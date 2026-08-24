@@ -1,0 +1,45 @@
+name: Build boat race database
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 18 * * *'
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_REPO: BoatraceCSV/boatracecsv.github.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout collector
+        uses: actions/checkout@v4
+
+      - name: Checkout public boat-race data
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SOURCE_REPO }}
+          path: source
+          fetch-depth: 1
+
+      - name: Inspect available data
+        run: |
+          find source/data -type f | head -50 || true
+          find source/data -type f -name '*.csv' | wc -l || true
+
+      - name: Build SQLite from all available result CSVs
+        run: |
+          python collector.py source/data/results artifacts/boatrace.sqlite || \
+          python collector.py source/data artifacts/boatrace.sqlite
+          sqlite3 artifacts/boatrace.sqlite 'select count(*) as races from races; select count(*) as entries from entries;'
+
+      - name: Upload SQLite
+        uses: actions/upload-artifact@v4
+        with:
+          name: boatrace-database
+          path: artifacts/boatrace.sqlite
+          retention-days: 30
