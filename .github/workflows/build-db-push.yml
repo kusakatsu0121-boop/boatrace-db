@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 env:
   SOURCE_REPO: BoatraceCSV/boatracecsv.github.io
@@ -27,14 +28,23 @@ jobs:
           fetch-depth: 1
 
       - name: Inspect available data
+        id: inspect
         run: |
-          echo "CSV files:"
-          find source/data -type f -name '*.csv' | wc -l || true
+          CSV_COUNT=$(find source/data -type f -name '*.csv' | wc -l)
+          echo "csv_count=$CSV_COUNT" >> "$GITHUB_OUTPUT"
 
       - name: Build SQLite from all available result CSVs
+        id: build
         run: |
           python collector.py source/data/results artifacts/boatrace.sqlite || python collector.py source/data artifacts/boatrace.sqlite
-          sqlite3 artifacts/boatrace.sqlite 'select count(*) as races from races; select count(*) as entries from entries;'
+          RACES=$(sqlite3 artifacts/boatrace.sqlite 'select count(*) from races;')
+          ENTRIES=$(sqlite3 artifacts/boatrace.sqlite 'select count(*) from entries;')
+          METHODS=$(sqlite3 -separator ' / ' artifacts/boatrace.sqlite "select winning_method,count(*) from races group by winning_method order by count(*) desc;")
+          echo "races=$RACES" >> "$GITHUB_OUTPUT"
+          echo "entries=$ENTRIES" >> "$GITHUB_OUTPUT"
+          echo "methods<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$METHODS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Upload SQLite
         uses: actions/upload-artifact@v4
@@ -42,3 +52,28 @@ jobs:
           name: boatrace-database
           path: artifacts/boatrace.sqlite
           retention-days: 30
+
+      - name: Publish build summary as issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CSV_COUNT: ${{ steps.inspect.outputs.csv_count }}
+          RACES: ${{ steps.build.outputs.races }}
+          ENTRIES: ${{ steps.build.outputs.entries }}
+          METHODS: ${{ steps.build.outputs.methods }}
+        run: |
+          cat > /tmp/body.md <<EOF
+          Automated boat-race database build completed.
+
+          - Source CSV files found: ${CSV_COUNT}
+          - Unique races in SQLite: ${RACES}
+          - Boat entry records: ${ENTRIES}
+
+          Winning methods:
+          \`\`\`
+          ${METHODS}
+          \`\`\`
+
+          Commit: ${GITHUB_SHA}
+          Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          EOF
+          gh issue create --title "DB build result ${GITHUB_RUN_ID}" --body-file /tmp/body.md
