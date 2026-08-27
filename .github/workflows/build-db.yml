@@ -37,9 +37,19 @@ jobs:
           python collector.py source/data artifacts/boatrace.sqlite
           sqlite3 artifacts/boatrace.sqlite 'select count(*) as races from races; select count(*) as entries from entries;'
 
-      - name: Upload SQLite
+      - name: Install racer-directory dependencies
+        run: python -m pip install --disable-pip-version-check pandas numpy
+
+      - name: Build racer directory
+        run: |
+          python racer_directory.py --source source/data --out artifacts/racer_directory --sqlite artifacts/boatrace.sqlite
+          ls -lh artifacts/racer_directory
+
+      - name: Upload database and racer directory
         uses: actions/upload-artifact@v4
         with:
           name: boatrace-database
-          path: artifacts/boatrace.sqlite
+          path: |
+            artifacts/boatrace.sqlite
+            artifacts/racer_directory/*.csv
           retention-days: 30
