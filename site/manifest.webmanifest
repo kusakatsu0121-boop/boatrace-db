@@ -1,0 +1,10 @@
+{
+  "name": "BOAT EDGE",
+  "short_name": "BOAT EDGE",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070b14",
+  "theme_color": "#0b1020",
+  "lang": "ja"
+}
