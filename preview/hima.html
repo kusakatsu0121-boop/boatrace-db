@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>暇になると余計なことを考える</title>
+<style>
+html,body{margin:0;height:100%;background:#f7f9fc;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif;overflow:hidden}
+.stage{position:relative;width:100vw;height:100vh;max-width:540px;margin:auto;background:#f7f9fc;overflow:hidden}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0}
+.s1{animation:s1 10s infinite}.s2{animation:s2 10s infinite}.s3{animation:s3 10s infinite}
+h1,h2{margin:0;text-align:center;color:#192330}.red{color:#eb5055}
+h1{font-size:44px} h2{font-size:30px}
+.man{position:relative;width:180px;height:280px;margin-top:30px;animation:fidget .45s infinite alternate}
+.head{position:absolute;left:65px;top:0;width:50px;height:50px;border:7px solid #192330;border-radius:50%}
+.body{position:absolute;left:86px;top:57px;width:8px;height:100px;background:#192330}
+.arm,.leg{position:absolute;width:8px;height:75px;background:#192330;transform-origin:top center;border-radius:6px}
+.a1{left:86px;top:74px;transform:rotate(55deg)}.a2{left:86px;top:74px;transform:rotate(-55deg)}
+.l1{left:86px;top:150px;transform:rotate(35deg)}.l2{left:86px;top:150px;transform:rotate(-35deg)}
+.clock{width:120px;height:120px;border:6px solid #192330;border-radius:50%;position:absolute;right:35px;top:150px}
+.hand{position:absolute;width:5px;height:42px;background:#eb5055;left:57px;top:18px;transform-origin:bottom center;animation:hand 3s linear infinite}
+.phone{width:100px;height:180px;border-radius:16px;background:#263040;position:absolute;right:55px;top:420px}
+.phone:after{content:"";position:absolute;inset:16px 12px 25px;background:#dff2ff;border-radius:10px}
+.dot{position:absolute;width:16px;height:16px;background:#eb5055;border-radius:50%;left:calc(50% - 8px);top:270px;transform-origin:8px 120px}
+@keyframes s1{0%,29%{opacity:1}30%,100%{opacity:0}}
+@keyframes s2{0%,29%{opacity:0}30%,59%{opacity:1}60%,100%{opacity:0}}
+@keyframes s3{0%,59%{opacity:0}60%,100%{opacity:1}}
+@keyframes fidget{to{transform:translateX(10px) rotate(2deg)}}
+@keyframes hand{to{transform:rotate(20deg)}}
+.progress{position:absolute;left:0;bottom:0;height:8px;background:#eb5055;animation:prog 10s linear infinite}
+@keyframes prog{from{width:0}to{width:100%}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="scene s1"><h1>暇だ……</h1><div class="man"><div class="head"></div><div class="body"></div><div class="arm a1"></div><div class="arm a2"></div><div class="leg l1"></div><div class="leg l2"></div></div><div class="clock"><div class="hand"></div></div></div>
+  <div class="scene s2"><h2>何もしないだけなのに</h2><h1 class="red">なぜ苦痛？</h1><div class="man"><div class="head"></div><div class="body"></div><div class="arm a1"></div><div class="arm a2"></div><div class="leg l1"></div><div class="leg l2"></div></div><div class="phone"></div></div>
+  <div class="scene s3"><h2>暇になると</h2><h1 class="red">余計なことを考える</h1><div class="man"><div class="head"></div><div class="body"></div><div class="arm a1"></div><div class="arm a2"></div><div class="leg l1"></div><div class="leg l2"></div></div>
+  <div class="dot" style="transform:rotate(0deg)"></div><div class="dot" style="transform:rotate(52deg)"></div><div class="dot" style="transform:rotate(104deg)"></div><div class="dot" style="transform:rotate(156deg)"></div><div class="dot" style="transform:rotate(208deg)"></div><div class="dot" style="transform:rotate(260deg)"></div><div class="dot" style="transform:rotate(312deg)"></div></div>
+  <div class="progress"></div>
+</div>
+</body></html>
