@@ -2,7 +2,7 @@ name: Build boat race database on push
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/meaningful-rating-validation-v1]
   workflow_dispatch:
 
 permissions:
