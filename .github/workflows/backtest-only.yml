@@ -24,16 +24,16 @@ jobs:
           fetch-depth: 1
       - name: Install dependencies
         run: python -m pip install --disable-pip-version-check pandas numpy
-      - name: Run OOS EV backtest
+      - name: Run July discovery August OOS backtest
         shell: bash
         run: |
           set -o pipefail
-          python backtest_ev_runner.py | tee /tmp/backtest.log
+          python backtest_ev_jul_aug.py | tee /tmp/backtest.log
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
-          name: ev-backtest
-          path: artifacts/backtest_ev/*.csv
+          name: ev-backtest-jul-aug
+          path: artifacts/backtest_ev_jul_aug/*.csv
           retention-days: 30
       - name: Publish result
         env:
@@ -41,10 +41,10 @@ jobs:
         run: |
           python - <<'PY' > /tmp/result.md
           import pandas as pd
-          s=pd.read_csv('artifacts/backtest_ev/summary.csv')
-          meta=pd.read_csv('artifacts/backtest_ev/fold_meta.csv')
+          s=pd.read_csv('artifacts/backtest_ev_jul_aug/summary.csv')
+          meta=pd.read_csv('artifacts/backtest_ev_jul_aug/fold_meta.csv')
           primary=s[s['strategy'].eq('EV1.15_TOP1')]
-          print('Leakage-safe EV backtest completed.')
+          print('July discovery -> untouched August EV backtest completed.')
           print('')
           print('Primary: EV >= 1.15, max 1 bet/race, fixed 100 yen.')
           print('```')
@@ -56,4 +56,4 @@ jobs:
           print(meta.to_string(index=False))
           print('```')
           PY
-          gh issue create --title "EV backtest result ${GITHUB_RUN_ID}" --body-file /tmp/result.md
+          gh issue create --title "July-Aug EV backtest result ${GITHUB_RUN_ID}" --body-file /tmp/result.md
