@@ -94,6 +94,21 @@ jobs:
           echo "path_signals=$PATH_SIGNALS" >> "$GITHUB_OUTPUT"
           ls -lh artifacts/strategy_strict
 
+      - name: Run leakage-safe EV and bankroll backtest
+        id: evtest
+        run: |
+          python backtest_ev.py --source source/data --out artifacts/backtest_ev | tee /tmp/evtest.log
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import pandas as pd
+          p='artifacts/backtest_ev/summary.csv'
+          s=pd.read_csv(p)
+          r=s[(s['fold']=='POOLED') & (s['strategy']=='EV1.15_TOP1')].iloc[0]
+          print(f"primary_bets={int(r['bets'])}")
+          print(f"primary_hits={int(r['hits'])}")
+          print(f"primary_roi={r['roi_pct']:.2f}")
+          PY
+          ls -lh artifacts/backtest_ev
+
       - name: Upload database, racer directory and strategy features
         uses: actions/upload-artifact@v4
         with:
@@ -103,6 +118,7 @@ jobs:
             artifacts/racer_directory/*.csv
             artifacts/strategy_features/*.csv
             artifacts/strategy_strict/*.csv
+            artifacts/backtest_ev/*.csv
           retention-days: 30
 
       - name: Publish build summary as issue
@@ -115,6 +131,9 @@ jobs:
           SIGNALS: ${{ steps.strategy.outputs.signals }}
           STRICT_SIGNALS: ${{ steps.strict.outputs.strict_signals }}
           PATH_SIGNALS: ${{ steps.strict.outputs.path_signals }}
+          PRIMARY_BETS: ${{ steps.evtest.outputs.primary_bets }}
+          PRIMARY_HITS: ${{ steps.evtest.outputs.primary_hits }}
+          PRIMARY_ROI: ${{ steps.evtest.outputs.primary_roi }}
           METHODS: ${{ steps.build.outputs.methods }}
         run: |
           cat > /tmp/body.md <<EOF
@@ -127,10 +146,13 @@ jobs:
           - Exploratory holdout signals: ${SIGNALS}
           - Strict reproducible pair signals: ${STRICT_SIGNALS}
           - Strict reproducible trifecta-path signals: ${PATH_SIGNALS}
+          - Primary OOS EV>=1.15 / top1 bets: ${PRIMARY_BETS}
+          - Primary OOS hits: ${PRIMARY_HITS}
+          - Primary OOS fixed-100 return rate: ${PRIMARY_ROI}%
 
-          Strict signals normalize winning-method whitespace, learn racer/course types only before the holdout,
-          use all six boats' historical same-course strengths for the race baseline, subtract each type's marginal effect,
-          and require the effect direction to repeat in both halves of the 120-day holdout.
+          Backtest uses only pre-race information: racer/course types learned from prior races,
+          start-exhibition course placement, and the od3 trifecta odds snapshot around 10 minutes before deadline.
+          Signals are discovered in a prior 60-day window and evaluated only in the following untouched 60-day window.
 
           Winning methods:
           \`\`\`
