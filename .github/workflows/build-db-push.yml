@@ -46,7 +46,7 @@ jobs:
           echo "$METHODS" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
-      - name: Install racer-directory dependencies
+      - name: Install analysis dependencies
         run: python -m pip install --disable-pip-version-check pandas numpy
 
       - name: Build racer directory
@@ -61,13 +61,30 @@ jobs:
           echo "racers=$RACERS" >> "$GITHUB_OUTPUT"
           ls -lh artifacts/racer_directory
 
-      - name: Upload database and racer directory
+      - name: Build holdout-tested course/style strategy features
+        id: strategy
+        run: |
+          python strategy_features.py --source source/data --out artifacts/strategy_features --holdout-days 120 | tee /tmp/strategy.log
+          SIGNALS=$(python - <<'PY'
+          import pandas as pd
+          p='artifacts/strategy_features/top_strategy_signals.csv'
+          try:
+              print(len(pd.read_csv(p)))
+          except Exception:
+              print(0)
+          PY
+          )
+          echo "signals=$SIGNALS" >> "$GITHUB_OUTPUT"
+          ls -lh artifacts/strategy_features
+
+      - name: Upload database, racer directory and strategy features
         uses: actions/upload-artifact@v4
         with:
           name: boatrace-database
           path: |
             artifacts/boatrace.sqlite
             artifacts/racer_directory/*.csv
+            artifacts/strategy_features/*.csv
           retention-days: 30
 
       - name: Publish build summary as issue
@@ -77,6 +94,7 @@ jobs:
           RACES: ${{ steps.build.outputs.races }}
           ENTRIES: ${{ steps.build.outputs.entries }}
           RACERS: ${{ steps.racers.outputs.racers }}
+          SIGNALS: ${{ steps.strategy.outputs.signals }}
           METHODS: ${{ steps.build.outputs.methods }}
         run: |
           cat > /tmp/body.md <<EOF
@@ -86,8 +104,11 @@ jobs:
           - Unique races in SQLite: ${RACES}
           - Boat entry records: ${ENTRIES}
           - Racer directory entries: ${RACERS}
+          - Holdout-tested strategy signals: ${SIGNALS}
 
-          Racer directory tables are included in the workflow artifact and SQLite.
+          Strategy outputs include course-specific finish roles, attack styles, pair placement effects,
+          1-2-3 type effects, and actual-course trifecta paths. Effects are estimated on a 120-day holdout
+          after types/baselines are learned only from earlier races.
 
           Winning methods:
           \`\`\`
