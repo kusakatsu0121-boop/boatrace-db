@@ -1,59 +1,48 @@
-let feed=null,venueIndex=0,raceIndex=0,view="basic";
-const $=id=>document.getElementById(id),venueStrip=$("venueStrip"),raceStrip=$("raceStrip"),raceHeader=$("raceHeader"),viewTabs=$("viewTabs"),tableWrap=$("tableWrap"),empty=$("empty");
-const views=[["basic","基本"],["course","コース・ST"],["edge","状態・独自"]];
+let feed=null,venueIndex=0,raceIndex=0,view="race";
+const $=id=>document.getElementById(id);
+const venueStrip=$("venueStrip"),raceStrip=$("raceStrip"),raceHeader=$("raceHeader"),viewTabs=$("viewTabs"),tableWrap=$("tableWrap"),empty=$("empty");
+
+const views=[["race","出走表"],["event","今節"],["adjust","補正"],["course","コース/ST"],["traits","特性"],["mydata","MyData"]];
+const myMetrics=[
+  ["today_adjusted_winrate","今日補正",v=>win(v)],["base_winrate","実力換算",v=>win(v)],["current_winrate","現在",v=>win(v)],["national_win_rate","公式勝率",v=>win(v)],
+  ["local_win_rate","当地勝率",v=>win(v)],["pub_avg_st","全国ST",v=>st(v)],["event_avg_st","今節ST",v=>st(v)],["event_avg_finish","今節平均着",v=>n(v,2)],
+  ["motor_2rate","M2連",v=>pct(v)],["motor_3rate","M3連",v=>pct(v)],["course_win1_rate","コース1着",v=>pct(v)],["course_top3_rate","コース3連",v=>pct(v)],
+  ["course_avg_st","コースST",v=>st(v)],["course_st_top_rate","ST先行",v=>pct(v)],["course_st_0x_rate","0台率",v=>pct(v)],["recent20_top3_rate","直近20 3連",v=>pct(v)],
+  ["strong_field_top3_rate","強敵3連",v=>pct(v)],["motor_dependency_delta","M依存差",v=>signed(v,1,"pt")]
+];
+let mySelected=loadMyData();
 const has=v=>v!==undefined&&v!==null&&v!==""&&!Number.isNaN(Number(v));
 const n=(v,d=1)=>has(v)?Number(v).toFixed(d):"—";
+const win=v=>has(v)?Number(v).toFixed(2):"—";
 const pct=(v,d=1)=>has(v)?`${Number(v).toFixed(d)}%`:"—";
-const st=v=>has(v)?Number(v).toFixed(3).replace(/^0/,""):"—";
-const signed=(v,d=1,suffix="")=>has(v)?`${Number(v)>0?"+":""}${Number(v).toFixed(d)}${suffix}`:"—";
+const st=v=>{if(!has(v))return"—";const x=Number(v);if(x<0)return`F${Math.abs(x).toFixed(2).replace(/^0/,"")}`;return x.toFixed(2).replace(/^0/,"")};
+const signed=(v,d=2,suffix="")=>has(v)?`${Number(v)>0?"+":""}${Number(v).toFixed(d)}${suffix}`:"—";
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+function loadMyData(){try{const saved=JSON.parse(localStorage.getItem("boat-edge-mydata-v1"));if(Array.isArray(saved)&&saved.length)return saved}catch(_){}return["today_adjusted_winrate","base_winrate","national_win_rate","event_avg_st","motor_2rate","course_win1_rate"]}
+function saveMyData(){localStorage.setItem("boat-edge-mydata-v1",JSON.stringify(mySelected))}
 function chip(text,active,fn){const b=document.createElement("button");b.className=`chip${active?" active":""}`;b.textContent=text;b.onclick=fn;return b}
-function tone(v,goodWhenPositive=true,threshold=0){if(!has(v)||Math.abs(Number(v))<threshold)return"neutral";const pos=Number(v)>0;return(pos===goodWhenPositive)?"good":"bad"}
-function cell(value,cls="neutral",sub=""){return`<span class="val ${cls}">${value}</span>${sub?`<span class="subval">${sub}</span>`:""}`}
-function row(label,entries,renderer){return`<tr><th class="row-label">${label}</th>${entries.map(e=>`<td>${renderer(e)}</td>`).join("")}</tr>`}
-function section(label){return`<tr class="section-row"><th class="row-label">${label}</th>${"<td>●</td>".repeat(6)}</tr>`}
+function laneBadge(no){return`<span class="lane-badge lane-${no}">${no}</span>`}
+function fTag(e){const f=e.f_count??0,l=e.l_count??0;return`<span class="tag ${(f||l)?"tag-warn":""}">F${f}/L${l}</span>`}
+function deltaClass(v){if(!has(v)||Math.abs(Number(v))<.05)return"";return Number(v)>0?"up":"down"}
+function metric(label,value,cls="",sub=""){return`<div class="metric ${cls}"><span>${label}</span><strong>${value}</strong>${sub?`<small>${sub}</small>`:""}</div>`}
 function renderVenues(){venueStrip.replaceChildren();(feed?.venues||[]).forEach((v,i)=>venueStrip.appendChild(chip(v.venue,i===venueIndex,()=>{venueIndex=i;raceIndex=0;renderAll()})))}
 function renderRaces(){raceStrip.replaceChildren();const races=feed?.venues?.[venueIndex]?.races||[];races.forEach((r,i)=>raceStrip.appendChild(chip(`${r.race_no}R`,i===raceIndex,()=>{raceIndex=i;renderAll(false)})))}
-function renderTabs(){viewTabs.replaceChildren();views.forEach(([key,label])=>{const b=document.createElement("button");b.className=`view-tab${view===key?" active":""}`;b.textContent=label;b.onclick=()=>{view=key;renderTabs();renderTable()};viewTabs.appendChild(b)})}
-function header(entries){return`<thead><tr><th class="row-label">艇</th>${entries.map(e=>`<th class="boat-head boat-${e.boat_no}"><div class="boat-num">${e.boat_no}</div><div class="boat-name">${e.name||"—"}</div><div class="boat-grade">${e.class_grade||""}</div></th>`).join("")}</tr></thead>`}
-function basicRows(es){return[
- row("F/L",es,e=>cell(`F${e.f_count??0}/L${e.l_count??0}`,(e.f_count||e.l_count)?"warn":"neutral")),
- row("全国勝率",es,e=>cell(n(e.national_win_rate,2))),
- row("全国3連",es,e=>cell(pct(e.national_3rate))),
- row("当地勝率",es,e=>cell(n(e.local_win_rate,2))),
- row("当地3連",es,e=>cell(pct(e.local_3rate))),
- row("公表ST",es,e=>cell(st(e.pub_avg_st))),
- row("モーター",es,e=>cell(e.motor_no??"—")),
- row("M2連",es,e=>cell(pct(e.motor_2rate))),
- row("M3連",es,e=>cell(pct(e.motor_3rate)))
-].join("")}
-function courseRows(es){return[
- row("実績数",es,e=>cell(e.course_n??"—")),
- row("1着率",es,e=>cell(pct(e.course_win1_rate))),
- row("3連率",es,e=>cell(pct(e.course_top3_rate))),
- row("平均ST",es,e=>cell(st(e.course_avg_st))),
- row("ST1着率",es,e=>cell(pct(e.course_st_top_rate))),
- row("STブレ",es,e=>cell(has(e.course_st_sd)?n(e.course_st_sd,3):"—")),
- section("全体参考"),
- row("全体3連",es,e=>cell(pct(e.all_top3_rate))),
- row("全体ST",es,e=>cell(st(e.all_avg_st)))
-].join("")}
-function edgeRows(es){return[
- section("直近状態"),
- row("直近5 3連",es,e=>cell(pct(e.recent5_top3_rate))),
- row("直近10 3連",es,e=>cell(pct(e.recent10_top3_rate))),
- row("直近20 3連",es,e=>cell(pct(e.recent20_top3_rate))),
- row("実力傾向",es,e=>{const t=e.trend||"不明";return cell(t,t==="上向き"?"good":t==="下向き"?"bad":"neutral")}),
- row("3連変化",es,e=>cell(signed(e.trend_top3_delta,1,"pt"),tone(e.trend_top3_delta,true,3))),
- row("ST変化",es,e=>cell(signed(e.trend_st_delta,3,"秒"),tone(e.trend_st_delta,false,.003))),
- section("独自指標"),
- row("強敵補正",es,e=>cell(signed(e.strong_field_perf,2),tone(e.strong_field_perf,true,.10),has(e.strong_field_n)?`n=${e.strong_field_n}`:"")),
- row("強敵3連",es,e=>cell(pct(e.strong_field_top3_rate),"neutral",has(e.strong_field_n)?`n=${e.strong_field_n}`:"")),
- row("M依存",es,e=>cell(signed(e.motor_dependency_delta,1,"pt"),Math.abs(Number(e.motor_dependency_delta||0))>=15?"warn":"neutral")),
- row("悪機3連",es,e=>cell(pct(e.bad_motor_top3_rate),"neutral",has(e.bad_motor_n)?`n=${e.bad_motor_n}`:"")),
- row("2走目差",es,e=>{if(!has(e.second_run_top3_rate)||!has(e.first_run_top3_rate))return cell("—");const d=Number(e.second_run_top3_rate)-Number(e.first_run_top3_rate);return cell(signed(d,1,"pt"),tone(d,true,5),has(e.second_run_n)?`n=${e.second_run_n}`:"")})
-].join("")}
-function renderTable(){const venue=feed?.venues?.[venueIndex],race=venue?.races?.[raceIndex];if(!race){tableWrap.innerHTML="";empty.classList.remove("hidden");return}empty.classList.add("hidden");const es=[...(race.entries||[])].sort((a,b)=>(a.boat_no||9)-(b.boat_no||9));while(es.length<6)es.push({boat_no:es.length+1});const body=view==="basic"?basicRows(es):view==="course"?courseRows(es):edgeRows(es);tableWrap.innerHTML=`<table class="race-table">${header(es)}<tbody>${body}</tbody></table>`}
-function renderHeader(){const venue=feed?.venues?.[venueIndex],race=venue?.races?.[raceIndex];if(!race){raceHeader.innerHTML="";return}raceHeader.innerHTML=`<div class="race-title">${venue.venue} ${race.race_no}R ${race.race_name||""}</div><div class="race-sub">${[race.grade,race.day_label,race.event_title,race.deadline?`締切 ${race.deadline}`:null].filter(Boolean).join(" · ")}</div>`}
-function renderAll(withVenues=true){try{if(withVenues)renderVenues();renderRaces();renderHeader();renderTabs();renderTable()}catch(err){console.error("render error",err);$("dateMeta").textContent=`${feed?.race_date||""} · 表示エラー`;}}
-async function boot(){try{const res=await fetch(`./data/today.json?t=${Date.now()}`,{cache:"no-store"});if(!res.ok)throw new Error(`HTTP ${res.status}`);feed=await res.json();if(!Array.isArray(feed.venues)||!feed.venues.length)throw new Error("no venues");$("dateMeta").textContent=`${feed.race_date} · ${feed.venues.length}場 · ${feed.venues.reduce((s,v)=>s+(v.races?.length||0),0)}R`;renderAll();if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=2").catch(console.warn)}catch(err){console.error(err);$("dateMeta").textContent="データ読込エラー";empty.classList.remove("hidden")}}
+function renderTabs(){viewTabs.replaceChildren();views.forEach(([key,label])=>{const b=document.createElement("button");b.className=`view-tab${view===key?" active":""}`;b.textContent=label;b.onclick=()=>{view=key;renderTabs();renderView()};viewTabs.appendChild(b)})}
+function currentRace(){return feed?.venues?.[venueIndex]?.races?.[raceIndex]}
+function entries(){return[...(currentRace()?.entries||[])].sort((a,b)=>(a.boat_no||9)-(b.boat_no||9))}
+function entryTitle(e){return`<div class="entry-title">${laneBadge(e.boat_no)}<div class="entry-person"><div class="name">${esc(e.name||"—")} <span class="grade">${esc(e.class_grade||"")}</span></div><div class="entry-meta">${fTag(e)} <span>${e.regno||""}</span></div></div></div>`}
+function compactEvent(e){const runs=e.event_runs||[];if(!runs.length)return"今節データなし";return runs.map(r=>`${r.finish||"?"}${has(r.st)?` ${st(r.st)}`:""}`).join(" / ")}
+function renderRace(){tableWrap.innerHTML=`<div class="entry-list">${entries().map(e=>`<article class="entry-card">${entryTitle(e)}<div class="score-strip">${metric("公式",win(e.national_win_rate))}${metric("実力",win(e.base_winrate),"score-base",has(e.rating_sample_n)?`n=${e.rating_sample_n}`:"")}${metric("現在",win(e.current_winrate),deltaClass(e.form_adjustment))}${metric("今日",win(e.today_adjusted_winrate),"score-today")}</div><div class="quick-grid"><span>全国ST <b>${st(e.pub_avg_st)}</b></span><span>当地 <b>${win(e.local_win_rate)}</b></span><span>M${e.motor_no??"—"} <b>${pct(e.motor_2rate)}</b></span><span>今節ST <b>${st(e.event_avg_st)}</b></span></div><div class="event-line"><span>今節</span>${esc(compactEvent(e))}</div></article>`).join("")}</div><div class="explain-box"><b>実力</b>＝相手レベル・コース・機力などをならした勝率換算。<b>今日</b>＝現在の実力に、この6艇・枠・モーター・場・取得済み天候などを加えた推定値。</div>`}
+function eventCell(r){const finish=esc(r.finish||"—");const sub=[r.race_no?`${r.race_no}R`:null,r.frame?`${r.frame}枠`:null,r.course?`${r.course}コース`:null].filter(Boolean).join(" ");return`<div class="run-cell"><b>${finish}</b><span>ST ${st(r.st)}</span><small>${sub}</small></div>`}
+function renderEvent(){tableWrap.innerHTML=`<div class="entry-list">${entries().map(e=>{const byDay={};(e.event_runs||[]).forEach(r=>(byDay[r.day]??=[]).push(r));return`<article class="entry-card">${entryTitle(e)}<div class="event-summary">${metric("出走",e.event_n??0)}${metric("平均ST",st(e.event_avg_st))}${metric("平均着",n(e.event_avg_finish,2))}</div><div class="day-scroll">${Object.keys(byDay).map(d=>`<div class="day-col"><div class="day-head">${d}日目</div>${byDay[d].map(eventCell).join("")}</div>`).join("")||'<div class="no-data">今節の過去走なし</div>'}</div></article>`}).join("")}</div>`}
+function adjustmentRows(e){const rows=[["相手",e.field_adjustment,"今日の相手レベル"],["コース",e.course_adjustment,"今回の枠＝暫定進入"],["場×コース",e.venue_course_adjustment,"この水面のコース傾向"],["モーター",e.motor_adjustment,"同レース6艇内で比較"],["F状態",e.f_adjustment,"F本数による全体傾向"],["天候・水面",e.environment_adjustment,"取得済み時だけ反映"],["個別適性",e.personal_condition_adjustment,"標本・再現性基準を通過したものだけ"]];return rows.map(([l,v,s])=>`<div class="adjust-row"><span>${l}<small>${s}</small></span><b class="${deltaClass(v)}">${signed(v,2)}</b></div>`).join("")}
+function renderAdjust(){tableWrap.innerHTML=`<div class="explain-box top-note"><b>補正勝率 β</b>　条件データが少ない、または期間を分けると再現しない個別補正は0として使いません。</div><div class="entry-list">${entries().map(e=>`<article class="entry-card">${entryTitle(e)}<div class="score-strip four">${metric("公式",win(e.national_win_rate))}${metric("実力",win(e.base_winrate))}${metric("現在",win(e.current_winrate))}${metric("今日",win(e.today_adjusted_winrate),"score-today",`公式比 ${signed(e.today_delta_vs_official,2)}`)}</div><div class="adjust-list">${adjustmentRows(e)}</div><div class="accepted">${(e.accepted_conditions||[]).length?(e.accepted_conditions||[]).map(c=>`<span>${esc(c.label)} ${signed(c.value,2)} <small>n=${c.n}</small></span>`).join(""):"<em>個別条件補正なし（標本不足・差が小さい・再現しない条件は不使用）</em>"}</div></article>`).join("")}</div>`}
+function renderCourse(){tableWrap.innerHTML=`<div class="entry-list">${entries().map(e=>`<article class="entry-card">${entryTitle(e)}<div class="section-title">${e.boat_no}コース想定の過去成績 <small>n=${e.course_n??"—"}</small></div><div class="metric-grid">${metric("1着率",pct(e.course_win1_rate))}${metric("2連率",pct(e.course_top2_rate))}${metric("3連率",pct(e.course_top3_rate))}${metric("平均着",n(e.course_avg_finish,2))}${metric("平均ST",st(e.course_avg_st))}${metric("ST先行率",pct(e.course_st_top_rate))}${metric("0台率",pct(e.course_st_0x_rate))}${metric("STブレ",n(e.course_st_sd,3))}</div></article>`).join("")}</div>`}
+function strengthLabel(v,goodPositive=true){if(!has(v))return["不明",""];const x=Number(v)*(goodPositive?1:-1);if(x>=.25)return["強め","up"];if(x>=.08)return["やや強め","up"];if(x<=-.25)return["弱め","down"];if(x<=-.08)return["やや弱め","down"];return["普通",""]}
+function renderTraits(){tableWrap.innerHTML=`<div class="entry-list">${entries().map(e=>{const strong=strengthLabel(e.strong_field_perf,true);const trend=e.trend||"不明";const dep=has(e.motor_dependency_delta)?Math.abs(Number(e.motor_dependency_delta)):null;const second=has(e.second_run_top3_rate)&&has(e.first_run_top3_rate)?Number(e.second_run_top3_rate)-Number(e.first_run_top3_rate):null;return`<article class="entry-card">${entryTitle(e)}<div class="trait-list"><div><span>現在傾向<small>直近とその前をコース補正後で比較</small></span><b class="${trend==="上向き"?"up":trend==="下向き"?"down":""}">${esc(trend)}</b></div><div><span>強敵相手<small>強い相手が多いレースで崩れにくいか</small></span><b class="${strong[1]}">${strong[0]}</b><em>${has(e.strong_field_n)?`n=${e.strong_field_n}`:""}</em></div><div><span>モーター依存<small>良機と悪機で3連率がどれだけ変わるか</small></span><b>${dep===null?"—":dep>=15?"高め":dep>=7?"やや高め":"小さめ"}</b><em>${has(e.motor_dependency_delta)?signed(e.motor_dependency_delta,1,"pt"):""}</em></div><div><span>2走目変化<small>同日1走目と2走目の3連率差</small></span><b class="${deltaClass(second)}">${signed(second,1,"pt")}</b><em>${has(e.second_run_n)?`n=${e.second_run_n}`:""}</em></div></div></article>`}).join("")}</div>`}
+function renderMyData(){const selectedSet=new Set(mySelected);tableWrap.innerHTML=`<div class="mydata-config"><div><b>MyData</b><small>出走表に出したい項目を選択。端末に保存されます。</small></div><div class="metric-picks">${myMetrics.map(([key,label])=>`<button data-key="${key}" class="${selectedSet.has(key)?"on":""}">${label}</button>`).join("")}</div></div><div class="entry-list">${entries().map(e=>`<article class="entry-card">${entryTitle(e)}<div class="metric-grid my-grid">${myMetrics.filter(([key])=>selectedSet.has(key)).map(([key,label,fmt])=>metric(label,fmt(e[key]))).join("")||'<div class="no-data">表示項目を選んでください</div>'}</div></article>`).join("")}</div>`;tableWrap.querySelectorAll(".metric-picks button").forEach(b=>b.onclick=()=>{const key=b.dataset.key;if(mySelected.includes(key)){if(mySelected.length>1)mySelected=mySelected.filter(x=>x!==key)}else mySelected.push(key);saveMyData();renderMyData()})}
+function renderView(){const race=currentRace();if(!race){tableWrap.innerHTML="";empty.classList.remove("hidden");return}empty.classList.add("hidden");if(view==="race")renderRace();else if(view==="event")renderEvent();else if(view==="adjust")renderAdjust();else if(view==="course")renderCourse();else if(view==="traits")renderTraits();else renderMyData()}
+function renderHeader(){const venue=feed?.venues?.[venueIndex],race=currentRace();if(!race){raceHeader.innerHTML="";return}const w=race.weather||{};const weather=[w.weather,w.wind_direction,has(w.wind_speed)?`${n(w.wind_speed,1)}m`:null,has(w.wave_height)?`波${n(w.wave_height,0)}cm`:null].filter(Boolean).join(" ");raceHeader.innerHTML=`<div class="race-title">${esc(venue.venue)} ${race.race_no}R ${esc(race.race_name||"")}</div><div class="race-sub">${[race.grade_normalized,race.series!=="通常"?race.series:null,race.day_label,race.event_title,race.deadline?`締切 ${race.deadline}`:null].filter(Boolean).map(esc).join(" · ")}</div>${weather?`<div class="weather-line">${esc(weather)}</div>`:""}`}
+function renderAll(withVenues=true){try{if(withVenues)renderVenues();renderRaces();renderHeader();renderTabs();renderView()}catch(err){console.error("render error",err);$("dateMeta").textContent=`${feed?.race_date||""} · 表示エラー`}}
+async function boot(){try{const res=await fetch(`./data/today.json?t=${Date.now()}`,{cache:"no-store"});if(!res.ok)throw new Error(`HTTP ${res.status}`);feed=await res.json();if(!Array.isArray(feed.venues)||!feed.venues.length)throw new Error("no venues");$("dateMeta").textContent=`${feed.race_date} · ${feed.venues.length}場 · ${feed.venues.reduce((s,v)=>s+(v.races?.length||0),0)}R`;renderAll();if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=3").catch(console.warn)}catch(err){console.error(err);$("dateMeta").textContent="データ読込エラー";empty.classList.remove("hidden")}}
 boot();
