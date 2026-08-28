@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - 'racer_directory.py'
+      - 'adjusted_winrate.py'
+      - 'build_adjusted_winrate.py'
       - 'build_mobile_feed.py'
       - 'site/**'
       - '.github/workflows/mobile-app.yml'
@@ -44,6 +46,9 @@ jobs:
         run: |
           mkdir -p artifacts/racer_directory
           python racer_directory.py --source source/data --out artifacts/racer_directory --sqlite artifacts/boatrace.sqlite
+      - name: Build adjusted win-rate model
+        run: |
+          python build_adjusted_winrate.py --source source/data --out artifacts/racer_directory
       - name: Build mobile feed
         run: |
           python build_mobile_feed.py --source source/data --directory artifacts/racer_directory --site site
