@@ -26,6 +26,7 @@ RATIO_MIN = 0.55
 RATIO_MAX = 1.80
 DAMP_POWER = 0.50
 PRIMARY_EV = 1.15
+PRIMARY_MAX_BETS = 4
 
 
 def role_baseline_map(roles):
@@ -170,7 +171,7 @@ def adjusted_probs(row, qrow, signal_lookup):
     return p, len(best)
 
 
-def make_test_bets(races, odds_course, q, winner_path, signals, start, end, ev_threshold=PRIMARY_EV):
+def make_test_bets(races, odds_course, q, winner_path, signals, start, end, ev_threshold=PRIMARY_EV, max_bets=PRIMARY_MAX_BETS):
     lk = lookup_signals(signals)
     mask = (races.race_date >= pd.Timestamp(start)) & (races.race_date <= pd.Timestamp(end)) & (winner_path >= 0)
     rows = []
@@ -184,15 +185,17 @@ def make_test_bets(races, odds_course, q, winner_path, signals, start, end, ev_t
         eligible = np.flatnonzero(np.isfinite(ev) & (ev >= ev_threshold))
         if len(eligible) == 0:
             continue
-        pidx = int(eligible[np.nanargmax(ev[eligible])])
-        hit = int(pidx == winner_path[i])
-        rows.append({
-            'レースコード':r['レースコード'], 'race_date':r.race_date,
-            'course_trifecta':'-'.join(map(str,be.PATHS[pidx])), 'path_idx':pidx,
-            'snapshot_odds':float(odds_course[i,pidx]), 'model_prob':float(p[pidx]),
-            'model_ev':float(ev[pidx]), 'signals_used':used, 'hit':hit,
-            'return_per_100':float(r.payout) if hit else 0.0,
-        })
+        order = eligible[np.argsort(ev[eligible])[::-1]][:max_bets]
+        for rank, pidx in enumerate(order, start=1):
+            pidx = int(pidx)
+            hit = int(pidx == winner_path[i])
+            rows.append({
+                'レースコード':r['レースコード'], 'race_date':r.race_date, 'rank_in_race':rank,
+                'course_trifecta':'-'.join(map(str,be.PATHS[pidx])), 'path_idx':pidx,
+                'snapshot_odds':float(odds_course[i,pidx]), 'model_prob':float(p[pidx]),
+                'model_ev':float(ev[pidx]), 'signals_used':used, 'hit':hit,
+                'return_per_100':float(r.payout) if hit else 0.0,
+            })
     return pd.DataFrame(rows)
 
 
@@ -213,22 +216,21 @@ def main():
     races = races[(races.race_date >= TEST_START) & (races.race_date <= TEST_END)].reset_index(drop=True)
     odds_course, q, winner_path, _ = be.odds_in_exhibition_course_order(races)
 
-    all_bets = make_test_bets(races, odds_course, q, winner_path, signals, TEST_START, TEST_END, PRIMARY_EV)
+    all_bets = make_test_bets(races, odds_course, q, winner_path, signals, TEST_START, TEST_END, PRIMARY_EV, PRIMARY_MAX_BETS)
     july = all_bets[(all_bets.race_date >= pd.Timestamp('2026-07-01')) & (all_bets.race_date <= pd.Timestamp('2026-07-31'))].copy() if len(all_bets) else all_bets
     aug = all_bets[(all_bets.race_date >= pd.Timestamp('2026-08-01')) & (all_bets.race_date <= pd.Timestamp('2026-08-28'))].copy() if len(all_bets) else all_bets
 
     rows = [summarize('JULY',july), summarize('AUGUST',aug), summarize('POOLED',all_bets)]
     summary = pd.DataFrame(rows)
     summary['signals'] = len(signals)
+    summary['max_bets_per_race'] = PRIMARY_MAX_BETS
     summary.to_csv(out/'summary.csv', index=False)
     all_bets.to_csv(out/'primary_bets.csv', index=False)
-    curve, kstats = be.kelly_simulation(all_bets)
-    curve.to_csv(out/'kelly_curve.csv', index=False)
     pd.DataFrame([{
         'role_train_end':str(ROLE_TRAIN_END.date()), 'discovery_start':str(DISC_START.date()),
         'discovery_end':str(DISC_END.date()), 'test_start':str(TEST_START.date()), 'test_end':str(TEST_END.date()),
         'role_rows':len(roles),'discovery_races':disc['レースコード'].nunique(),'test_races':len(races),
-        'signals':len(signals), **kstats,
+        'signals':len(signals), 'primary_ev':PRIMARY_EV, 'primary_max_bets':PRIMARY_MAX_BETS,
     }]).to_csv(out/'meta.csv',index=False)
 
     print('HIERARCHICAL OOS SUMMARY')
