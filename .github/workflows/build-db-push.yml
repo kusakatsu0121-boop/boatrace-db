@@ -61,6 +61,15 @@ jobs:
           echo "racers=$RACERS" >> "$GITHUB_OUTPUT"
           ls -lh artifacts/racer_directory
 
+      - name: Build adjusted ratings and forward validation
+        run: |
+          python build_adjusted_winrate.py --source source/data --out artifacts/racer_directory
+          python validate_adjusted_winrate.py --source source/data --out artifacts/racer_directory --holdout-days 30
+          echo "=== forward validation ==="
+          cat artifacts/racer_directory/model_forward_validation.csv
+          echo "=== validation period ==="
+          cat artifacts/racer_directory/model_forward_validation_meta.csv
+
       - name: Upload database and racer directory
         uses: actions/upload-artifact@v4
         with:
@@ -87,7 +96,7 @@ jobs:
           - Boat entry records: ${ENTRIES}
           - Racer directory entries: ${RACERS}
 
-          Racer directory tables are included in the workflow artifact and SQLite.
+          Racer directory tables, adjusted win-rate-equivalent ratings, and forward validation files are included in the workflow artifact and SQLite.
 
           Winning methods:
           \`\`\`
