@@ -25,7 +25,10 @@ jobs:
       - name: Install dependencies
         run: python -m pip install --disable-pip-version-check pandas numpy
       - name: Run OOS EV backtest
-        run: python backtest_ev.py --source source/data --out artifacts/backtest_ev | tee /tmp/backtest.log
+        shell: bash
+        run: |
+          set -o pipefail
+          python backtest_ev_runner.py | tee /tmp/backtest.log
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
