@@ -1,0 +1,58 @@
+name: Full independent probability backtest
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout model code
+        uses: actions/checkout@v4
+      - name: Checkout public boat-race data
+        uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas numpy scikit-learn
+      - name: Run full independent probability model
+        shell: bash
+        run: |
+          set -o pipefail
+          python full_probability_model.py | tee /tmp/full-model.log
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-probability-backtest
+          path: artifacts/full_probability/*.csv
+          retention-days: 30
+      - name: Publish result
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY' > /tmp/result.md
+          import pandas as pd
+          s=pd.read_csv('artifacts/full_probability/summary.csv')
+          m=pd.read_csv('artifacts/full_probability/model_metrics.csv')
+          x=pd.read_csv('artifacts/full_probability/meta.csv')
+          v=pd.read_csv('artifacts/full_probability/sensitivity.csv')
+          print('Independent full probability model completed. Odds were not used to create model probabilities; odds are used only at the final EV layer.')
+          print('\nPrimary EV>=1.15, max 4 bets/race:')
+          print('```'); print(s.to_string(index=False)); print('```')
+          print('\nProbability quality:')
+          print('```'); print(m.to_string(index=False)); print('```')
+          print('\nEV sensitivity:')
+          print('```'); print(v.to_string(index=False)); print('```')
+          print('\nMeta:')
+          print('```'); print(x.to_string(index=False)); print('```')
+          PY
+          gh issue create --title "Full probability OOS result ${GITHUB_RUN_ID}" --body-file /tmp/result.md
