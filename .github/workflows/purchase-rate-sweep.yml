@@ -1,0 +1,56 @@
+name: Purchase-rate sweep OOS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout model code
+        uses: actions/checkout@v4
+      - name: Checkout public boat-race data
+        uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas numpy
+      - name: Run purchase-rate sweep
+        shell: bash
+        run: |
+          set -o pipefail
+          python backtest_purchase_rates.py | tee /tmp/purchase-rate.log
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: purchase-rate-sweep
+          path: artifacts/purchase_rate_sweep/*.csv
+          retention-days: 30
+      - name: Publish result
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY' > /tmp/result.md
+          import pandas as pd
+          s=pd.read_csv('artifacts/purchase_rate_sweep/summary.csv')
+          r=pd.read_csv('artifacts/purchase_rate_sweep/rank_summary.csv')
+          print('Purchase-rate sweep: July score calibration -> untouched August outcome test.')
+          print('Max 4 bets/race, ticket EV floor 1.00.')
+          print('```')
+          print(s.to_string(index=False))
+          print('```')
+          print('\nRank contribution:')
+          print('```')
+          print(r.to_string(index=False))
+          print('```')
+          PY
+          gh issue create --title "Purchase-rate OOS sweep ${GITHUB_RUN_ID}" --body-file /tmp/result.md
