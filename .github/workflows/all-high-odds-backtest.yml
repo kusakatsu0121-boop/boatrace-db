@@ -1,0 +1,25 @@
+name: All high-odds trifecta baseline
+on:
+  push:
+    paths:
+      - 'backtest_all_high_odds.py'
+      - '.github/workflows/all-high-odds-backtest.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - run: python -m pip install --disable-pip-version-check pandas numpy
+      - run: python backtest_all_high_odds.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: all-high-odds-backtest
+          path: artifacts/all_high_odds/
