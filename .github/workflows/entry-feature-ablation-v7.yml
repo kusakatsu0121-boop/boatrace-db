@@ -1,0 +1,103 @@
+name: Parallel entry feature ablation v7
+
+on:
+  push:
+    paths:
+      - 'entry_ablation_trigger.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  screen:
+    strategy:
+      fail-fast: false
+      matrix:
+        model:
+          - CORE
+          - CORE+PUBLISHED_ABILITY
+          - CORE+VENUE
+          - CORE+ST
+          - CORE+MOTOR_BOAT
+          - CORE+EXHIBITION
+          - CORE+WEATHER_VENUE
+          - CORE+ATTACK_ESCAPE
+          - CORE+F_STAGE
+          - FULL
+          - FULL-PUBLISHED_ABILITY
+          - FULL-VENUE
+          - FULL-ST
+          - FULL-MOTOR_BOAT
+          - FULL-EXHIBITION
+          - FULL-WEATHER_VENUE
+          - FULL-ATTACK_ESCAPE
+          - FULL-F_STAGE
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - run: python -m pip install --disable-pip-version-check pandas numpy scikit-learn
+      - name: Run one feature model
+        env:
+          MODEL_NAME: ${{ matrix.model }}
+        run: python entry_feature_ablation_worker_v7.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: entry-ablation-${{ strategy.job-index }}
+          path: artifacts/entry_ablation_v7/*.csv
+          retention-days: 30
+
+  aggregate:
+    needs: screen
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: entry-ablation-*
+          path: gathered
+          merge-multiple: true
+      - run: python -m pip install --disable-pip-version-check pandas
+      - name: Aggregate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          files=list(Path('gathered').glob('*.csv'))
+          if not files:
+              raise SystemExit('no result files')
+          d=pd.concat([pd.read_csv(p) for p in files], ignore_index=True)
+          core=d[d.model.eq('CORE')].iloc[0]
+          full=d[d.model.eq('FULL')].iloc[0]
+          for period in ['may_jun','july','aug']:
+              for metric in ['winner_nll','entry_class_nll']:
+                  base=core[f'{period}_{metric}']
+                  d[f'{period}_{metric}_delta_vs_core']=d[f'{period}_{metric}']-base
+          d=d.sort_values(['may_jun_winner_nll','may_jun_entry_class_nll'])
+          d.to_csv('entry_feature_ablation_v7_all.csv',index=False)
+          print(d.to_string(index=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: entry-feature-ablation-v7-all
+          path: entry_feature_ablation_v7_all.csv
+          retention-days: 30
+      - name: Publish issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '## Parallel feature-screen result'
+            echo 'Selection should be based on May-June; July/August are audit columns.'
+            echo '```'
+            cat entry_feature_ablation_v7_all.csv
+            echo '```'
+          } > /tmp/body.md
+          gh issue create --title "Parallel entry feature ablation V7 ${GITHUB_RUN_ID}" --body-file /tmp/body.md
