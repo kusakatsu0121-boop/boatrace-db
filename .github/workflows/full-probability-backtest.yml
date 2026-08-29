@@ -1,8 +1,6 @@
 name: Full independent probability backtest
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
