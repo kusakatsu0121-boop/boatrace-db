@@ -1,8 +1,6 @@
 name: Full probability model v2
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
