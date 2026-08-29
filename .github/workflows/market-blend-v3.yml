@@ -1,0 +1,51 @@
+name: Market prior residual model v3
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout model code
+        uses: actions/checkout@v4
+      - name: Checkout public boat-race data
+        uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas numpy scikit-learn
+      - name: Run market blend v3
+        shell: bash
+        run: |
+          set -o pipefail
+          python market_blend_v3.py | tee /tmp/market-v3.log
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-blend-v3
+          path: artifacts/market_blend_v3/*.csv
+          retention-days: 30
+      - name: Publish result
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY' > /tmp/result.md
+          import pandas as pd
+          for name in ['meta','model_metrics','market_blend_grid','sensitivity','monthly_sensitivity','edge_distribution']:
+              p=f'artifacts/market_blend_v3/{name}.csv'
+              print(f'\n## {name}')
+              print('```')
+              print(pd.read_csv(p).to_string(index=False))
+              print('```')
+          PY
+          gh issue create --title "Market blend V3 OOS ${GITHUB_RUN_ID}" --body-file /tmp/result.md
