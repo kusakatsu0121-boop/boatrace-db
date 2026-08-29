@@ -1,4 +1,4 @@
-name: Market prior residual model v3
+name: Market prior residual model leak-safe v4
 
 on:
   push:
@@ -24,15 +24,15 @@ jobs:
           fetch-depth: 1
       - name: Install dependencies
         run: python -m pip install --disable-pip-version-check pandas numpy scikit-learn
-      - name: Run market blend v3
+      - name: Run leakage-safe market blend v4
         shell: bash
         run: |
           set -o pipefail
-          python run_market_blend_v3_august.py | tee /tmp/market-v3.log
+          python run_market_blend_v4_leak_safe.py | tee /tmp/market-v4.log
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
-          name: market-blend-v3
+          name: market-blend-v4-leak-safe
           path: artifacts/market_blend_v3/*.csv
           retention-days: 30
       - name: Publish result
@@ -48,4 +48,4 @@ jobs:
               print(pd.read_csv(p).to_string(index=False))
               print('```')
           PY
-          gh issue create --title "Market blend V3 August OOS ${GITHUB_RUN_ID}" --body-file /tmp/result.md
+          gh issue create --title "Leak-safe V4 August OOS ${GITHUB_RUN_ID}" --body-file /tmp/result.md
