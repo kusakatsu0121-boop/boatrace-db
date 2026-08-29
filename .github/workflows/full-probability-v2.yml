@@ -1,0 +1,51 @@
+name: Full probability model v2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout model code
+        uses: actions/checkout@v4
+      - name: Checkout public boat-race data
+        uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas numpy scikit-learn
+      - name: Run full probability v2
+        shell: bash
+        run: |
+          set -o pipefail
+          python full_probability_model_v2.py | tee /tmp/full-v2.log
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-probability-v2
+          path: artifacts/full_probability_v2/*.csv
+          retention-days: 30
+      - name: Publish result
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY' > /tmp/result.md
+          import pandas as pd
+          for name in ['model_metrics','summary','sensitivity','odds_bands','meta']:
+              p=f'artifacts/full_probability_v2/{name}.csv'
+              print(f'\n## {name}')
+              print('```')
+              print(pd.read_csv(p).to_string(index=False))
+              print('```')
+          PY
+          gh issue create --title "Full probability V2 OOS ${GITHUB_RUN_ID}" --body-file /tmp/result.md
