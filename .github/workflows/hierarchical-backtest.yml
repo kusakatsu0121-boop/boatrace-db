@@ -1,8 +1,6 @@
 name: Hierarchical causal EV backtest
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
