@@ -1,0 +1,25 @@
+name: All EV150 V7
+on:
+  push:
+    paths:
+      - 'all_ev150_v7.py'
+      - '.github/workflows/all-ev150-v7.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - run: python -m pip install --disable-pip-version-check pandas numpy scikit-learn
+      - run: python all_ev150_v7.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: all-ev150-v7
+          path: artifacts/all_ev150_v7/
