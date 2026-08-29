@@ -1,8 +1,6 @@
 name: Purchase-rate sweep OOS
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
