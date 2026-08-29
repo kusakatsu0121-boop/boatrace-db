@@ -6,7 +6,7 @@ import hashlib
 import json
 import os
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -32,7 +32,9 @@ OPTIONAL = {
 
 
 def source_commit() -> str:
-    repo = SOURCE.parent.parent
+    # SOURCE normally points to source/data, so SOURCE.parent is the checked-out
+    # BoatraceCSV repository root. Record that exact immutable commit.
+    repo = SOURCE.parent
     try:
         return subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip()
     except Exception:
