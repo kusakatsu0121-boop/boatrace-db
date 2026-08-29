@@ -1,0 +1,77 @@
+name: Compact path candidates v7
+
+on:
+  push:
+    paths:
+      - 'compact_path_trigger.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  candidate:
+    strategy:
+      fail-fast: false
+      matrix:
+        candidate: [FULL, NO_WEATHER, NO_WEATHER_NO_F, NO_WEATHER_NO_ATTACK, LEAN]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - run: python -m pip install --disable-pip-version-check pandas numpy scikit-learn
+      - name: Run candidate
+        env:
+          CANDIDATE: ${{ matrix.candidate }}
+        run: python compact_path_worker_v7.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compact-path-${{ strategy.job-index }}
+          path: artifacts/compact_path_v7/*.csv
+          retention-days: 30
+
+  aggregate:
+    needs: candidate
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: compact-path-*
+          path: gathered
+          merge-multiple: true
+      - run: python -m pip install --disable-pip-version-check pandas
+      - run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          fs=list(Path('gathered').glob('*.csv'))
+          if not fs: raise SystemExit('no candidates')
+          d=pd.concat([pd.read_csv(f) for f in fs],ignore_index=True)
+          d=d.sort_values(['july_blend_nll','aug_blend_nll'])
+          d.to_csv('compact_path_candidates_v7.csv',index=False)
+          print(d.to_string(index=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compact-path-candidates-v7-all
+          path: compact_path_candidates_v7.csv
+          retention-days: 30
+      - name: Publish issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '## Compact 120-path candidate comparison'
+            echo 'Selection should be driven by May-June calibration + July blend; August is OOS audit.'
+            echo '```'
+            cat compact_path_candidates_v7.csv
+            echo '```'
+          } > /tmp/body.md
+          gh issue create --title "Compact path candidates V7 ${GITHUB_RUN_ID}" --body-file /tmp/body.md
