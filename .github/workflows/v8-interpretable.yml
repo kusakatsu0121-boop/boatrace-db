@@ -1,0 +1,26 @@
+name: Interpretable core-first V8
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'v8_interpretable_trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+      - run: python -m pip install --disable-pip-version-check pandas numpy scikit-learn
+      - run: python v8_interpretable_model.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v8-interpretable
+          path: artifacts/v8_interpretable
