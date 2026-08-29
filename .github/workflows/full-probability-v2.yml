@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python full_probability_model_v2.py | tee /tmp/full-v2.log
+          python run_full_probability_model_v2.py | tee /tmp/full-v2.log
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
