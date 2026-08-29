@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'v8_interpretable_trigger.txt'
+      - 'v8_interpretable_trigger*.txt'
 
 permissions:
   contents: read
@@ -19,7 +19,7 @@ jobs:
           repository: BoatraceCSV/boatracecsv.github.io
           path: source
       - run: python -m pip install --disable-pip-version-check pandas numpy scikit-learn
-      - run: python v8_interpretable_model.py
+      - run: python run_v8_interpretable.py
       - uses: actions/upload-artifact@v4
         with:
           name: v8-interpretable
