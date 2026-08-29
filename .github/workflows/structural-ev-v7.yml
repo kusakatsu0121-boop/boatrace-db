@@ -1,0 +1,77 @@
+name: Structural EV candidates v7
+
+on:
+  push:
+    paths:
+      - 'structural_ev_trigger.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  ev:
+    strategy:
+      fail-fast: false
+      matrix:
+        candidate: [FULL, NO_WEATHER, NO_WEATHER_NO_F, NO_WEATHER_NO_ATTACK, LEAN]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - run: python -m pip install --disable-pip-version-check pandas numpy scikit-learn
+      - name: Structural EV backtest
+        env:
+          CANDIDATE: ${{ matrix.candidate }}
+        run: python structural_ev_worker_v7.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: structural-ev-${{ strategy.job-index }}
+          path: artifacts/structural_ev_v7/*.csv
+          retention-days: 30
+
+  aggregate:
+    needs: ev
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: structural-ev-*
+          path: gathered
+          merge-multiple: true
+      - run: python -m pip install --disable-pip-version-check pandas
+      - name: Aggregate summaries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          fs=list(Path('gathered').glob('*_summary.csv'))
+          if not fs: raise SystemExit('no summaries')
+          d=pd.concat([pd.read_csv(f) for f in fs],ignore_index=True)
+          d.to_csv('structural_ev_v7_all.csv',index=False)
+          print(d.to_string(index=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: structural-ev-v7-all
+          path: structural_ev_v7_all.csv
+          retention-days: 30
+      - name: Publish issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '## Structural probability EV audit'
+            echo 'July outcomes are not used: July only fixes race-score quantiles. August ROI is retrospective audit, not architecture selection.'
+            echo '```'
+            cat structural_ev_v7_all.csv
+            echo '```'
+          } > /tmp/body.md
+          gh issue create --title "Structural EV V7 ${GITHUB_RUN_ID}" --body-file /tmp/body.md
