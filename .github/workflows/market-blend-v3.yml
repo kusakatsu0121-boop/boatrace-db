@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python market_blend_v3.py | tee /tmp/market-v3.log
+          python run_market_blend_v3_august.py | tee /tmp/market-v3.log
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
@@ -41,11 +41,11 @@ jobs:
         run: |
           python - <<'PY' > /tmp/result.md
           import pandas as pd
-          for name in ['meta','model_metrics','market_blend_grid','sensitivity','monthly_sensitivity','edge_distribution']:
+          for name in ['meta','model_metrics','market_blend_grid','sensitivity','edge_distribution']:
               p=f'artifacts/market_blend_v3/{name}.csv'
               print(f'\n## {name}')
               print('```')
               print(pd.read_csv(p).to_string(index=False))
               print('```')
           PY
-          gh issue create --title "Market blend V3 OOS ${GITHUB_RUN_ID}" --body-file /tmp/result.md
+          gh issue create --title "Market blend V3 August OOS ${GITHUB_RUN_ID}" --body-file /tmp/result.md
