@@ -1,0 +1,27 @@
+name: Boat Advisor extension pattern scan
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'advisor_extension_patterns.py'
+      - 'advisor_extension_trigger*.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+      - run: python -m pip install --disable-pip-version-check pandas numpy
+      - run: python advisor_extension_patterns.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: advisor-extension-patterns
+          path: artifacts/advisor_extension_patterns
