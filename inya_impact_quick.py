@@ -52,7 +52,9 @@ for rc,g in evalp.groupby('レースコード'):
     f10=g[g.fronted.eq(1)&g.inya_top10]
     winner=g[g.finish.eq(1)]
     win_boat=int(winner.boat_no.iloc[0]) if len(winner) else -1
-    method=str(winner['決まり手'].iloc[0]) if len(winner) and '決まり手' in winner else ''
+    raw_method=str(winner['決まり手'].iloc[0]) if len(winner) and '決まり手' in winner else ''
+    # Source sometimes stores full-width spaces, e.g. '逃　げ'. Normalize all whitespace.
+    method=''.join(raw_method.split())
     race_rows.append({
         'race_code':rc,'race_date':b1.race_date,'venue':str(b1.get('レース場','')),
         'b1_regno':int(b1.regno),'b1_name':b1.get('name',''),
@@ -121,7 +123,10 @@ for v,g in r.groupby('venue'):
     if m.sum()<20: continue
     s=summarize(f'VENUE_{v}', (r.venue.eq(v)&m))
     venue.append(s)
-pd.DataFrame(venue).sort_values('win_lift_pt_adj').to_csv(OUT/'inya_impact_by_venue.csv',index=False)
+vd=pd.DataFrame(venue)
+if not vd.empty:
+    vd=vd.sort_values('win_lift_pt_adj')
+vd.to_csv(OUT/'inya_impact_by_venue.csv',index=False)
 
 # Deepness bands for actual front-push, descriptive.
 bands=[]
