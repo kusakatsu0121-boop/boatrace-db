@@ -1,0 +1,1 @@
+trigger hierarchical course-chain scan 2026-08-31
