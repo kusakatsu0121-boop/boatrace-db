@@ -1,0 +1,27 @@
+name: Boat hierarchical quick scan
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'advisor_hierarchical_quick.py'
+      - 'advisor_hierarchical_trigger*.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  hierarchical:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+      - run: python -m pip install --disable-pip-version-check pandas numpy
+      - run: python advisor_hierarchical_quick.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: advisor-hierarchical-quick
+          path: artifacts/advisor_hierarchical_quick
