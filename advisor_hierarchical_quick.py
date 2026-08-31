@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import itertools
 import numpy as np
 import pandas as pd
 
@@ -11,8 +10,17 @@ import advisor_weight_quick as q
 from racer_directory import load_many, cards_to_long, results_to_long, build_panel
 
 EPS=1e-12
-LEVELS=[0.0,0.25,0.5,1.0]
 PATHS=q.PATHS
+GRID=[
+    (0.0,0.0,0.0),
+    (0.5,0.0,0.0),
+    (1.0,0.0,0.0),
+    (0.0,0.5,0.0),
+    (0.0,1.0,0.0),
+    (0.0,0.0,0.5),
+    (0.0,0.0,1.0),
+    (0.5,0.5,0.5),
+]
 
 
 def base_follow_dict(df: pd.DataFrame, kind: str) -> dict:
@@ -128,31 +136,29 @@ def main():
     oos=q.stratified_sample(aug,q.OOS_N,q.SEED+1)
     rem_j=jul[~jul['レースコード'].isin(set(cal['レースコード']))]
     rem_a=aug[~aug['レースコード'].isin(set(oos['レースコード']))]
-    grid=list(itertools.product(LEVELS,LEVELS,LEVELS)) # follow2 gamma, follow3 beta, structural chain alpha
-    calres=evaluate(cal,f2lk,f3lk,b2,b3,chainlk,grid)
+    calres=evaluate(cal,f2lk,f3lk,b2,b3,chainlk,GRID)
     rows=[]
     for g,b,a,s,_ in calres:
         rows.append({'follow2_gamma':g,'follow3_beta':b,'struct_chain_alpha':a,**{f'cal_{k}':v for k,v in s.items()}})
     d=pd.DataFrame(rows).sort_values(['cal_logloss','cal_top5'],ascending=[True,False]).reset_index(drop=True)
     d.to_csv(out/'hier_grid_cal.csv',index=False)
-    top_params=[tuple(x) for x in d.head(10)[['follow2_gamma','follow3_beta','struct_chain_alpha']].to_numpy()]
+    top_params=[tuple(x) for x in d[['follow2_gamma','follow3_beta','struct_chain_alpha']].to_numpy()]
     oosres=evaluate(oos,f2lk,f3lk,b2,b3,chainlk,top_params)
     top=[]
-    for (g,b,a,s,_),(_,r) in zip(oosres,d.head(10).iterrows()):
+    for (g,b,a,s,_),(_,r) in zip(oosres,d.iterrows()):
         top.append({**r.to_dict(),**{f'oos_{k}':v for k,v in s.items()}})
-    topdf=pd.DataFrame(top); topdf.to_csv(out/'hier_top10_oos.csv',index=False)
+    topdf=pd.DataFrame(top); topdf.to_csv(out/'hier_candidates_oos.csv',index=False)
     best=tuple(d.iloc[0][['follow2_gamma','follow3_beta','struct_chain_alpha']].to_numpy(dtype=float))
-    # untouched remainder validation for the July-selected best plus baseline 0,0,0
     checks=[]
     for label,dfx in [('July_remainder',rem_j),('August_remainder',rem_a),('Combined_remainder',pd.concat([rem_j,rem_a]))]:
         rr=evaluate(dfx,f2lk,f3lk,b2,b3,chainlk,[best,(0.0,0.0,0.0)])
         for g,b,a,s,_ in rr:
             checks.append({'split':label,'follow2_gamma':g,'follow3_beta':b,'struct_chain_alpha':a,**s})
     ck=pd.DataFrame(checks); ck.to_csv(out/'hier_best_remainder.csv',index=False)
-    print(f'HIER QUICK: cal={len(cal):,} oos={len(oos):,} untouched={len(rem_j)+len(rem_a):,}')
-    print('\nJULY BEST HIER PARAMS')
-    print(d.head(10).to_string(index=False))
-    print('\nAUG OOS TOP JULY CANDIDATES')
+    print(f'HIER QUICK 8-CANDIDATE: cal={len(cal):,} oos={len(oos):,} untouched={len(rem_j)+len(rem_a):,}')
+    print('\nJULY CANDIDATES')
+    print(d.to_string(index=False))
+    print('\nAUG OOS')
     print(topdf.to_string(index=False))
     print('\nUNTOUCHED REMAINDER: JULY-BEST vs BASELINE 70/30')
     print(ck.to_string(index=False))
