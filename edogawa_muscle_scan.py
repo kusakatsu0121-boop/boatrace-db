@@ -21,12 +21,14 @@ def parse_combo(v):
 
 def venue_mask(df):
     if "レース場コード" in df.columns:
-        s=df["レース場コード"].astype(str).str.zfill(2)
+        s=df["レース場コード"].astype(str).str.extract(r"(\d+)")[0].str.zfill(2)
         return s.eq(VENUE_CODE)
     if "レース場" in df.columns:
-        return df["レース場"].astype(str).str.contains("江戸川",na=False)
-    # BOAT race code commonly embeds venue code; fallback only when explicit column absent.
-    return df["レースコード"].astype(str).str.contains(r"(?:^|\D)03(?:\D|$)",regex=True,na=False)
+        s=df["レース場"].astype(str)
+        numeric=s.str.extract(r"(\d+)")[0].str.zfill(2)
+        return numeric.eq(VENUE_CODE) | s.str.contains("江戸川",na=False)
+    code=df["レースコード"].astype(str).str.replace(r"\D","",regex=True).str.zfill(12)
+    return code.str[-4:-2].eq(VENUE_CODE)
 
 def main():
     cards=load_many(str(SRC/"programs/race_cards/*/*/*.csv"))
