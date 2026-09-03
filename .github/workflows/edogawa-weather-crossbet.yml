@@ -43,7 +43,7 @@ jobs:
           try:
               s=pd.read_csv(p/'summary.csv').iloc[0]
               body += [f"- races: {int(s['edogawa_races'])}",f"- date: {s['date_min']} .. {s['date_max']}",f"- stable candidates: {int(s['stable_candidates'])}",'']
-              t=pd.read_csv(p/'stable_top300.csv').head(20)
+              t=pd.read_csv(p/'stable_top500.csv').head(20)
               body += ['## Stable top', t.to_string(index=False) if len(t) else 'none']
           except Exception as e:
               body += ['failed',str(e)]
