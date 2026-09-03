@@ -1,128 +1,120 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 from pathlib import Path
-import itertools, numpy as np, pandas as pd
-
-from racer_directory import load_many, cards_to_long
+import itertools
+import numpy as np
+import pandas as pd
+from racer_directory import load_many
 
 SRC=Path("source/data")
 OUT=Path("artifacts/edogawa_muscle_scan")
 OUT.mkdir(parents=True,exist_ok=True)
-VENUE_CODE="03"
+VENUE="03"
 PATHS=list(itertools.permutations(range(1,7),3))
-ODDS_COLS=[f"3連単_{a}-{b}-{c}" for a,b,c in PATHS]
 
-def parse_combo(v):
+def venue_mask(df):
+    if "レース場" in df.columns:
+        s=df["レース場"].astype(str)
+        n=s.str.extract(r"(\d+)")[0].str.zfill(2)
+        return n.eq(VENUE) | s.str.contains("江戸川",na=False)
+    code=df["レースコード"].astype(str).str.replace(r"\D","",regex=True).str.zfill(12)
+    return code.str[-4:-2].eq(VENUE)
+
+def parse3(v):
     try:
-        t=tuple(int(x) for x in str(v).replace("=","-").split("-"))
-        return t if len(t)==3 and len(set(t))==3 else None
+        xs=[int(x) for x in str(v).replace("=","-").split("-")]
+        return tuple(xs) if len(xs)==3 and len(set(xs))==3 else None
     except Exception:
         return None
 
-def venue_mask(df):
-    if "レース場コード" in df.columns:
-        s=df["レース場コード"].astype(str).str.extract(r"(\d+)")[0].str.zfill(2)
-        return s.eq(VENUE_CODE)
-    if "レース場" in df.columns:
-        s=df["レース場"].astype(str)
-        numeric=s.str.extract(r"(\d+)")[0].str.zfill(2)
-        return numeric.eq(VENUE_CODE) | s.str.contains("江戸川",na=False)
-    code=df["レースコード"].astype(str).str.replace(r"\D","",regex=True).str.zfill(12)
-    return code.str[-4:-2].eq(VENUE_CODE)
+def split3(df):
+    df=df.sort_values(["レース日","レースコード"]).reset_index(drop=True)
+    a=int(len(df)*.60); b=int(len(df)*.80)
+    return {"DISC":df.iloc[:a].copy(),"VAL":df.iloc[a:b].copy(),"OOS":df.iloc[b:].copy()}
+
+def calc_fixed(g, hitmask, stake_per_race):
+    n=len(g)
+    if n==0: return {"n":0,"hits":0,"roi":np.nan,"roi_dropmax":np.nan,"max_payout":np.nan}
+    rets=np.where(hitmask,pd.to_numeric(g["payout"],errors="coerce").fillna(0),0.0)
+    ret=float(np.sum(rets)); mx=float(np.max(rets)) if len(rets) else 0.0
+    stake=stake_per_race*n
+    return {"n":n,"hits":int(np.sum(hitmask)),"roi":ret/stake*100,"roi_dropmax":(ret-mx)/stake*100,"max_payout":mx}
 
 def main():
-    cards=load_many(str(SRC/"programs/race_cards/*/*/*.csv"))
-    odds=load_many(str(SRC/"previews/od3/*/*/*.csv"))
-    payouts=load_many(str(SRC/"results/payouts/*/*/*.csv"))
-    if any(x.empty for x in [cards,odds,payouts]):
-        raise SystemExit("required cards/od3/payouts missing")
+    pay=load_many(str(SRC/"results/payouts/*/*/*.csv"))
+    if pay.empty: raise SystemExit("payouts missing")
+    pay=pay[venue_mask(pay)].copy()
+    pay["レース日"]=pd.to_datetime(pay["レース日"],errors="coerce")
+    pay["winner"]=pay["3連単_組番"].map(parse3)
+    pay["payout"]=pd.to_numeric(pay["3連単_払戻金"],errors="coerce")
+    pay=pay.dropna(subset=["レース日","winner","payout"]).drop_duplicates("レースコード",keep="last")
+    pay=pay.sort_values(["レース日","レースコード"]).reset_index(drop=True)
+    if len(pay)<500: raise SystemExit(f"too few Edogawa payout races: {len(pay)}")
+    splits=split3(pay)
 
-    cl=cards_to_long(cards)
-    meta_cols=["レースコード"]
-    for c in ["レース日","レース場コード","レース場"]:
-        if c in cl.columns: meta_cols.append(c)
-    base=cl[meta_cols].drop_duplicates("レースコード")
-    base=base[venue_mask(base)].copy()
-    if "レース日" in base:
-        base["race_date"]=pd.to_datetime(base["レース日"],errors="coerce")
-    else:
-        base["race_date"]=pd.NaT
-
-    paycols=[c for c in ["レースコード","3連単_組番","3連単_払戻金"] if c in payouts.columns]
-    pay=payouts[paycols].drop_duplicates("レースコード",keep="last").copy()
-    pay["winner"]=pay.get("3連単_組番").map(parse_combo)
-    pay["payout"]=pd.to_numeric(pay.get("3連単_払戻金"),errors="coerce")
-    pay=pay.dropna(subset=["winner","payout"])
-
-    odcols=["レースコード"]+[c for c in ODDS_COLS if c in odds.columns]
-    od=odds[odcols].drop_duplicates("レースコード",keep="last").copy()
-    for c in ODDS_COLS:
-        if c not in od: od[c]=np.nan
-        od[c]=pd.to_numeric(od[c],errors="coerce")
-
-    r=base.merge(pay[["レースコード","winner","payout"]],on="レースコード").merge(od[["レースコード"]+ODDS_COLS],on="レースコード")
-    r=r.dropna(subset=["race_date"]).sort_values("race_date").reset_index(drop=True)
-    if len(r)<300:
-        raise SystemExit(f"too few Edogawa races: {len(r)}")
-
-    # chronological 60/20/20 split
-    q1=int(len(r)*0.60); q2=int(len(r)*0.80)
-    disc, val, oos=r.iloc[:q1],r.iloc[q1:q2],r.iloc[q2:]
     rows=[]
     for path in PATHS:
-        col=f"3連単_{path[0]}-{path[1]}-{path[2]}"
-        for name,g in [("DISC",disc),("VAL",val),("OOS",oos)]:
-            hit=g["winner"].map(lambda x: tuple(x)==path)
-            bets=g[col].notna() & g[col].gt(1)
-            gg=g[bets].copy(); hh=hit[bets]
-            n=len(gg)
-            ret=float(gg.loc[hh,"payout"].sum()) if n else 0.0
-            rows.append({"path":"-".join(map(str,path)),"split":name,"n":n,"hits":int(hh.sum()),"hit_rate":float(hh.mean()) if n else np.nan,"roi_pct":ret/(100*n)*100 if n else np.nan})
-    d=pd.DataFrame(rows)
-    wide=d.pivot(index="path",columns="split",values=["n","hits","hit_rate","roi_pct"])
-    wide.columns=["_".join(x) for x in wide.columns]
-    wide=wide.reset_index()
-    # Require positive validation and OOS, with adequate exposure.
-    wide["stable"]=(wide["n_VAL"]>=100)&(wide["n_OOS"]>=100)&(wide["roi_pct_VAL"]>100)&(wide["roi_pct_OOS"]>100)
-    wide["min_val_oos_roi"]=wide[["roi_pct_VAL","roi_pct_OOS"]].min(axis=1)
-    wide=wide.sort_values(["stable","min_val_oos_roi","n_OOS"],ascending=[False,False,False])
-    wide.to_csv(OUT/"path_stability.csv",index=False)
+        rec={"kind":"EXACT","ticket":"-".join(map(str,path)),"stake_per_race":100}
+        for s,d in splits.items():
+            m=calc_fixed(d,d["winner"].map(lambda x:x==path).to_numpy(),100)
+            rec.update({f"{s}_{k}":v for k,v in m.items()})
+        rec["stable"]=bool(rec["VAL_n"]>=100 and rec["OOS_n"]>=100 and rec["VAL_roi"]>100 and rec["OOS_roi"]>100 and rec["OOS_roi_dropmax"]>=90)
+        rec["robust_score"]=min(rec["VAL_roi"],rec["OOS_roi"],rec["OOS_roi_dropmax"])
+        rows.append(rec)
 
-    # Muscle families: same winner + second, varying third; same winner, varying followers.
-    fam=[]
+    # winner-second muscle: a-b-* = four 100-yen tickets per race
     for a in range(1,7):
         for b in range(1,7):
-            if b==a: continue
-            members=[f"{a}-{b}-{c}" for c in range(1,7) if c not in (a,b)]
-            for split,g in [("DISC",disc),("VAL",val),("OOS",oos)]:
-                hit=g["winner"].map(lambda x: tuple(x)[:2]==(a,b))
-                # Equal 100-yen stake on all 4 third-place continuations.
-                ret=0.0
-                n=len(g)
-                for idx,row in g.iterrows():
-                    if hit.loc[idx]:
-                        ret += float(row["payout"])
-                stake=400*n
-                fam.append({"family":f"{a}-{b}-*","split":split,"races":n,"tickets":4*n,"hits":int(hit.sum()),"roi_pct":ret/stake*100 if stake else np.nan})
-    f=pd.DataFrame(fam)
-    fw=f.pivot(index="family",columns="split",values=["races","tickets","hits","roi_pct"])
-    fw.columns=["_".join(x) for x in fw.columns]
-    fw=fw.reset_index()
-    fw["stable"]=(fw["roi_pct_VAL"]>100)&(fw["roi_pct_OOS"]>100)
-    fw["min_val_oos_roi"]=fw[["roi_pct_VAL","roi_pct_OOS"]].min(axis=1)
-    fw=fw.sort_values(["stable","min_val_oos_roi"],ascending=[False,False])
-    fw.to_csv(OUT/"muscle_family_stability.csv",index=False)
+            if a==b: continue
+            rec={"kind":"AB_STAR","ticket":f"{a}-{b}-*","stake_per_race":400}
+            for s,d in splits.items():
+                hit=d["winner"].map(lambda x:x[0]==a and x[1]==b).to_numpy()
+                m=calc_fixed(d,hit,400)
+                rec.update({f"{s}_{k}":v for k,v in m.items()})
+            rec["stable"]=bool(rec["VAL_n"]>=100 and rec["OOS_n"]>=100 and rec["VAL_roi"]>100 and rec["OOS_roi"]>100 and rec["OOS_roi_dropmax"]>=90)
+            rec["robust_score"]=min(rec["VAL_roi"],rec["OOS_roi"],rec["OOS_roi_dropmax"])
+            rows.append(rec)
 
-    pd.DataFrame([{
-      "races":len(r),"date_min":str(r.race_date.min().date()),"date_max":str(r.race_date.max().date()),
-      "disc":len(disc),"val":len(val),"oos":len(oos),
-      "stable_paths":int(wide.stable.sum()),"stable_families":int(fw.stable.sum())
-    }]).to_csv(OUT/"summary.csv",index=False)
-    print(pd.read_csv(OUT/"summary.csv").to_string(index=False))
-    print("\nTOP PATHS")
-    print(wide.head(20).to_string(index=False))
-    print("\nTOP FAMILIES")
-    print(fw.head(20).to_string(index=False))
+    # winner-third muscle: a-*-c = four second-place tickets
+    for a in range(1,7):
+        for c in range(1,7):
+            if a==c: continue
+            rec={"kind":"A_STAR_C","ticket":f"{a}-*-{c}","stake_per_race":400}
+            for s,d in splits.items():
+                hit=d["winner"].map(lambda x:x[0]==a and x[2]==c).to_numpy()
+                m=calc_fixed(d,hit,400)
+                rec.update({f"{s}_{k}":v for k,v in m.items()})
+            rec["stable"]=bool(rec["VAL_n"]>=100 and rec["OOS_n"]>=100 and rec["VAL_roi"]>100 and rec["OOS_roi"]>100 and rec["OOS_roi_dropmax"]>=90)
+            rec["robust_score"]=min(rec["VAL_roi"],rec["OOS_roi"],rec["OOS_roi_dropmax"])
+            rows.append(rec)
+
+    out=pd.DataFrame(rows).sort_values(["stable","robust_score","OOS_n"],ascending=[False,False,False])
+    out.to_csv(OUT/"all_muscle_candidates.csv",index=False)
+    out[out["stable"]].to_csv(OUT/"stable_candidates.csv",index=False)
+
+    # monthly diagnostic for top discovery candidates only; not used for selection
+    top=out.sort_values("DISC_roi",ascending=False).head(30)
+    mons=[]
+    for r in top.itertuples(index=False):
+        for month,g in pay.groupby(pay["レース日"].dt.to_period("M").astype(str)):
+            if r.kind=="EXACT":
+                p=parse3(r.ticket); hit=g["winner"].map(lambda x:x==p).to_numpy()
+            elif r.kind=="AB_STAR":
+                a,b=map(int,r.ticket.replace("-*","").split("-")[:2]); hit=g["winner"].map(lambda x:x[0]==a and x[1]==b).to_numpy()
+            else:
+                a=int(r.ticket.split("-")[0]); c=int(r.ticket.split("-")[2]); hit=g["winner"].map(lambda x:x[0]==a and x[2]==c).to_numpy()
+            m=calc_fixed(g,hit,int(r.stake_per_race))
+            mons.append({"kind":r.kind,"ticket":r.ticket,"month":month,**m})
+    pd.DataFrame(mons).to_csv(OUT/"monthly_top30.csv",index=False)
+
+    summary=pd.DataFrame([{
+        "races":len(pay),"date_min":str(pay["レース日"].min().date()),"date_max":str(pay["レース日"].max().date()),
+        "disc":len(splits["DISC"]),"val":len(splits["VAL"]),"oos":len(splits["OOS"]),
+        "candidates":len(out),"stable_candidates":int(out["stable"].sum())
+    }])
+    summary.to_csv(OUT/"summary.csv",index=False)
+    print(summary.to_string(index=False))
+    print("\nTOP")
+    print(out.head(30).to_string(index=False))
 
 if __name__=="__main__":
     main()
