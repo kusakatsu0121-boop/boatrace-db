@@ -50,14 +50,11 @@ jobs:
                   f"- races: {int(s['races'])}",
                   f"- date: {s['date_min']} .. {s['date_max']}",
                   f"- discovery/validation/OOS: {int(s['disc'])}/{int(s['val'])}/{int(s['oos'])}",
-                  f"- stable paths: {int(s['stable_paths'])}",
-                  f"- stable muscle families: {int(s['stable_families'])}",
+                  f"- stable candidates: {int(s['stable_candidates'])}",
                   ''
               ]
-              w=pd.read_csv(p/'path_stability.csv').head(10)
-              body += ['## Top exact trifecta paths', w.to_string(index=False), '']
-              f=pd.read_csv(p/'muscle_family_stability.csv').head(10)
-              body += ['## Top muscle families', f.to_string(index=False)]
+              w=pd.read_csv(p/'all_muscle_candidates.csv').head(20)
+              body += ['## Top muscle candidates', w.to_string(index=False)]
           except Exception as e:
               body += ['Scanner did not produce normal output.', str(e)]
               if Path('/tmp/edogawa.log').exists():
