@@ -1,0 +1,49 @@
+name: Edogawa head metric scan
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "edogawa_head_metric_scan.py"
+      - ".github/workflows/edogawa-head-metric.yml"
+      - "edogawa_head_metric_trigger*.txt"
+permissions:
+  contents: read
+  issues: write
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install pandas numpy
+      - run: python edogawa_head_metric_scan.py | tee /tmp/head.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: edogawa-head-metric
+          path: artifacts/edogawa_head_metric
+      - name: Publish
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          p=Path('artifacts/edogawa_head_metric')
+          body=['Edogawa head metric result','']
+          try:
+              s=pd.read_csv(p/'summary.csv').iloc[0]
+              body += [f"- races: {int(s['races'])}",f"- stable: {int(s['stable'])}",f"- date: {s['date_min']} .. {s['date_max']}",'']
+              body += [pd.read_csv(p/'results.csv').head(30).to_string(index=False)]
+          except Exception as e:
+              body += ['failed',str(e)]
+          Path('/tmp/issue.md').write_text('\n'.join(body))
+          PY
+          gh issue create --title "Edogawa head metric ${GITHUB_RUN_ID}" --body-file /tmp/issue.md
