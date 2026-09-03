@@ -57,7 +57,7 @@ def main():
         for s,d in splits.items():
             m=calc_fixed(d,d["winner"].map(lambda x:x==path).to_numpy(),100)
             rec.update({f"{s}_{k}":v for k,v in m.items()})
-        rec["stable"]=bool(rec["VAL_n"]>=100 and rec["OOS_n"]>=100 and rec["VAL_roi"]>100 and rec["OOS_roi"]>100 and rec["OOS_roi_dropmax"]>=90)
+        rec["stable"]=bool(rec["DISC_n"]>=500 and rec["VAL_n"]>=100 and rec["OOS_n"]>=100 and rec["DISC_roi"]>100 and rec["VAL_roi"]>100 and rec["OOS_roi"]>100 and rec["DISC_roi_dropmax"]>=90 and rec["VAL_roi_dropmax"]>=90 and rec["OOS_roi_dropmax"]>=90)
         rec["robust_score"]=min(rec["VAL_roi"],rec["OOS_roi"],rec["OOS_roi_dropmax"])
         rows.append(rec)
 
@@ -70,7 +70,7 @@ def main():
                 hit=d["winner"].map(lambda x:x[0]==a and x[1]==b).to_numpy()
                 m=calc_fixed(d,hit,400)
                 rec.update({f"{s}_{k}":v for k,v in m.items()})
-            rec["stable"]=bool(rec["VAL_n"]>=100 and rec["OOS_n"]>=100 and rec["VAL_roi"]>100 and rec["OOS_roi"]>100 and rec["OOS_roi_dropmax"]>=90)
+            rec["stable"]=bool(rec["DISC_n"]>=500 and rec["VAL_n"]>=100 and rec["OOS_n"]>=100 and rec["DISC_roi"]>100 and rec["VAL_roi"]>100 and rec["OOS_roi"]>100 and rec["DISC_roi_dropmax"]>=90 and rec["VAL_roi_dropmax"]>=90 and rec["OOS_roi_dropmax"]>=90)
             rec["robust_score"]=min(rec["VAL_roi"],rec["OOS_roi"],rec["OOS_roi_dropmax"])
             rows.append(rec)
 
@@ -83,7 +83,7 @@ def main():
                 hit=d["winner"].map(lambda x:x[0]==a and x[2]==c).to_numpy()
                 m=calc_fixed(d,hit,400)
                 rec.update({f"{s}_{k}":v for k,v in m.items()})
-            rec["stable"]=bool(rec["VAL_n"]>=100 and rec["OOS_n"]>=100 and rec["VAL_roi"]>100 and rec["OOS_roi"]>100 and rec["OOS_roi_dropmax"]>=90)
+            rec["stable"]=bool(rec["DISC_n"]>=500 and rec["VAL_n"]>=100 and rec["OOS_n"]>=100 and rec["DISC_roi"]>100 and rec["VAL_roi"]>100 and rec["OOS_roi"]>100 and rec["DISC_roi_dropmax"]>=90 and rec["VAL_roi_dropmax"]>=90 and rec["OOS_roi_dropmax"]>=90)
             rec["robust_score"]=min(rec["VAL_roi"],rec["OOS_roi"],rec["OOS_roi_dropmax"])
             rows.append(rec)
 
