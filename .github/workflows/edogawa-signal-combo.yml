@@ -1,0 +1,53 @@
+name: Edogawa signal combo scan
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "edogawa_signal_combo_scan.py"
+      - ".github/workflows/edogawa-signal-combo.yml"
+      - "edogawa_signal_trigger*.txt"
+permissions:
+  contents: read
+  issues: write
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --disable-pip-version-check pandas numpy
+      - run: python edogawa_signal_combo_scan.py | tee /tmp/signal.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: edogawa-signal-combo
+          path: artifacts/edogawa_signal_combo
+      - name: Publish result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          p=Path('artifacts/edogawa_signal_combo')
+          body=['Edogawa signal combo result','']
+          try:
+              s=pd.read_csv(p/'summary.csv').iloc[0]
+              body += [f"- races: {int(s['races'])}", f"- date: {s['date_min']} .. {s['date_max']}", f"- stable: {int(s['stable'])}", '']
+              t=pd.read_csv(p/'signal_combo_results.csv').head(30)
+              body += [t.to_string(index=False)]
+          except Exception as e:
+              body += ['failed',str(e)]
+              if Path('/tmp/signal.log').exists(): body += ['\n'.join(Path('/tmp/signal.log').read_text(errors='ignore').splitlines()[-100:])]
+          Path('/tmp/issue.md').write_text('\n'.join(body))
+          PY
+          gh issue create --title "Edogawa signal combo ${GITHUB_RUN_ID}" --body-file /tmp/issue.md
