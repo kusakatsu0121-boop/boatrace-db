@@ -1,0 +1,63 @@
+name: Edogawa factor interaction scan
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "edogawa_factor_interactions.py"
+      - ".github/workflows/edogawa-factor-interactions.yml"
+      - "edogawa_factor_trigger*.txt"
+permissions:
+  contents: read
+  issues: write
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --disable-pip-version-check pandas numpy scikit-learn
+      - run: python edogawa_factor_interactions.py | tee /tmp/factor.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: edogawa-factor-interactions
+          path: artifacts/edogawa_factor_interactions
+      - name: Publish result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          p=Path('artifacts/edogawa_factor_interactions')
+          body=['Edogawa factor interaction result','']
+          try:
+              s=pd.read_csv(p/'summary.csv').iloc[0]
+              body += [f"- races: {int(s['races'])}",f"- date: {s['date_min']} .. {s['date_max']}",
+                       f"- split: {int(s['disc'])}/{int(s['val'])}/{int(s['oos'])}",
+                       f"- stable interactions: {int(s['stable_interactions'])}",
+                       f"- adjusted effect candidates: {int(s['adjusted_effect_candidates'])}",'']
+              imp=pd.read_csv(p/'importance_pct.csv')
+              body += ['## Importance top',imp.sort_values(['target','importance_pct'],ascending=[True,False]).groupby('target').head(6).to_string(index=False),'']
+              inter=pd.read_csv(p/'interaction_gains.csv')
+              body += ['## Stable interactions',inter[inter['stable_interaction']].head(20).to_string(index=False),'']
+              ce=pd.read_csv(p/'adjusted_effect_candidates.csv')
+              if len(ce):
+                  ce['absdiff']=ce['adjusted_diff_pt'].abs()
+                  body += ['## Adjusted effect candidates',ce.sort_values('absdiff',ascending=False).head(20).to_string(index=False)]
+          except Exception as e:
+              body += ['failed',str(e)]
+              if Path('/tmp/factor.log').exists():
+                  body += ['','## log','\n'.join(Path('/tmp/factor.log').read_text(errors='ignore').splitlines()[-120:])]
+          Path('/tmp/issue.md').write_text('\n'.join(body))
+          PY
+          gh issue create --title "Edogawa factor interactions ${GITHUB_RUN_ID}" --body-file /tmp/issue.md
