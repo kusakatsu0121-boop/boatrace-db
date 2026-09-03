@@ -120,12 +120,11 @@ def outcome(row, typ):
 
 def eval_strategy(df,name,condition):
     vals=[]
-    for r in df.itertuples(index=False):
-        rr=r._asdict()
+    for _,rr in df.iterrows():
         if condition=="WIND6+" and not (pd.notna(rr.get("wind")) and rr["wind"]>=6): continue
         if condition=="WIND4+" and not (pd.notna(rr.get("wind")) and rr["wind"]>=4): continue
         if condition=="WAVE6+" and not (pd.notna(rr.get("wave")) and rr["wave"]>=6): continue
-        st=strategies(pd.Series(rr))
+        st=strategies(rr)
         if name not in st: continue
         typ,ticket=st[name]
         o,p=outcome(rr,typ)
