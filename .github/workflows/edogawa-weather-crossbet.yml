@@ -5,6 +5,7 @@ on:
     paths:
       - "edogawa_weather_crossbet.py"
       - ".github/workflows/edogawa-weather-crossbet.yml"
+      - "edogawa_weather_trigger*.txt"
 permissions:
   contents: read
   issues: write
@@ -42,7 +43,7 @@ jobs:
           body=['Edogawa weather cross-bet result','']
           try:
               s=pd.read_csv(p/'summary.csv').iloc[0]
-              body += [f"- races: {int(s['edogawa_races'])}",f"- date: {s['date_min']} .. {s['date_max']}",f"- stable candidates: {int(s['stable_candidates'])}",'']
+              body += [f"- races: {int(s['races'])}",f"- date: {s['date_min']} .. {s['date_max']}",f"- stable candidates: {int(s['stable_candidates'])}",'']
               t=pd.read_csv(p/'stable_top500.csv').head(20)
               body += ['## Stable top', t.to_string(index=False) if len(t) else 'none']
           except Exception as e:
