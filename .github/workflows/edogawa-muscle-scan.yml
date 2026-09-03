@@ -5,18 +5,63 @@ on:
     paths:
       - "edogawa_muscle_scan.py"
       - ".github/workflows/edogawa-muscle-scan.yml"
+      - "edogawa_muscle_trigger*.txt"
+
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   run:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install pandas numpy
-      - run: python edogawa_muscle_scan.py
+      - run: python -m pip install --disable-pip-version-check pandas numpy
+      - name: Run Edogawa muscle scanner
+        run: python edogawa_muscle_scan.py | tee /tmp/edogawa.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: edogawa-muscle-scan
           path: artifacts/edogawa_muscle_scan
+          retention-days: 30
+      - name: Publish concise result issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          p=Path('artifacts/edogawa_muscle_scan')
+          body=['Edogawa muscle scan result','']
+          try:
+              s=pd.read_csv(p/'summary.csv').iloc[0]
+              body += [
+                  f"- races: {int(s['races'])}",
+                  f"- date: {s['date_min']} .. {s['date_max']}",
+                  f"- discovery/validation/OOS: {int(s['disc'])}/{int(s['val'])}/{int(s['oos'])}",
+                  f"- stable paths: {int(s['stable_paths'])}",
+                  f"- stable muscle families: {int(s['stable_families'])}",
+                  ''
+              ]
+              w=pd.read_csv(p/'path_stability.csv').head(10)
+              body += ['## Top exact trifecta paths', w.to_string(index=False), '']
+              f=pd.read_csv(p/'muscle_family_stability.csv').head(10)
+              body += ['## Top muscle families', f.to_string(index=False)]
+          except Exception as e:
+              body += ['Scanner did not produce normal output.', str(e)]
+              if Path('/tmp/edogawa.log').exists():
+                  body += ['', '## Log tail', '\n'.join(Path('/tmp/edogawa.log').read_text(errors='ignore').splitlines()[-80:])]
+          Path('/tmp/issue.md').write_text('\n'.join(body))
+          PY
+          gh issue create --title "Edogawa muscle scan ${GITHUB_RUN_ID}" --body-file /tmp/issue.md
