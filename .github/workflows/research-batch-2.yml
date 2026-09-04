@@ -1,0 +1,23 @@
+name: Research batch 2 gender interactions
+on:
+  push:
+    paths:
+      - 'research_batch_2_gender_interactions.py'
+      - '.github/workflows/research-batch-2.yml'
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+      - run: python -m pip install --disable-pip-version-check pandas numpy requests
+      - run: python research_batch_2_gender_interactions.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: research-batch-2
+          path: artifacts/research_batch_2
