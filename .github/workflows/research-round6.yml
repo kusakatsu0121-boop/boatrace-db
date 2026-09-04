@@ -1,0 +1,22 @@
+name: Research round 6
+on:
+  push:
+    paths:
+      - research_round6.py
+      - .github/workflows/research-round6.yml
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: kusakatsu0121-boop/boatrace-data
+          path: source
+      - run: python -m pip install --disable-pip-version-check pandas numpy requests
+      - run: python research_round6.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: research-round6
+          path: artifacts/research_round6
