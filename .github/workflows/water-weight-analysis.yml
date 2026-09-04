@@ -1,0 +1,24 @@
+name: Water weight analysis
+on:
+  push:
+    paths:
+      - 'water_weight_analysis.py'
+      - 'water_weight_trigger*.txt'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+      - run: python -m pip install --disable-pip-version-check pandas numpy
+      - run: python water_weight_analysis.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: water-weight-analysis
+          path: artifacts/water_weight_analysis
