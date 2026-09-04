@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import glob,re
+import glob
 import numpy as np
 import pandas as pd
 
@@ -38,21 +38,11 @@ def result_long(df):
         c=f'{k}コース_艇番'
         if c in df.columns:
             q=df[['レースコード',c]].rename(columns={'レースコード':'race',c:'boat'}).copy(); q['course']=k; cs.append(q)
-    z=pd.concat(fs,ignore_index=True).merge(pd.concat(cs,ignore_index=True),on=['race','boat'])
-    # try common ST column patterns
-    for b in range(1,7):
-        candidates=[f'艇{b}_ST',f'{b}号艇_ST',f'{b}コース_ST',f'{b}コース_スタートタイミング']
-        hit=next((c for c in candidates if c in df.columns),None)
-        if hit:
-            q=df[['レースコード',hit]].rename(columns={'レースコード':'race',hit:'st'}).copy(); q['boat']=b
-            z=z.merge(q,on=['race','boat'],how='left')
-            break
-    return z
+    return pd.concat(fs,ignore_index=True).merge(pd.concat(cs,ignore_index=True),on=['race','boat'])
 
 C=cards_long(load('programs/race_cards/*/*/*.csv'))
 T=tkz_long(load('previews/tkz/*/*/*.csv'))
-RR=load('results/realtime/*/*/*.csv')
-R=result_long(RR)
+R=result_long(load('results/realtime/*/*/*.csv'))
 for d in (C,T,R):
     d['race']=d.race.astype(str); d['boat']=pd.to_numeric(d.boat,errors='coerce')
 X=C.merge(T,on=['race','boat']).merge(R,on=['race','boat'])
@@ -61,58 +51,63 @@ for c in ['reg','weight','adjust','course','finish']:
     X[c]=pd.to_numeric(X[c],errors='coerce')
 X=X.dropna(subset=['reg','weight','adjust','course','finish'])
 X['carried']=X.weight+X.adjust
-med=X.groupby('reg').carried.median()
-X['sex_est']=X.reg.map((med<49.5).map({True:'female_est',False:'male_est'}))
-# inner adjacent opponent by actual course
+med=X.groupby('reg').carried.median(); X['sex_est']=X.reg.map((med<49.5).map({True:'female_est',False:'male_est'}))
 inner=X[['race','course','reg','sex_est','finish']].copy(); inner['course']=inner.course+1
 inner=inner.rename(columns={'reg':'inner_reg','sex_est':'inner_sex','finish':'inner_finish'})
 Y=X.merge(inner,on=['race','course'],how='inner')
 Y=Y[(Y.sex_est=='male_est') & (Y.course>=2)].copy()
-Y['beats_inner']=(Y.finish<Y.inner_finish).astype(int)
-Y['male_win']=(Y.finish==1).astype(int)
-Y['male_top3']=(Y.finish<=3).astype(int)
-Y['inner_top3']=(Y.inner_finish<=3).astype(int)
-# racer x course residuals remove actor baseline
+Y['beats_inner']=(Y.finish<Y.inner_finish).astype(float)
+Y['male_win']=(Y.finish==1).astype(float)
+Y['male_top3']=(Y.finish<=3).astype(float)
+Y['inner_top3']=(Y.inner_finish<=3).astype(float)
+
+# two-sided adjustment: outer male's normal ability AND inner opponent's normal ability, by course.
+# resid = y - actor(course) mean - inner_opponent(inner-course) mean + course mean
 for col in ['beats_inner','male_win','male_top3','inner_top3']:
-    Y[col+'_resid']=Y[col]-Y.groupby(['reg','course'])[col].transform('mean')
+    actor=Y.groupby(['reg','course'])[col].transform('mean')
+    opp=Y.groupby(['inner_reg','course'])[col].transform('mean')
+    course_mean=Y.groupby('course')[col].transform('mean')
+    Y[col+'_adj']=Y[col]-actor-opp+course_mean
+
 rows=[]
 for innersex,g in Y.groupby('inner_sex'):
     row={'inner_sex':innersex,'n':len(g)}
     for col in ['beats_inner','male_win','male_top3','inner_top3']:
-        row[col]=g[col].mean(); row[col+'_resid']=g[col+'_resid'].mean()
+        row[col]=g[col].mean(); row[col+'_adj']=g[col+'_adj'].mean()
     rows.append(row)
 S=pd.DataFrame(rows)
-# course detail residual difference female-inner minus male-inner
+
 cr=[]
 for course,g in Y.groupby('course'):
-    vals={}
-    for s,h in g.groupby('inner_sex'):
-        vals[s]={'n':len(h),**{c:h[c+'_resid'].mean() for c in ['beats_inner','male_win','male_top3','inner_top3']}}
-    if 'female_est' in vals and 'male_est' in vals:
-        cr.append({'course':int(course),'n_female_inner':vals['female_est']['n'],'n_male_inner':vals['male_est']['n'],**{c+'_diff':vals['female_est'][c]-vals['male_est'][c] for c in ['beats_inner','male_win','male_top3','inner_top3']}})
+    a=g[g.inner_sex=='female_est']; b=g[g.inner_sex=='male_est']
+    if len(a) and len(b):
+        cr.append({'course':int(course),'n_female_inner':len(a),'n_male_inner':len(b),**{c+'_diff':a[c+'_adj'].mean()-b[c+'_adj'].mean() for c in ['beats_inner','male_win','male_top3','inner_top3']}})
 CD=pd.DataFrame(cr)
-# period reproducibility
+
 hr=[]
 for label,mask in [('early',Y.date<=pd.Timestamp('2026-06-30')),('late',Y.date>=pd.Timestamp('2026-07-01'))]:
     Z=Y[mask].copy()
     for col in ['beats_inner','male_win','male_top3','inner_top3']:
-        Z[col+'_r2']=Z[col]-Z.groupby(['reg','course'])[col].transform('mean')
+        actor=Z.groupby(['reg','course'])[col].transform('mean')
+        opp=Z.groupby(['inner_reg','course'])[col].transform('mean')
+        cm=Z.groupby('course')[col].transform('mean')
+        Z[col+'_adj2']=Z[col]-actor-opp+cm
     a=Z[Z.inner_sex=='female_est']; b=Z[Z.inner_sex=='male_est']
     if len(a) and len(b):
-        hr.append({'period':label,'n_female_inner':len(a),'n_male_inner':len(b),**{c+'_diff':a[c+'_r2'].mean()-b[c+'_r2'].mean() for c in ['beats_inner','male_win','male_top3','inner_top3']}})
+        hr.append({'period':label,'n_female_inner':len(a),'n_male_inner':len(b),**{c+'_diff':a[c+'_adj2'].mean()-b[c+'_adj2'].mean() for c in ['beats_inner','male_win','male_top3','inner_top3']}})
 H=pd.DataFrame(hr)
-# player-level candidates, min 30 female-inner + 80 male-inner same actor across courses, residual difference
+
 pr=[]
 for reg,g in Y.groupby('reg'):
     a=g[g.inner_sex=='female_est']; b=g[g.inner_sex=='male_est']
-    if len(a)>=30 and len(b)>=80:
-        pr.append({'reg':int(reg),'n_female_inner':len(a),'n_male_inner':len(b),**{c+'_diff':a[c+'_resid'].mean()-b[c+'_resid'].mean() for c in ['beats_inner','male_win','male_top3','inner_top3']}})
+    if len(a)>=20 and len(b)>=80:
+        pr.append({'reg':int(reg),'n_female_inner':len(a),'n_male_inner':len(b),**{c+'_diff':a[c+'_adj'].mean()-b[c+'_adj'].mean() for c in ['beats_inner','male_win','male_top3','inner_top3']}})
 P=pd.DataFrame(pr)
 if len(P): P=P.sort_values('beats_inner_diff')
 S.to_csv(OUT/'summary.csv',index=False); CD.to_csv(OUT/'course_detail.csv',index=False); H.to_csv(OUT/'holdout.csv',index=False); P.to_csv(OUT/'player_candidates.csv',index=False)
 print('STARTS',len(X),'MALE_OUTER_ADJ',len(Y),'RACERS',Y.reg.nunique())
-print('\nSUMMARY\n',S.to_string(index=False))
-print('\nCOURSE\n',CD.to_string(index=False))
-print('\nHOLDOUT\n',H.to_string(index=False))
-print('\nPLAYER LOW beats-inner (possible restraint)\n',P.head(20).to_string(index=False) if len(P) else 'none')
-print('\nNOTE sex is inferred from median carried weight (<49.5 female-like); this is preliminary only. Losing-racer intent is not directly observed. beats_inner etc are behavioral outcome proxies.')
+print('\nSUMMARY\n'+S.to_string(index=False))
+print('\nCOURSE\n'+CD.to_string(index=False))
+print('\nHOLDOUT\n'+H.to_string(index=False))
+print('\nPLAYER LOW beats-inner (possible restraint)\n'+(P.head(20).to_string(index=False) if len(P) else 'none'))
+print('\nNOTE: sex is inferred from median carried weight (<49.5 female-like), so this is preliminary. Losing-racer intent is not observed. Two-sided adjustment removes both outer male and inner opponent historical course ability.')
