@@ -1,0 +1,24 @@
+name: Water weight kachiritsu slow dash
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'water_weight_kachiritsu_slow_dash.py'
+      - '.github/workflows/water-weight-kachiritsu-slow-dash.yml'
+permissions:
+  contents: read
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+      - run: python -m pip install --disable-pip-version-check pandas numpy
+      - run: python water_weight_kachiritsu_slow_dash.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: water-weight-kachiritsu-slow-dash
+          path: artifacts/water_weight_kachiritsu_slow_dash
