@@ -69,13 +69,11 @@ for (sex,water,grp),g in X[X.water.isin(['fresh','sea'])].groupby(['sex','water'
     sl=slope(g)
     rows.append({'sex':sex,'water':water,'start_group':grp,'n':len(g),'avg_score':g.score.mean(),'score_change_per_kg':sl,'score_change_3kg':sl*3 if pd.notna(sl) else np.nan})
 S=pd.DataFrame(rows); S.to_csv(OUT/'summary.csv',index=False)
-# course detail
 rows=[]
 for (sex,water,course),g in X[X.water.isin(['fresh','sea'])].groupby(['sex','water','course']):
     sl=slope(g)
     rows.append({'sex':sex,'water':water,'course':int(course),'n':len(g),'avg_score':g.score.mean(),'score_change_per_kg':sl,'score_change_3kg':sl*3 if pd.notna(sl) else np.nan})
 CDET=pd.DataFrame(rows); CDET.to_csv(OUT/'course_detail.csv',index=False)
-# holdout early/late
 hold=[]
 for label,mask in [('early',X.date<=pd.Timestamp('2026-06-30')),('late',X.date>=pd.Timestamp('2026-07-01'))]:
     Z=X[mask].copy(); Z['score_r2']=Z.score-Z.groupby(['reg','course']).score.transform('mean')
@@ -88,3 +86,4 @@ print('\nSUMMARY\n'+S.to_string(index=False))
 print('\nHOLDOUT\n'+H.to_string(index=False))
 print('\nCOURSE\n'+CDET.to_string(index=False))
 print('\nNOTE general-race points only: 10,8,6,4,2,1. Grade/final bonuses not in source rows, so this is comparable-rate proxy, not exact official aggregate for graded races.')
+# trigger rerun
