@@ -1,0 +1,22 @@
+name: Research4 core traits
+on:
+  push:
+    paths:
+      - 'research4_validate_core_traits.py'
+      - '.github/workflows/research4-core-traits.yml'
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+      - run: python -m pip install --disable-pip-version-check pandas numpy requests
+      - run: python research4_validate_core_traits.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: research4-core-traits
+          path: artifacts/research4/*.csv
