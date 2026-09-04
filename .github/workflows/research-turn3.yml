@@ -1,0 +1,22 @@
+name: Research turn 3
+on:
+  push:
+    paths:
+      - 'research_turn3_interactions.py'
+      - '.github/workflows/research-turn3.yml'
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+      - run: python -m pip install --disable-pip-version-check pandas numpy requests
+      - run: python research_turn3_interactions.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: research-turn3
+          path: artifacts/research_turn3/
