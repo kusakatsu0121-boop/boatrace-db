@@ -1,0 +1,22 @@
+name: Research5 interaction validation
+on:
+  push:
+    paths:
+      - 'research5_interaction_validation.py'
+      - '.github/workflows/research5-interaction-validation.yml'
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+      - run: python -m pip install --disable-pip-version-check pandas numpy requests
+      - run: python research5_interaction_validation.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: research5-interaction-validation
+          path: artifacts/research5/*.csv
