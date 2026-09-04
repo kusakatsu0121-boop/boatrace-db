@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with:
-          repository: kusakatsu0121-boop/boatrace-data
+          repository: BoatraceCSV/boatracecsv.github.io
           path: source
       - run: python -m pip install --disable-pip-version-check pandas numpy requests
       - run: python research_round6.py
