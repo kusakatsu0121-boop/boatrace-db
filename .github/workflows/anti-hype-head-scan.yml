@@ -1,0 +1,25 @@
+name: Anti hype head scan
+on:
+  push:
+    paths:
+      - 'anti_hype_head_scan.py'
+      - '.github/workflows/anti-hype-head-scan.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - run: python -m pip install --disable-pip-version-check pandas numpy
+      - run: python anti_hype_head_scan.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: anti-hype-head-scan
+          path: artifacts/anti_hype_head_scan/
