@@ -1,1 +1,1 @@
-run fast advisor extension scan
+run fast advisor extension scan 2026-09-06 value-ticket refresh
