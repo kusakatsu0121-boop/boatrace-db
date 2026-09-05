@@ -1,1 +1,1 @@
-trigger EV quick scan 2026-08-31
+trigger EV quick scan 2026-09-06 value-ticket refresh
