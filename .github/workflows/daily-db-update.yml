@@ -7,15 +7,73 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
+  actions: read
   contents: read
 
 jobs:
-  trigger-db-build:
+  incremental-update:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - name: Trigger full DB build
+      - name: Checkout collector
+        uses: actions/checkout@v4
+
+      - name: Checkout public boat-race data
+        uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+
+      - name: Restore previous database
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh workflow run build-db-push.yml --repo "${{ github.repository }}"
+          mkdir -p prev artifacts
+
+          # Prefer the latest successful incremental DB.
+          RUN_ID=$(gh run list --repo "${{ github.repository }}" --workflow daily-db-update.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId' || true)
+          if [ -n "$RUN_ID" ]; then
+            gh run download "$RUN_ID" --repo "${{ github.repository }}" -n boatrace-database-incremental -D prev || true
+          fi
+
+          # First incremental run: fall back to the latest full-build artifact.
+          if ! find prev -name boatrace.sqlite -print -quit | grep -q .; then
+            FULL_RUN=$(gh run list --repo "${{ github.repository }}" --workflow build-db-push.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId' || true)
+            if [ -n "$FULL_RUN" ]; then
+              gh run download "$FULL_RUN" --repo "${{ github.repository }}" -n boatrace-database -D prev || true
+            fi
+          fi
+
+          DB=$(find prev -name boatrace.sqlite -print -quit || true)
+          if [ -n "$DB" ]; then
+            cp "$DB" artifacts/boatrace.sqlite
+          fi
+
+      - name: Add only recent result data
+        run: |
+          # collector.py is idempotent: existing race/boat keys are replaced,
+          # new ones are appended. Re-read only the latest two month folders so
+          # late corrections around month boundaries are also picked up.
+          mapfile -t DIRS < <(find source/data/results/realtime -type f -name '*.csv' -printf '%h\n' | sort -u | tail -2)
+          if [ ${#DIRS[@]} -eq 0 ]; then
+            echo "No realtime result CSV found"
+            exit 1
+          fi
+          for d in "${DIRS[@]}"; do
+            echo "Updating from $d"
+            python collector.py "$d" artifacts/boatrace.sqlite
+          done
+
+      - name: Show DB size
+        run: |
+          sqlite3 artifacts/boatrace.sqlite 'select count(*) as races from races;'
+          sqlite3 artifacts/boatrace.sqlite 'select count(*) as entries from entries;'
+          ls -lh artifacts/boatrace.sqlite
+
+      - name: Upload updated database
+        uses: actions/upload-artifact@v4
+        with:
+          name: boatrace-database-incremental
+          path: artifacts/boatrace.sqlite
+          retention-days: 30
