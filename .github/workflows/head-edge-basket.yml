@@ -1,0 +1,25 @@
+name: Head edge basket
+on:
+  push:
+    paths:
+      - 'head_edge_basket.py'
+      - '.github/workflows/head-edge-basket.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BoatraceCSV/boatracecsv.github.io
+          path: source
+          fetch-depth: 1
+      - run: python -m pip install --disable-pip-version-check pandas numpy
+      - run: python head_edge_basket.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: head-edge-basket
+          path: artifacts/head_edge_basket/
