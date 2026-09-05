@@ -1,0 +1,21 @@
+name: Daily boat race DB update
+
+on:
+  schedule:
+    # 03:30 JST every day (18:30 UTC previous day)
+    - cron: '30 18 * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  trigger-db-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger full DB build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run build-db-push.yml --repo "${{ github.repository }}"
