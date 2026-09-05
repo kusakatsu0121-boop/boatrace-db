@@ -1,1 +1,1 @@
-trigger market calibration quick 2026-08-31
+trigger market calibration quick 2026-09-06 value-ticket refresh
