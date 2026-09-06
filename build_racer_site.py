@@ -66,42 +66,99 @@ def strongest_course(rows: list[dict]):
     return max(valid, key=lambda r: r['win1'])['course']
 
 
-def trait_candidates(g6: pd.DataFrame, g1: pd.DataFrame, c6: list[dict], c1: list[dict]) -> list[dict]:
+def public_features(g6: pd.DataFrame, g1: pd.DataFrame) -> list[dict]:
+    """Public-facing features only. Do not publish course-type labels here."""
     out = []
-    # Only deterministic, descriptive labels. These are not psychological claims.
-    for course in range(1, 7):
-        a, b = c6[course-1], c1[course-1]
-        if a['n'] < 12 or b['n'] < 20:
-            continue
-        methods6, methods1 = a.get('methods', {}), b.get('methods', {})
-        for method in ['逃げ', '差し', 'まくり', 'まくり差し']:
-            x, y = methods6.get(method), methods1.get(method)
-            if x is None or y is None:
-                continue
-            if x >= 55 and y >= 45:
-                out.append({'label': f'{course}コース・{method}型', 'confidence': '高', 'note': f'半年 {x}% / 1年 {y}%（1着時の決まり手構成）'})
-        if a['avg_st'] is not None and b['avg_st'] is not None and a['avg_st'] <= 0.14 and b['avg_st'] <= 0.15:
-            out.append({'label': f'{course}コース・スタート速め', 'confidence': '中', 'note': f'平均ST 半年 {a["avg_st"]} / 1年 {b["avg_st"]}'})
-    # recent change: same basic metric, avoid overclaiming
     p6, p1 = perf(g6), perf(g1)
     if p6['n'] >= 30 and p1['n'] >= 50 and p6['top3'] is not None and p1['top3'] is not None:
         d = p6['top3'] - p1['top3']
         if d >= 6:
-            out.append({'label': '最近6か月で3連対率上向き', 'confidence': '中', 'note': f'半年 {p6["top3"]}% / 1年 {p1["top3"]}%'})
+            out.append({'label': '最近6か月で成績上向き', 'confidence': '中', 'note': f'3連対率 半年 {p6["top3"]}% / 1年 {p1["top3"]}%'})
         elif d <= -6:
-            out.append({'label': '最近6か月で3連対率下向き', 'confidence': '中', 'note': f'半年 {p6["top3"]}% / 1年 {p1["top3"]}%'})
-    return out[:6]
+            out.append({'label': '最近6か月で成績下向き', 'confidence': '中', 'note': f'3連対率 半年 {p6["top3"]}% / 1年 {p1["top3"]}%'})
+    return out
+
+
+def phase_stats(g: pd.DataFrame) -> dict:
+    if g.empty:
+        return {'n': 0, 'course_adj': None, 'top3': None, 'avg_finish': None, 'avg_st': None, 'opp': None}
+    normal = g[g['f_start'].fillna(0).eq(0)] if 'f_start' in g.columns else g
+    return {
+        'n': int(len(g)),
+        'course_adj': safe_num(g['course_adjusted_perf'].mean(), 3),
+        'top3': safe_num(g['finish'].le(3).mean() * 100, 1),
+        'avg_finish': safe_num(g['finish'].mean(), 2),
+        'avg_st': safe_num(normal['actual_st'].mean(), 3) if 'actual_st' in normal.columns else None,
+        'opp': safe_num(g['opponent_strength'].mean(), 2) if 'opponent_strength' in g.columns else None,
+    }
+
+
+def late_meet_memo(g: pd.DataFrame, label: str) -> dict:
+    """Assess whether a racer improves as a meet progresses. Internal memo, not a public type label."""
+    if g.empty or 'day_no' not in g.columns:
+        return {'window': label, 'status': '不足', 'reason': '節日次データなし'}
+    x = g.dropna(subset=['day_no']).copy()
+    if x.empty:
+        return {'window': label, 'status': '不足', 'reason': '節日次データなし'}
+    early = x[x['day_no'].between(1, 2)]
+    middle = x[x['day_no'].between(3, 4)]
+    late = x[x['day_no'] >= 5]
+    e, m, l = phase_stats(early), phase_stats(middle), phase_stats(late)
+    result = {'window': label, 'early': e, 'middle': m, 'late': l}
+
+    # Need enough observations in both ends to call a tendency.
+    if e['n'] < 10 or l['n'] < 10 or e['course_adj'] is None or l['course_adj'] is None:
+        result.update({'status': '不足', 'confidence': '低', 'note': '初盤または終盤の標本不足'})
+        return result
+
+    delta = l['course_adj'] - e['course_adj']
+    top3_delta = None if e['top3'] is None or l['top3'] is None else l['top3'] - e['top3']
+    finish_delta = None if e['avg_finish'] is None or l['avg_finish'] is None else e['avg_finish'] - l['avg_finish']
+    result['late_minus_early_course_adj'] = safe_num(delta, 3)
+    result['late_minus_early_top3_pt'] = safe_num(top3_delta, 1) if top3_delta is not None else None
+    result['early_minus_late_avg_finish'] = safe_num(finish_delta, 2) if finish_delta is not None else None
+
+    # Course-adjusted performance is primary; top3/finish are supporting checks.
+    supportive_up = (top3_delta is not None and top3_delta >= 4) or (finish_delta is not None and finish_delta >= 0.15)
+    supportive_down = (top3_delta is not None and top3_delta <= -4) or (finish_delta is not None and finish_delta <= -0.15)
+    if delta >= 0.18 and supportive_up:
+        status = '後半上昇候補'
+    elif delta <= -0.18 and supportive_down:
+        status = '後半低下候補'
+    else:
+        status = '明確な後半差なし'
+
+    nmin = min(e['n'], l['n'])
+    confidence = '高' if nmin >= 30 and abs(delta) >= 0.25 else ('中' if nmin >= 15 else '低')
+    result.update({'status': status, 'confidence': confidence})
+    return result
+
+
+def build_player_memo(g6: pd.DataFrame, g1: pd.DataFrame) -> dict:
+    m6 = late_meet_memo(g6, '6か月')
+    m1 = late_meet_memo(g1, '1年')
+    stable = False
+    if m6.get('status') == '後半上昇候補' and m1.get('status') == '後半上昇候補':
+        stable = True
+    return {
+        'late_meet_6m': m6,
+        'late_meet_1y': m1,
+        'late_meet_reproduced': stable,
+        'memo_tags': ['節後半に上げる'] if stable else [],
+        'visibility': 'internal_memo'
+    }
 
 
 def main():
     cards = load_many(str(SRC / 'programs/race_cards/*/*/*.csv'))
     results = load_many(str(SRC / 'results/realtime/*/*/*.csv'))
+    title = load_many(str(SRC / 'programs/title/*/*/*.csv'))
     if cards.empty or results.empty:
         raise SystemExit('race cards/results not found')
 
     cl = cards_to_long(cards)
     rl = results_to_long(results)
-    panel = build_panel(cl, rl, pd.DataFrame()).dropna(subset=['race_date', 'regno', 'finish']).copy()
+    panel = build_panel(cl, rl, title).dropna(subset=['race_date', 'regno', 'finish']).copy()
     panel['race_date'] = pd.to_datetime(panel['race_date'])
     asof = panel['race_date'].max().normalize()
     start_1y = asof - pd.Timedelta(days=365)
@@ -134,7 +191,8 @@ def main():
             'courses_6m': c6,
             'courses_1y': c1,
             'strongest_course_6m': strongest_course(c6),
-            'traits': trait_candidates(g6, g1, c6, c1),
+            'features': public_features(g6, g1),
+            'player_memo': build_player_memo(g6, g1),
         })
 
     racers.sort(key=lambda x: (x['class'] or '', x['one_year']['win1'] or 0, x['regno']), reverse=True)
@@ -146,8 +204,9 @@ def main():
         'racers': racers,
         'notes': [
             '半年・1年は実レース結果から再集計',
-            '特殊能力欄は現時点では決まり手構成・ST・直近変化など再現可能な記述のみ',
-            '心理・相手依存などの能力は別検証で裏が取れたものだけ後から追加'
+            '何コース何型という分類は公開しない',
+            '節後半上昇など分析途中の情報は選手メモに蓄積',
+            '心理・相手依存などは別検証で裏が取れたものだけ公開候補に昇格'
         ]
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
