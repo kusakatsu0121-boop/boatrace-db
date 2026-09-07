@@ -75,6 +75,7 @@ def venue_memo(g,label):
         if s['n']<6:continue
         rows.append({'venue':str(venue),'n':s['n'],'stats':s,'course_adj_vs_overall':safe_num(s['course_adj']-overall['course_adj'],3),'top3_vs_overall_pt':safe_num(s['top3']-overall['top3'],1),'overall_minus_venue_avg_finish':safe_num(overall['avg_finish']-s['avg_finish'],2)})
     rows.sort(key=lambda r:abs(r['course_adj_vs_overall'] or 0),reverse=True);return {'window':label,'status':'集計済','overall':overall,'venues':rows[:8]}
+
 def reproduced_venue_traits(a,b):
     x={r['venue']:r for r in a.get('venues',[]) if r['n']>=6}; y={r['venue']:r for r in b.get('venues',[]) if r['n']>=10}; out=[]
     for v in set(x)&set(y):
@@ -95,6 +96,7 @@ def condition_resilience(g,label,col,target_values,min_n=10):
 
 def water_memo(g,label):
     return {'window':label,'strong_wind':condition_resilience(g,label,'wind_band',{'4-5m','6m+'},10),'high_wave':condition_resilience(g,label,'wave_band',{'6-10cm','11cm+'},10)}
+
 def reproduced_water_traits(w6,w1):
     out=[]
     for key,label in [('strong_wind','強風'),('high_wave','高波')]:
@@ -103,12 +105,37 @@ def reproduced_water_traits(w6,w1):
             out.append({'condition':label,'status':a['status'],'confidence':'高' if a.get('confidence')=='高' and b.get('confidence')=='高' else '中','six_month':a,'one_year':b})
     return out
 
+def rebound_memo(g,label):
+    need={'race_date','レース場','finish','course_adjusted_perf'}
+    if g.empty or not need.issubset(g.columns):return {'window':label,'status':'不足','reason':'直前出走判定データなし'}
+    x=g.dropna(subset=['race_date','レース場','finish','course_adjusted_perf']).copy()
+    x=x.sort_values(['race_date','race_no_num','レースコード'])
+    x['prev_finish']=x['finish'].shift(1); x['prev_date']=x['race_date'].shift(1); x['prev_venue']=x['レース場'].shift(1)
+    x['gap_days']=(x['race_date']-x['prev_date']).dt.days
+    x=x[(x['prev_venue'].astype(str)==x['レース場'].astype(str)) & x['gap_days'].between(0,2) & x['prev_finish'].notna()]
+    after_good=phase_stats(x[x['prev_finish']<=3]); after_bad=phase_stats(x[x['prev_finish']>=4])
+    r={'window':label,'after_top3':after_good,'after_4plus':after_bad,'same_venue_gap_days_max':2}
+    if after_good['n']<10 or after_bad['n']<10 or after_good['course_adj'] is None or after_bad['course_adj'] is None:
+        r.update({'status':'不足','confidence':'低','note':'直前3着以内/4着以下のどちらかが10走未満'});return r
+    cad=after_bad['course_adj']-after_good['course_adj']; t=after_bad['top3']-after_good['top3']; f=after_good['avg_finish']-after_bad['avg_finish']
+    r.update({'after_bad_minus_good_course_adj':safe_num(cad,3),'after_bad_minus_good_top3_pt':safe_num(t,1),'after_good_minus_bad_avg_finish':safe_num(f,2)})
+    if cad>=.16 and (t>=3 or f>=.12):status='前走不振後に立て直す候補'
+    elif cad<=-.16 and (t<=-3 or f<=-.12):status='前走不振を引きずる候補'
+    else:status='前走結果による明確な差なし'
+    n=min(after_good['n'],after_bad['n']); r.update({'status':status,'confidence':'高' if n>=25 and abs(cad)>=.22 else ('中' if n>=15 else '低')});return r
+
+def reproduced_rebound_trait(r6,r1):
+    if r6.get('status')==r1.get('status') and r6.get('status') in {'前走不振後に立て直す候補','前走不振を引きずる候補'}:
+        return {'status':r6['status'],'confidence':'高' if r6.get('confidence')=='高' and r1.get('confidence')=='高' else '中','six_month':r6,'one_year':r1}
+    return None
+
 def build_player_memo(g6,g1):
-    lm6,lm1=late_meet_memo(g6,'6か月'),late_meet_memo(g1,'1年'); or6,or1=opponent_resilience_memo(g6,'6か月'),opponent_resilience_memo(g1,'1年'); vm6,vm1=venue_memo(g6,'6か月'),venue_memo(g1,'1年'); vt=reproduced_venue_traits(vm6,vm1); wm6,wm1=water_memo(g6,'6か月'),water_memo(g1,'1年'); wt=reproduced_water_traits(wm6,wm1); tags=[]
+    lm6,lm1=late_meet_memo(g6,'6か月'),late_meet_memo(g1,'1年'); or6,or1=opponent_resilience_memo(g6,'6か月'),opponent_resilience_memo(g1,'1年'); vm6,vm1=venue_memo(g6,'6か月'),venue_memo(g1,'1年'); vt=reproduced_venue_traits(vm6,vm1); wm6,wm1=water_memo(g6,'6か月'),water_memo(g1,'1年'); wt=reproduced_water_traits(wm6,wm1); rb6,rb1=rebound_memo(g6,'6か月'),rebound_memo(g1,'1年'); rbt=reproduced_rebound_trait(rb6,rb1); tags=[]
     if lm6.get('status')=='後半上昇候補' and lm1.get('status')=='後半上昇候補':tags.append('節後半に上げる')
     if or6.get('status')=='強豪相手でも崩れにくい候補' and or1.get('status')=='強豪相手でも崩れにくい候補':tags.append('強豪相手でも崩れにくい')
     tags += [f"{v['venue']}・{v['status']}" for v in vt] + [f"{w['condition']}・{w['status']}" for w in wt]
-    return {'late_meet_6m':lm6,'late_meet_1y':lm1,'opponent_resilience_6m':or6,'opponent_resilience_1y':or1,'venue_6m':vm6,'venue_1y':vm1,'venue_reproduced_traits':vt,'water_6m':wm6,'water_1y':wm1,'water_reproduced_traits':wt,'memo_tags':tags,'visibility':'internal_memo'}
+    if rbt:tags.append(rbt['status'].replace('候補',''))
+    return {'late_meet_6m':lm6,'late_meet_1y':lm1,'opponent_resilience_6m':or6,'opponent_resilience_1y':or1,'venue_6m':vm6,'venue_1y':vm1,'venue_reproduced_traits':vt,'water_6m':wm6,'water_1y':wm1,'water_reproduced_traits':wt,'rebound_6m':rb6,'rebound_1y':rb1,'rebound_reproduced_trait':rbt,'memo_tags':tags,'visibility':'internal_memo'}
 
 def main():
     cards=load_many(str(SRC/'programs/race_cards/*/*/*.csv')); results=load_many(str(SRC/'results/realtime/*/*/*.csv')); title=load_many(str(SRC/'programs/title/*/*/*.csv'))
@@ -119,5 +146,5 @@ def main():
         g6=p6[p6.regno.eq(reg)]; row=prof.loc[reg]; c1,c6=course_rows(g1),course_rows(g6); name=str(row.get('name','') or '').strip()
         if not name or name.lower()=='nan':continue
         racers.append({'regno':int(reg),'name':name,'class':None if pd.isna(row.get('class_grade')) else str(row.get('class_grade')),'branch':None if pd.isna(row.get('branch')) else str(row.get('branch')),'birthplace':None if pd.isna(row.get('birthplace')) else str(row.get('birthplace')),'age':None if pd.isna(row.get('age')) else int(float(row.get('age'))),'term':None if pd.isna(row.get('term')) else str(row.get('term')),'six_month':perf(g6),'one_year':perf(g1),'courses_6m':c6,'courses_1y':c1,'strongest_course_6m':strongest_course(c6),'features':public_features(g6,g1),'player_memo':build_player_memo(g6,g1)})
-    racers.sort(key=lambda x:(x['class'] or '',x['one_year']['win1'] or 0,x['regno']),reverse=True); payload={'updated':asof.strftime('%Y-%m-%d'),'window_6m_start':start6.strftime('%Y-%m-%d'),'window_1y_start':start1.strftime('%Y-%m-%d'),'count':len(racers),'racers':racers,'notes':['半年・1年は実レース結果から再集計','何コース何型という分類は公開しない','節後半・相手強度・場依存・強風/高波耐性は選手メモに蓄積','半年/1年で再現し裏が取れたものだけ公開候補に昇格']}; OUT.parent.mkdir(parents=True,exist_ok=True); OUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(',',':')),encoding='utf-8'); print(f'wrote {OUT} racers={len(racers)} asof={asof.date()}')
+    racers.sort(key=lambda x:(x['class'] or '',x['one_year']['win1'] or 0,x['regno']),reverse=True); payload={'updated':asof.strftime('%Y-%m-%d'),'window_6m_start':start6.strftime('%Y-%m-%d'),'window_1y_start':start1.strftime('%Y-%m-%d'),'count':len(racers),'racers':racers,'notes':['半年・1年は実レース結果から再集計','何コース何型という分類は公開しない','節後半・相手強度・場依存・強風/高波耐性・前走不振後の立て直しは選手メモに蓄積','半年/1年で再現し裏が取れたものだけ公開候補に昇格']}; OUT.parent.mkdir(parents=True,exist_ok=True); OUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(',',':')),encoding='utf-8'); print(f'wrote {OUT} racers={len(racers)} asof={asof.date()}')
 if __name__=='__main__':main()
