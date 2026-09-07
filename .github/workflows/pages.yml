@@ -6,6 +6,7 @@ on:
       - "docs/**"
       - "build_racer_site.py"
       - "racer_directory.py"
+      - "enrich_adjustment_memos.py"
       - ".github/workflows/pages.yml"
   schedule:
     - cron: "25 20 * * *"
@@ -34,7 +35,9 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --disable-pip-version-check pandas numpy
       - name: Build racer directory data
-        run: python build_racer_site.py
+        run: |
+          python build_racer_site.py
+          python enrich_adjustment_memos.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
