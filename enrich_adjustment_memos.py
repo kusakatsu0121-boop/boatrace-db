@@ -35,57 +35,104 @@ def phase(g: pd.DataFrame) -> dict:
 
 
 def low_motor_recovery(g: pd.DataFrame, label: str) -> dict:
-    """Internal memo: does the racer improve late in meets when assigned a low-rated motor?"""
+    """Internal memo: paired-meet test of late improvement on relatively weak motors.
+
+    The previous version pooled all early races and all late races. That could mix
+    different meets/venues and mistake composition changes for adjustment skill.
+    This version derives a meet key from venue + inferred meet start, keeps only
+    low-motor meets that contain both early and late samples, and evaluates the
+    within-meet deltas before declaring a reproducible trait.
+    """
     base = {'window': label, 'status': '不足', 'confidence': '低'}
-    required = {'motor_2rate', 'day_no', 'course_adjusted_perf', 'finish'}
+    required = {'motor_2rate', 'day_no', 'race_date', 'レース場', 'course_adjusted_perf', 'finish'}
     if g.empty or not required.issubset(g.columns):
         base['reason'] = '必要データなし'
         return base
 
-    x = g.dropna(subset=['motor_2rate', 'day_no']).copy()
+    x = g.dropna(subset=['motor_2rate', 'day_no', 'race_date', 'レース場', 'course_adjusted_perf', 'finish']).copy()
     if len(x) < 20:
         base['reason'] = '標本不足'
         return base
 
-    # Racer-relative threshold: bottom quartile of motors actually assigned in this window.
-    cutoff = x['motor_2rate'].quantile(.25)
-    bad = x[x['motor_2rate'] <= cutoff]
-    early = bad[bad['day_no'].between(1, 2)]
-    late = bad[bad['day_no'] >= 5]
-    e, l = phase(early), phase(late)
+    x['race_date'] = pd.to_datetime(x['race_date'])
+    x['day_no'] = pd.to_numeric(x['day_no'], errors='coerce')
+    x = x.dropna(subset=['day_no'])
+    # day_no=1 is the inferred meet start. Venue is included to avoid accidental joins.
+    x['meet_start'] = x['race_date'].dt.normalize() - pd.to_timedelta(x['day_no'] - 1, unit='D')
+    x['meet_key'] = x['レース場'].astype(str) + '|' + x['meet_start'].dt.strftime('%Y-%m-%d')
+
+    meet_motor = x.groupby('meet_key')['motor_2rate'].median().dropna()
+    if len(meet_motor) < 4:
+        base['reason'] = '節数不足'
+        base['meet_n'] = int(len(meet_motor))
+        return base
+
+    # Racer-relative threshold, but now applied at meet level rather than race-row level.
+    cutoff = float(meet_motor.quantile(.25))
+    low_keys = set(meet_motor[meet_motor <= cutoff].index)
+    bad = x[x['meet_key'].isin(low_keys)].copy()
+
+    paired = []
+    for key, h in bad.groupby('meet_key'):
+        early = h[h['day_no'].between(1, 2)]
+        late = h[h['day_no'] >= 5]
+        if early.empty or late.empty:
+            continue
+        e, l = phase(early), phase(late)
+        if e['course_adj'] is None or l['course_adj'] is None:
+            continue
+        paired.append({
+            'meet_key': key,
+            'motor_2rate': safe_num(meet_motor.get(key), 1),
+            'early_n': e['n'],
+            'late_n': l['n'],
+            'course_adj_delta': safe_num(l['course_adj'] - e['course_adj']),
+            'top3_delta_pt': None if e['top3'] is None or l['top3'] is None else safe_num(l['top3'] - e['top3'], 1),
+            'finish_improve': None if e['avg_finish'] is None or l['avg_finish'] is None else safe_num(e['avg_finish'] - l['avg_finish'], 2),
+        })
+
+    min_meets = 3 if label == '6か月' else 5
     out = {
         'window': label,
-        'motor_2rate_q25': safe_num(cutoff, 1),
-        'bad_motor_n': int(len(bad)),
-        'early': e,
-        'late': l,
+        'motor_2rate_q25_meet_level': safe_num(cutoff, 1),
+        'low_motor_meets': int(len(low_keys)),
+        'paired_meets': int(len(paired)),
     }
-
-    if e['n'] < 6 or l['n'] < 6 or e['course_adj'] is None or l['course_adj'] is None:
-        out.update({'status': '不足', 'confidence': '低', 'reason': '低調モーター時の初盤/終盤標本不足'})
+    if len(paired) < min_meets:
+        out.update({'status': '不足', 'confidence': '低', 'reason': f'前半・後半を同一節で比較できる低調機節が{min_meets}節未満'})
         return out
 
-    delta = l['course_adj'] - e['course_adj']
-    top3_delta = None if e['top3'] is None or l['top3'] is None else l['top3'] - e['top3']
-    finish_delta = None if e['avg_finish'] is None or l['avg_finish'] is None else e['avg_finish'] - l['avg_finish']
+    p = pd.DataFrame(paired)
+    cad_med = float(p['course_adj_delta'].median())
+    positive_rate = float((p['course_adj_delta'] > 0).mean())
+    top3_med = float(p['top3_delta_pt'].dropna().median()) if p['top3_delta_pt'].notna().any() else None
+    finish_med = float(p['finish_improve'].dropna().median()) if p['finish_improve'].notna().any() else None
+
+    early_all = bad[bad['day_no'].between(1, 2) & bad['meet_key'].isin(p['meet_key'])]
+    late_all = bad[(bad['day_no'] >= 5) & bad['meet_key'].isin(p['meet_key'])]
+    e_all, l_all = phase(early_all), phase(late_all)
+
     out.update({
-        'late_minus_early_course_adj': safe_num(delta),
-        'late_minus_early_top3_pt': safe_num(top3_delta, 1) if top3_delta is not None else None,
-        'early_minus_late_avg_finish': safe_num(finish_delta, 2) if finish_delta is not None else None,
+        'paired_course_adj_delta_median': safe_num(cad_med),
+        'paired_positive_meet_rate': safe_num(positive_rate * 100, 1),
+        'paired_top3_delta_median_pt': safe_num(top3_med, 1) if top3_med is not None else None,
+        'paired_finish_improve_median': safe_num(finish_med, 2) if finish_med is not None else None,
+        'early_pooled': e_all,
+        'late_pooled': l_all,
+        'meet_examples': paired[:8],
     })
 
-    supportive_up = (top3_delta is not None and top3_delta >= 5) or (finish_delta is not None and finish_delta >= .20)
-    supportive_down = (top3_delta is not None and top3_delta <= -5) or (finish_delta is not None and finish_delta <= -.20)
-    if delta >= .20 and supportive_up:
+    supportive_up = (top3_med is not None and top3_med >= 4) or (finish_med is not None and finish_med >= .15)
+    supportive_down = (top3_med is not None and top3_med <= -4) or (finish_med is not None and finish_med <= -.15)
+    if cad_med >= .18 and positive_rate >= .67 and supportive_up:
         status = '低調機から後半立て直し候補'
-    elif delta <= -.20 and supportive_down:
+    elif cad_med <= -.18 and positive_rate <= .33 and supportive_down:
         status = '低調機で後半悪化候補'
     else:
         status = '低調機で明確な後半差なし'
 
-    nmin = min(e['n'], l['n'])
-    confidence = '高' if nmin >= 18 and abs(delta) >= .28 else ('中' if nmin >= 10 else '低')
-    out.update({'status': status, 'confidence': confidence})
+    confidence = '高' if len(paired) >= 8 and abs(cad_med) >= .25 and (positive_rate >= .75 or positive_rate <= .25) else ('中' if len(paired) >= 5 else '低')
+    out.update({'status': status, 'confidence': confidence, 'validation': '同一節ペア比較'})
     return out
 
 
@@ -122,14 +169,22 @@ def main():
         memo['low_motor_recovery_1y'] = a1
         memo['low_motor_recovery_reproduced'] = stable
         tags = memo.setdefault('memo_tags', [])
+        # Remove stale tag if the stricter paired-meet validation no longer reproduces it.
+        if not stable and '低調機でも節後半に立て直す' in tags:
+            tags.remove('低調機でも節後半に立て直す')
         if stable and '低調機でも節後半に立て直す' not in tags:
             tags.append('低調機でも節後半に立て直す')
             reproduced += 1
 
-    payload.setdefault('notes', []).append('低調モーター時の節後半立て直しを半年・1年で選手メモへ追加')
-    payload['adjustment_memo_summary'] = {'reproduced_low_motor_recovery_racers': reproduced}
+    payload.setdefault('notes', []).append('低調機の節後半立て直し判定を、別節混在の集計から同一節ペア比較へ厳格化')
+    payload['adjustment_memo_summary'] = {
+        'reproduced_low_motor_recovery_racers': reproduced,
+        'validation': 'paired_meet',
+        'minimum_paired_meets_6m': 3,
+        'minimum_paired_meets_1y': 5,
+    }
     TARGET.write_text(json.dumps(payload, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
-    print(f'enriched {TARGET} reproduced_low_motor_recovery={reproduced}')
+    print(f'enriched {TARGET} reproduced_low_motor_recovery={reproduced} validation=paired_meet')
 
 
 if __name__ == '__main__':
