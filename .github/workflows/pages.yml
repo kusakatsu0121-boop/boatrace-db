@@ -8,6 +8,7 @@ on:
       - "racer_directory.py"
       - "enrich_adjustment_memos.py"
       - "enrich_same_day.py"
+      - "enrich_bad_early_recovery.py"
       - ".github/workflows/pages.yml"
   schedule:
     - cron: "25 20 * * *"
@@ -40,6 +41,7 @@ jobs:
           python build_racer_site.py
           python enrich_adjustment_memos.py
           python enrich_same_day.py
+          python enrich_bad_early_recovery.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
