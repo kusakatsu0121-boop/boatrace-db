@@ -8,7 +8,8 @@ import {
   dedupeCrossMedia,
   sameWorkRate,
   chooseBestPerCompany,
-  normalizeText
+  normalizeText,
+  extractShift
 } from './search-logic.js';
 
 export function normalizeBaseHourlyStrict(input = '') {
@@ -18,6 +19,18 @@ export function normalizeBaseHourlyStrict(input = '') {
   const explicit = s.match(/(?:基本時給|通常時給)\s*[:：]?\s*(\d{3,4})(?:\s*円)?/);
   if (explicit) {
     return { baseHourly: Number(explicit[1]), confidence: 0.99, reason: 'explicit_base_hourly' };
+  }
+
+  // A range close to x1.25 is a common base + statutory night-premium display.
+  const range = s.match(/時給\s*[:：]?\s*(\d{3,4})\s*(?:円)?\s*[～~-]\s*(\d{3,4})(?:\s*円)?/);
+  if (range) {
+    const low = Number(range[1]);
+    const high = Number(range[2]);
+    const premiumLike = low > 0 && Math.abs(high / low - 1.25) < 0.025;
+    if (premiumLike && /夜勤|深夜|22時|翌\s*5時|20:00|21:00|22:00/.test(s)) {
+      return { baseHourly: low, confidence: 0.99, reason: 'night_premium_range_use_low' };
+    }
+    return { baseHourly: low, confidence: 0.8, reason: 'hourly_range_use_low' };
   }
 
   const matches = [...s.matchAll(/時給\s*[:：]?\s*(\d{3,4})(?:\s*円)?/g)];
@@ -32,21 +45,88 @@ export function normalizeBaseHourlyStrict(input = '') {
   return { baseHourly: null, confidence: 0, reason: 'base_hourly_not_verified' };
 }
 
+function inferCompany(text = '') {
+  const s = String(text);
+  const explicit = s.match(/(?:会社名|派遣元|担当会社|企業名)\s*[:：|]?\s*([^\n|]{2,40})/);
+  if (explicit) return explicit[1].trim().replace(/[（(].*$/, '').trim();
+  const known = [
+    'パーソルフィールドスタッフ', 'パーソルテンプスタッフ', 'ランスタッド',
+    'アデコ', 'パソナ', 'スタッフサービス', 'マンパワーグループ'
+  ];
+  return known.find(name => s.includes(name)) || '';
+}
+
+function inferCity(text = '') {
+  const s = String(text);
+  const matches = [...s.matchAll(/(?:東京都\s*)?([一-龠ぁ-んァ-ヶー]+区)/g)];
+  return matches.length ? matches[matches.length - 1][1] : '';
+}
+
+function inferStation(text = '') {
+  const s = String(text);
+  const preferred = s.match(/(?:アクセス|勤務地)[\s\S]{0,120}?([一-龠ぁ-んァ-ヶー()（）・]+)駅/);
+  if (preferred) return preferred[1].replace(/.*[／/]/, '').trim();
+  const any = s.match(/([一-龠ぁ-んァ-ヶー()（）・]+)駅/);
+  return any ? any[1].replace(/.*[／/]/, '').trim() : '';
+}
+
+function inferPeriod(text = '') {
+  const s = String(text);
+  const m = s.match(/(?:期間|雇用形態)[\s|:：]*([^\n|]{0,45}(?:長期|短期|\d+\s*(?:か月|ヶ月|ヵ月|カ月|月)\s*(?:以上|以内)?))/);
+  if (m) return m[1].trim();
+  if (/長期/.test(s)) return '長期';
+  if (/短期/.test(s)) return '短期';
+  return '';
+}
+
+function inferProduct(text = '') {
+  const s = normalizeText(text);
+  if (/トレカ|トレーディングカード/.test(s)) return 'トレカ';
+  if (/スマホ|スマートフォン|携帯端末/.test(s)) return 'スマホ';
+  if (/pc|パソコン/.test(s)) return 'PC';
+  return '';
+}
+
+function inferRole(tasks = [], text = '') {
+  const t = new Set(tasks);
+  const office = ['問合せ', '入力', '資材発注', '在庫管理'].filter(x => t.has(x)).length;
+  const physical = ['検品', '照合', '開梱', '梱包', '発送', '仕分け', '棚入れ', '入荷', 'ピッキング', '撮影', 'スキャン', 'ケース収納', '封入', '初期化'].filter(x => t.has(x)).length;
+  const s = normalizeText(text);
+  if (/一般事務|oa事務|問い合わせ対応|メール対応/.test(s) && office >= physical) return 'office';
+  if (physical >= 2 && office <= 1) return 'physical';
+  return 'mixed';
+}
+
+export function inferCandidateFields(raw = {}) {
+  const rawText = String(raw.rawText || raw.statusText || raw.wageText || '');
+  const tasks = canonicalizeTasks(raw.tasks || [], rawText);
+  return {
+    company: raw.company || inferCompany(rawText),
+    city: raw.city || inferCity(rawText),
+    station: raw.station || inferStation(rawText),
+    shift: raw.shift || extractShift(rawText),
+    product: raw.product || inferProduct(rawText),
+    period: raw.period || inferPeriod(rawText),
+    role: raw.role || inferRole(tasks, rawText),
+    tasks
+  };
+}
+
 export function prepareLiveCandidate(raw = {}, now = new Date()) {
   const rawText = String(raw.rawText || '');
   const wage = normalizeBaseHourlyStrict(rawText || raw.wageText || '');
   const posting = classifyPostingStatus(rawText || raw.statusText || '', now);
-  const tasks = canonicalizeTasks(raw.tasks || [], rawText);
+  const inferred = inferCandidateFields(raw);
 
   return {
     ...raw,
+    ...inferred,
     baseHourly: wage.baseHourly,
     wageConfidence: wage.confidence,
     wageReason: wage.reason,
     postingStatus: posting.status,
     postingConfidence: posting.confidence,
-    postingReason: posting.reason,
-    tasks
+    postingReason: posting.reason
   };
 }
 
