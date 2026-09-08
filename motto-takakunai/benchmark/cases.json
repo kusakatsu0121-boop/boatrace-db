@@ -1,1 +1,96 @@
-[]
+[
+  {
+    "case_id": "CASE-001",
+    "tested_at": "2026-09-09T01:15:00+09:00",
+    "scored": false,
+    "selection_mode": "expected_comparable",
+    "occupation_group": "warehouse_lightwork",
+    "difficulty": "easy",
+    "source_job": {
+      "url": "https://www.randstad.co.jp/factory/r032701/kj108/",
+      "evidence": "Randstad current listing: trading-card case set / inspection / light work, 20:00-05:00, Ryutsu Center 5 min",
+      "company": "ランスタッド",
+      "base_hourly_wage": 1750,
+      "location": "東京都大田区平和島",
+      "nearest_station": "流通センター",
+      "shift": "night",
+      "period": "長期（3か月以上）",
+      "employment_type": "派遣",
+      "tasks": ["ケースセット", "検品", "機械圧着", "完成品確認", "撮影"]
+    },
+    "ground_truth": {
+      "status": "exists",
+      "search_minutes": null,
+      "searched_sources": [
+        "randstad.co.jp",
+        "tempstaff.co.jp",
+        "adecco.com",
+        "townwork.net",
+        "haken.en-japan.com",
+        "hatalike.jp"
+      ],
+      "verified_candidates": [
+        {
+          "company": "パーソルフィールドスタッフ",
+          "hourly_wage": 1900,
+          "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/BR260639739/",
+          "active": true,
+          "same_job_reason": "同じ流通センター、20:00-05:00、トレカ、ケース封入・チェック・機械圧着が一致"
+        },
+        {
+          "company": "パーソルテンプスタッフ",
+          "hourly_wage": 1900,
+          "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260674618/",
+          "active": true,
+          "same_job_reason": "同じ流通センター、20:00-05:00、トレカの検品・ケース封入・梱包が一致"
+        },
+        {
+          "company": "アデコ",
+          "hourly_wage": 1850,
+          "url": "https://www.adecco.com/ja-jp/job/PO_JobDetailA?jobno=A01499590",
+          "active": true,
+          "same_job_reason": "同じ流通センター、20:00-05:00、トレカ専用機械への設置・確認・接着・梱包"
+        }
+      ],
+      "best_verified_hourly_wage": 1900,
+      "best_verified_url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/BR260639739/",
+      "notes": "調整CASE。探索時間の計測を開始前に固定していなかったため search_minutes は未計測。少なくとも掲載中の高額同一候補3件を確認。"
+    },
+    "results": {
+      "motto_takakunai": {
+        "found_higher_same_job": false,
+        "found_hourly_wage": null,
+        "found_url": "",
+        "active_verified": null,
+        "presented_candidate_count": 0,
+        "presented_higher_candidate_count": 0,
+        "false_same_job_count": 0,
+        "ended_job_count": 0,
+        "base_wage_correct": true,
+        "same_job_rate": null,
+        "same_job_reasons": {},
+        "t1_result_seconds": null,
+        "t2_open_clicks": null,
+        "t3_total_seconds": null,
+        "notes": "現行公開ロジックは status=active の固定RAWだけを比較。1900円候補はRAW上 status=unknown のため除外され、Ground Truthに存在する1900円を発見できない。"
+      },
+      "chatgpt": {
+        "found_higher_same_job": true,
+        "found_hourly_wage": 1900,
+        "found_url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/BR260639739/",
+        "active_verified": true,
+        "presented_candidate_count": 3,
+        "presented_higher_candidate_count": 3,
+        "false_same_job_count": 0,
+        "ended_job_count": 0,
+        "base_wage_correct": true,
+        "t1_result_seconds": null,
+        "t2_open_clicks": null,
+        "t3_total_seconds": null,
+        "notes": "同時点のWeb検索で1900円（深夜2375円とは分離）と1850円の掲載中候補を確認。調整CASEのため時間は未計測。"
+      },
+      "gemini": {},
+      "perplexity": {}
+    }
+  }
+]
