@@ -1,0 +1,78 @@
+{
+  "verified_at": "2026-09-08T14:57:00+09:00",
+  "purpose": "Fresh verification snapshot for listing status, wage normalization, task matching, and source reliability.",
+  "records": [
+    {
+      "id": "TS26-0701795",
+      "company": "パーソルテンプスタッフ",
+      "status": "verified_active",
+      "basic_hourly_yen": 1840,
+      "display_range_yen": [1840, 2300],
+      "shift": "night",
+      "station": "流通センター",
+      "walk_minutes": 5,
+      "period": "2026年10月上旬～長期",
+      "transport": "全額支給",
+      "tasks_verified": ["開封", "検品", "梱包", "発送", "資材発注", "入荷対応", "在庫管理", "倉庫内探索", "バーコードスキャン"],
+      "notes": "2300円は深夜割増を含む上限で、比較用基本時給は1840円。既存の『検品・入力・軽作業』だけでは工程情報が粗すぎるため、同一仕事判定では詳細工程を優先する。"
+    },
+    {
+      "id": "TS26-0708244",
+      "company": "パーソルテンプスタッフ",
+      "status": "verified_active",
+      "basic_hourly_yen": 1750,
+      "display_range_yen": [1750, 1750],
+      "shift": "day",
+      "station": "流通センター",
+      "walk_minutes": 1,
+      "period": "2026年10月上旬～長期",
+      "transport": "全額支給",
+      "tasks_verified": ["開封", "内容チェック", "撮影", "登録", "封入", "品質チェック", "梱包", "発送準備", "データ入力"],
+      "notes": "配属チームごとに工程が分かれる記載あり。求人票全体の工程集合が一致しても、実配属工程が同一とは限らないため一致率99%固定は禁止。"
+    },
+    {
+      "id": "TS26-0701398",
+      "company": "パーソルテンプスタッフ",
+      "status": "verified_active",
+      "basic_hourly_yen": 1950,
+      "shift": "day",
+      "station": "流通センター",
+      "walk_minutes": 2,
+      "period": "2026年10月上旬～長期",
+      "transport": "全額支給",
+      "tasks_verified": ["問い合わせ対応", "発送手配", "申込書不備連絡", "チェック"],
+      "role": "office",
+      "notes": "トレカ同一現場でも事務職。軽作業系と同一仕事に統合しない。"
+    },
+    {
+      "id": "RANDSTAD-TRECA-NIGHT-1750",
+      "company": "ランスタッド",
+      "status": "verified_active_via_list",
+      "basic_hourly_yen": 1750,
+      "deep_night_yen": 2188,
+      "station": "流通センター",
+      "walk_minutes": 5,
+      "pay": "前給制度あり",
+      "tasks_verified": ["ケースセット", "軽作業", "検品", "梱包"],
+      "notes": "一覧ページ上で現行掲載を確認。タイトルは夜勤だが一覧構造の勤務日フィールドが日勤表記になっており、一覧ページの構造化項目だけでshift判定しない。タイトル・本文・就業時間を優先する。"
+    },
+    {
+      "id": "TS26-0703097",
+      "company": "パーソルテンプスタッフ",
+      "status": "recheck_needed",
+      "notes": "個別URLの直接取得が今回失敗。検索非表示だけで掲載終了扱いにしない。次回、個別URL・検索結果・サイト内一覧の複数経路で再確認する。"
+    },
+    {
+      "id": "BR26-0701235",
+      "company": "パーソルフィールドスタッフ",
+      "status": "recheck_needed",
+      "notes": "個別URLの直接取得が今回失敗。検索非表示だけで掲載終了扱いにしない。"
+    }
+  ],
+  "listing_status_policy": {
+    "verified_active": "個別求人ページまたは現行一覧で求人内容を確認できた",
+    "recheck_needed": "今回確認できなかったが終了証拠はない。比較候補から即削除しない",
+    "ended": "掲載終了・削除・募集終了を明示確認できた場合のみ",
+    "rule": "検索結果に出ないこと単独ではendedにしない"
+  }
+}
