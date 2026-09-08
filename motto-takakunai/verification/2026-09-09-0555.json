@@ -1,0 +1,57 @@
+{
+  "verified_at": "2026-09-09T05:55:46+09:00",
+  "scope": "流通センター周辺・夜勤トレカを主軸に、別職種・別勤務地・深夜割増表示を対照検証",
+  "verified_jobs": 7,
+  "base_job": {
+    "company": "ランスタッド",
+    "base_hourly_wage": 1750,
+    "station": "流通センター",
+    "shift": "night",
+    "product": "トレカ"
+  },
+  "best_verified_same_work": {
+    "base_hourly_wage": 1900,
+    "delta_hourly": 150,
+    "examples": [
+      "TS260703097",
+      "BR260701344"
+    ]
+  },
+  "negative_controls": [
+    {
+      "id": "TS260701398",
+      "display_hourly": 1950,
+      "reason": "同駅・トレカでも日勤の一般事務。高額だが別仕事"
+    },
+    {
+      "id": "RANDSTAD-FTKB109739",
+      "headline_hourly": 2000,
+      "normalized_base_hourly": 1600,
+      "reason": "深夜時給見出し。食品梱包でトレカ案件ではない"
+    },
+    {
+      "id": "RANDSTAD-FFBS112655",
+      "headline_hourly": 1750,
+      "normalized_base_hourly": 1400,
+      "reason": "深夜時給見出し。南船橋の別勤務地"
+    }
+  ],
+  "code_changes": [
+    "root live-candidates.json を新設し、24時間TTL付きの7件スナップショットを保存",
+    "live-candidate-pipeline.test.mjs に現行スナップショット回帰テストを追加",
+    "同じ仕事率が100にならないこと、高額な別職種・別勤務地を除外することを固定"
+  ],
+  "public_gap": {
+    "render_live_commit": "14273d3657c57702831dddde4b977a72f013d245",
+    "render_build_command": "mkdir -p public && cp motto-takakunai/index.html public/index.html",
+    "index_uses_fixed_raw": true,
+    "index_filters_active_only": true,
+    "index_uses_live_pipeline": false,
+    "note": "公開版は固定RAWのstatus=activeのみを比較しており、internal live pipeline/live candidate snapshotとは未接続"
+  },
+  "ci": {
+    "latest_commit_checked": "de68d3a8b6573b3d3e0330040cf3f305f2e04c97",
+    "status": "not_confirmed",
+    "note": "GitHub combined statusは現時点で空。CI成功とは扱わない"
+  }
+}
