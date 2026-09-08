@@ -16,8 +16,6 @@ export function normalizeBaseHourly(input = '') {
     .map(m => ({ low: Number(m[1]), high: m[2] ? Number(m[2]) : null }));
   if (!hourly.length) return { baseHourly: null, displayedHigh: null, reason: 'hourly_not_found' };
 
-  // Prefer the first explicit hourly amount. In Japanese night-shift listings, ranges such as
-  // 1840-2300 and 1900-2375 commonly represent base + 25% late-night premium.
   const first = hourly[0];
   const isNight = /夜勤|翌|20:00|21:00|22:00|23:00|24:00|29:00/.test(s);
   const premiumLike = first.high && Math.abs(first.high / first.low - 1.25) < 0.025;
@@ -45,17 +43,45 @@ export function generateSearchQueries(job) {
   const phrase = (job.distinctivePhrase || '').trim();
   const topTasks = tasks.slice(0, 3).join(' ');
 
-  // Multiple independent search routes are intentional. One-query search misses competitors.
   const raw = [
     [station, product, topTasks, '求人'].join(' '),
     [station, product, shiftWord, '派遣 時給'].join(' '),
     [city, station, topTasks, '派遣'].join(' '),
     phrase ? `"${phrase}" 求人` : '',
     company ? [company, station, product, topTasks].join(' ') : '',
-    // Crucial competitor-discovery route: deliberately omit the pasted job's company.
     [station, product, tasks[0] || '', '派遣 求人'].join(' ')
   ];
   return [...new Set(raw.map(q => q.replace(/\s+/g, ' ').trim()).filter(q => q.length >= 4))];
+}
+
+export function candidateLocationGate(base, candidate) {
+  const baseCity = normalizeText(base.city || '');
+  const candCity = normalizeText(candidate.city || '');
+  const baseStation = normalizeText(base.station || '');
+  const candStation = normalizeText(candidate.station || '');
+
+  const cityKnown = !!baseCity && !!candCity;
+  const stationKnown = !!baseStation && !!candStation;
+  const sameCity = cityKnown && baseCity === candCity;
+  const sameStation = stationKnown && baseStation === candStation;
+
+  // Search is intentionally broad, but unrelated cities must never enter same-work comparison.
+  if (cityKnown && !sameCity) return { pass: false, reason: 'different_city' };
+  // When both stations are known, a different station is kept only as a discovery result,
+  // not as a same-work candidate. This blocks noise such as 潮見 -> 辰巳/橋本.
+  if (stationKnown && !sameStation) return { pass: false, reason: 'different_station' };
+  if (!cityKnown && !stationKnown) return { pass: false, reason: 'location_unknown' };
+  return { pass: true, reason: sameStation ? 'same_station' : 'same_city_station_unknown' };
+}
+
+export function filterComparisonCandidates(base, rows = []) {
+  const accepted = [];
+  const rejected = [];
+  for (const row of rows) {
+    const gate = candidateLocationGate(base, row);
+    (gate.pass ? accepted : rejected).push({ ...row, locationGateReason: gate.reason });
+  }
+  return { accepted, rejected };
 }
 
 function taskSignature(tasks = []) {
@@ -63,7 +89,6 @@ function taskSignature(tasks = []) {
 }
 
 export function crossMediaFingerprint(job) {
-  // URL/job ID are deliberately excluded: the same vacancy is often syndicated under different IDs.
   return [
     normalizeText(job.company || ''),
     normalizeText(job.city || ''),
@@ -90,6 +115,9 @@ export function dedupeCrossMedia(rows = []) {
 }
 
 export function sameWorkRate(a, b) {
+  const location = candidateLocationGate(a, b);
+  if (!location.pass) return 0;
+
   const A = new Set((a.tasks || []).map(normalizeText));
   const B = new Set((b.tasks || []).map(normalizeText));
   const inter = [...A].filter(x => B.has(x)).length;
@@ -101,13 +129,11 @@ export function sameWorkRate(a, b) {
   const roleConflict = a.role && b.role && a.role !== 'mixed' && b.role !== 'mixed' && a.role !== b.role;
 
   let score = (sameStation ? 30 : sameCity ? 14 : 0) + (sameShift ? 20 : 0) + (sameProduct ? 15 : 0) + f1 * 35;
-  if (!sameCity) score = Math.min(score, 39);
   if (!sameShift) score = Math.min(score, 59);
   if (!sameProduct) score = Math.min(score, 49);
   if (roleConflict) score = Math.min(score, 49);
   if (A.size < 2 || B.size < 2) score = Math.min(score, 69);
 
-  // Product requirement: never display 100%.
   return Math.max(0, Math.min(99, Math.round(score)));
 }
 
