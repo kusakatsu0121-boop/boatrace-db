@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node search-logic.test.mjs && node tests/live-candidate-pipeline.test.mjs && node tests/live-snapshot-regression.mjs"
+    "test": "node search-logic.test.mjs && node tests/live-candidate-pipeline.test.mjs && node tests/live-snapshot-regression.mjs && node tests/public-index-regression.mjs"
   }
 }
