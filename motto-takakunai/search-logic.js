@@ -159,18 +159,52 @@ export function periodClass(input = '') {
   return 'unknown';
 }
 
+function compactPeriod(input = '') {
+  return normalizeText(input)
+    .replace(/\s+/g, '')
+    .replace(/[（）()]/g, '')
+    .replace(/開始日相談(?:ok|可)?/g, '')
+    .replace(/即日/g, '')
+    .trim();
+}
+
 export function comparePeriod(basePeriod = '', candidatePeriod = '') {
-  const baseClass = periodClass(basePeriod);
-  const candidateClass = periodClass(candidatePeriod);
+  const baseText = String(basePeriod || '').trim() || '期間未取得';
+  const candidateText = String(candidatePeriod || '').trim() || '期間未取得';
+  const baseClass = periodClass(baseText);
+  const candidateClass = periodClass(candidateText);
+  const wordingDifferent = compactPeriod(baseText) !== compactPeriod(candidateText);
+
   if (baseClass === 'unknown' || candidateClass === 'unknown') {
-    return { relation: 'unknown', penalty: 0, baseClass, candidateClass };
+    return {
+      relation: 'unknown',
+      penalty: 0,
+      baseClass,
+      candidateClass,
+      wordingDifferent,
+      display: wordingDifferent ? `期間：${baseText} → ${candidateText}` : ''
+    };
   }
   if (baseClass === candidateClass) {
-    return { relation: 'same', penalty: 0, baseClass, candidateClass };
+    return {
+      relation: wordingDifferent ? 'same_class_different_wording' : 'same',
+      penalty: 0,
+      baseClass,
+      candidateClass,
+      wordingDifferent,
+      display: wordingDifferent ? `期間：${baseText} → ${candidateText}` : ''
+    };
   }
   // Period wording is supporting evidence only. A short/long mismatch must never
   // override strong workplace, shift and task matches by itself.
-  return { relation: 'different', penalty: 5, baseClass, candidateClass };
+  return {
+    relation: 'different',
+    penalty: 5,
+    baseClass,
+    candidateClass,
+    wordingDifferent: true,
+    display: `期間：${baseText} → ${candidateText}`
+  };
 }
 
 export function crossMediaFingerprint(job) {
