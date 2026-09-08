@@ -7,7 +7,9 @@ import {
   dedupeCrossMedia,
   sameWorkRate,
   classifyPostingStatus,
-  generateSearchQueries
+  generateSearchQueries,
+  comparePeriod,
+  chooseBestPerCompany
 } from './search-logic.js';
 
 // Night premium ranges: compare basic hourly rate, never the 25% premium display.
@@ -66,6 +68,32 @@ import {
   );
   assert.ok(rate <= 39);
   assert.ok(rate <= 99);
+}
+
+// Period mismatch is visible but deliberately low-weight; unknown period must not penalize.
+{
+  const diff = comparePeriod('長期（3か月以上）', '短期（3か月以内）');
+  assert.equal(diff.relation, 'different');
+  assert.ok(diff.penalty > 0 && diff.penalty <= 5);
+  assert.equal(comparePeriod('長期', '期間未取得').penalty, 0);
+
+  const sameWorkDifferentPeriod = sameWorkRate(
+    { city: '大田区', station: '流通センター', shift: 'day', product: 'トレカ', tasks: ['検品', '照合', '入力'], period: '長期' },
+    { city: '大田区', station: '流通センター', shift: 'day', product: 'トレカ', tasks: ['検品', '照合', '入力'], period: '短期3か月以内' }
+  );
+  assert.ok(sameWorkDifferentPeriod >= 90);
+  assert.ok(sameWorkDifferentPeriod <= 99);
+}
+
+// One company = one row: similarity wins first, wage only breaks ties.
+{
+  const best = chooseBestPerCompany([
+    { company: 'A派遣', sameWorkRate: 92, baseHourly: 1700, id: 'closer' },
+    { company: 'A派遣', sameWorkRate: 70, baseHourly: 1950, id: 'higher-but-different' },
+    { company: 'B派遣', sameWorkRate: 88, baseHourly: 1800, id: 'other-company' }
+  ]);
+  assert.equal(best.find(x => x.company === 'A派遣').id, 'closer');
+  assert.equal(best.length, 2);
 }
 
 // Never infer ended merely from search disappearance; explicit end markers only.
