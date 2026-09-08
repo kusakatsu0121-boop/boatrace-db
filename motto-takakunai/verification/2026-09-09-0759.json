@@ -1,0 +1,108 @@
+{
+  "verified_at": "2026-09-09T07:59:26+09:00",
+  "focus": "fresh listing evidence, premium wage normalization, office-role exclusion, and search-list-only quarantine",
+  "verified_or_current_results": [
+    {
+      "id": "TS260703097",
+      "company": "パーソルテンプスタッフ",
+      "base_hourly_wage": 1900,
+      "premium_hourly_wage": 2375,
+      "shift": "night",
+      "station": "流通センター",
+      "work": "トレカ最終検品・ラベル確認・入力",
+      "classification": "same-work candidate"
+    },
+    {
+      "id": "TS260674618",
+      "company": "パーソルテンプスタッフ",
+      "base_hourly_wage": 1900,
+      "premium_hourly_wage": 2375,
+      "shift": "night",
+      "station": "流通センター",
+      "work": "トレカ検品・ケース封入・梱包",
+      "classification": "same-work candidate"
+    },
+    {
+      "id": "BR260639726",
+      "company": "パーソルフィールドスタッフ",
+      "base_hourly_wage": 1900,
+      "premium_hourly_wage": 2375,
+      "shift": "night",
+      "station": "流通センター",
+      "work": "トレカ確認・検品・入力",
+      "classification": "same-work candidate"
+    },
+    {
+      "id": "BR260572159",
+      "company": "パーソルフィールドスタッフ",
+      "base_hourly_wage": 1900,
+      "premium_hourly_wage": null,
+      "shift": "day",
+      "station": "流通センター",
+      "work": "トレカケース収納・チェック・圧着",
+      "classification": "same-work day candidate",
+      "detail_page_verified": true
+    },
+    {
+      "id": "TS260708244",
+      "company": "パーソルテンプスタッフ",
+      "base_hourly_wage": 1750,
+      "premium_hourly_wage": null,
+      "shift": "day",
+      "station": "流通センター",
+      "work": "トレカ開封・撮影・検品・発送準備",
+      "classification": "day comparison base",
+      "detail_page_verified": true
+    },
+    {
+      "id": "TS260701398",
+      "company": "パーソルテンプスタッフ",
+      "base_hourly_wage": 1950,
+      "premium_hourly_wage": null,
+      "shift": "day",
+      "station": "流通センター",
+      "work": "一般事務・問い合わせ・発送手配",
+      "classification": "exclude: office role despite higher wage"
+    },
+    {
+      "id": "RANDSTAD-FTKB109739",
+      "company": "ランスタッド",
+      "base_hourly_wage": 1600,
+      "premium_hourly_wage": 2000,
+      "shift": "night",
+      "station": "流通センター",
+      "work": "食品梱包・検品",
+      "classification": "exclude: different product/work; premium normalization control"
+    }
+  ],
+  "discovery_only": [
+    {
+      "company": "ランスタッド",
+      "base_hourly_wage": 1700,
+      "premium_hourly_wage": 2125,
+      "station": "流通センター",
+      "work": "夜勤トレカ倉庫",
+      "classification": "not rankable until detail identity/page is verified"
+    },
+    {
+      "company": "ランスタッド",
+      "base_hourly_wage": 1750,
+      "premium_hourly_wage": 2188,
+      "station": "流通センター",
+      "work": "夜勤トレカ検品系",
+      "classification": "not rankable until detail identity/page is verified"
+    }
+  ],
+  "changes": [
+    "Updated current candidate snapshot timestamp to 07:59 JST",
+    "Separated rankable verified candidates from search-list-only discoveries",
+    "Added append-only price history ledger",
+    "Added CI regression that forbids search-list-only observations from becoming rankable",
+    "Updated public single-file checker to the 07:59 snapshot and verified-only ranking policy"
+  ],
+  "known_limitations": [
+    "The public site still compares a server-prepared/embedded verified snapshot; it does not crawl the web at user request time",
+    "Render deployment status was not inspected in this run because no Render workspace is selected in the connector",
+    "Search-list results can reveal candidates faster than detail-page verification; these are intentionally quarantined to protect the zero-ended-listing goal"
+  ]
+}
