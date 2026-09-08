@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "policy": "Append observations; do not overwrite prior verified wages. UI may ignore this file initially. A search/list-page observation is evidence only unless a detail/current listing page is verified.",
+  "series": [
+    {
+      "identity": "ota-ryutsu-center-trading-cards-night-randstad",
+      "location": "東京都大田区平和島 / 流通センター駅",
+      "shift": "night",
+      "product": "トレカ",
+      "company": "ランスタッド",
+      "observations": [
+        {
+          "observed_at": "2026-09-09T05:55:46+09:00",
+          "base_hourly_wage": 1750,
+          "premium_hourly_wage": 2188,
+          "evidence_type": "detail-or-current-listing",
+          "rankable": true,
+          "url": "https://www.randstad.co.jp/factory/r032701/kj108/",
+          "note": "CASE-001/previous snapshot: case-set/inspection/light-work family"
+        },
+        {
+          "observed_at": "2026-09-09T07:59:26+09:00",
+          "base_hourly_wage": 1700,
+          "premium_hourly_wage": 2125,
+          "evidence_type": "search-list-only",
+          "rankable": false,
+          "url": "https://www.randstad.co.jp/factory/a1360/kj161/",
+          "note": "Search results currently also show a 1,700-yen night trading-card warehouse listing. Kept out of highest-wage ranking until detail URL is reverified."
+        },
+        {
+          "observed_at": "2026-09-09T07:59:26+09:00",
+          "base_hourly_wage": 1750,
+          "premium_hourly_wage": 2188,
+          "evidence_type": "search-list-only",
+          "rankable": false,
+          "url": "https://www.randstad.co.jp/factory/sb020/a1360_a1308/kj450/",
+          "note": "Search list simultaneously shows another night trading-card inspection/input listing at 1,750 yen; retained as separate discovery until detail identity is resolved."
+        }
+      ]
+    },
+    {
+      "identity": "ota-ryutsu-center-trading-cards-night-tempstaff-inspection-input",
+      "location": "東京都大田区 / 流通センター駅",
+      "shift": "night",
+      "product": "トレカ",
+      "company": "パーソルテンプスタッフ",
+      "observations": [
+        {
+          "observed_at": "2026-09-09T05:55:46+09:00",
+          "base_hourly_wage": 1900,
+          "premium_hourly_wage": 2375,
+          "evidence_type": "detail-page",
+          "rankable": true,
+          "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260703097/"
+        },
+        {
+          "observed_at": "2026-09-09T07:59:26+09:00",
+          "base_hourly_wage": 1900,
+          "premium_hourly_wage": 2375,
+          "evidence_type": "current-search-detail-result",
+          "rankable": true,
+          "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260703097/"
+        }
+      ]
+    },
+    {
+      "identity": "ota-ryutsu-center-trading-cards-day-fieldstaff-case-press",
+      "location": "東京都大田区 / 流通センター駅",
+      "shift": "day",
+      "product": "トレカ",
+      "company": "パーソルフィールドスタッフ",
+      "observations": [
+        {
+          "observed_at": "2026-09-09T07:59:26+09:00",
+          "base_hourly_wage": 1900,
+          "premium_hourly_wage": null,
+          "evidence_type": "detail-page",
+          "rankable": true,
+          "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/BR260572159/",
+          "note": "9:00-18:00, case insertion/check/press, 10 openings"
+        }
+      ]
+    }
+  ]
+}
