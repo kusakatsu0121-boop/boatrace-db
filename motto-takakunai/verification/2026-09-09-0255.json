@@ -1,0 +1,93 @@
+{
+  "verified_at": "2026-09-09T02:55:00+09:00",
+  "focus": "live-candidate field inference, shift separation, role separation, base-wage normalization",
+  "jobs": [
+    {
+      "id": "TS260674618",
+      "company": "パーソルテンプスタッフ",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260674618/",
+      "city": "大田区",
+      "station": "流通センター",
+      "walk_minutes": 3,
+      "shift": "night",
+      "hours": "20:00-05:00",
+      "base_hourly": 1900,
+      "displayed_high": 2375,
+      "role": "physical",
+      "product": "トレカ",
+      "tasks": ["検品", "ケース封入", "梱包"],
+      "posting_signal": "current detail page with listing content",
+      "notes": "1900-2375 range is base + night premium; base must be 1900"
+    },
+    {
+      "id": "TS260688948",
+      "company": "パーソルテンプスタッフ",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260688948/",
+      "city": "大田区",
+      "station": "流通センター",
+      "walk_minutes": 5,
+      "shift": "day",
+      "hours": "09:00-18:00",
+      "base_hourly": 1900,
+      "role": "physical",
+      "product": "トレカ",
+      "tasks": ["ラベル確認", "ケース選択", "検品", "機械セット", "梱包"],
+      "posting_signal": "current detail page with listing content",
+      "notes": "same product/location and same wage as night listing, but day shift; must not merge as same shift"
+    },
+    {
+      "id": "TS260701398",
+      "company": "パーソルテンプスタッフ",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-51/TS260701398/",
+      "city": "大田区",
+      "station": "流通センター",
+      "walk_minutes": 2,
+      "shift": "day",
+      "hours": "09:00-18:00",
+      "base_hourly": 1950,
+      "role": "office",
+      "product": "トレカ",
+      "tasks": ["問い合わせ対応", "発送手配", "不備確認"],
+      "posting_signal": "current detail page; listed 2026-09-02",
+      "notes": "higher wage but office role; must stay outside physical light-work same-job candidates"
+    },
+    {
+      "id": "TS260708244",
+      "company": "パーソルテンプスタッフ",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260708244/",
+      "city": "大田区",
+      "station": "流通センター",
+      "walk_minutes": 1,
+      "shift": "day",
+      "hours": "09:00-18:00",
+      "base_hourly": 1750,
+      "role": "physical",
+      "product": "トレカ",
+      "tasks": ["開梱", "検品", "撮影", "ケース封入", "梱包", "発送", "入力"],
+      "posting_signal": "current detail page; listed 2026-09-04",
+      "notes": "strong day-shift physical benchmark"
+    },
+    {
+      "id": "TS260679313",
+      "company": "パーソルテンプスタッフ",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260679313/",
+      "city": "大田区",
+      "station": "流通センター",
+      "walk_minutes": 1,
+      "shift": "day",
+      "hours": "09:00-18:00",
+      "base_hourly": 1450,
+      "role": "mixed",
+      "product": "トレカ",
+      "tasks": ["梱包", "撮影", "入力"],
+      "posting_signal": "current detail page",
+      "notes": "same workplace/product but lower wage and mixed task composition; useful non-winner/control candidate"
+    }
+  ],
+  "findings": [
+    "Night current benchmark contains a 1900 base / 2375 night-premium range; low value is the comparison wage.",
+    "Same station and same product can include 1950 office work, so role/task separation is mandatory.",
+    "Day and night versions must remain separate even when tasks and wages are similar.",
+    "Live-search adapters may provide only raw page/snippet text; pipeline now needs to infer company/city/station/shift/product/role/tasks before same-work scoring."
+  ]
+}
