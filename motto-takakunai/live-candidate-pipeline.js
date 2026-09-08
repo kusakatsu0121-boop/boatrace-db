@@ -15,13 +15,11 @@ import {
 export function normalizeBaseHourlyStrict(input = '') {
   const s = normalizeText(input).replace(/,/g, '');
 
-  // Explicit base/normal wage wins even if a headline mentions a higher night wage.
   const explicit = s.match(/(?:基本時給|通常時給)\s*[:：]?\s*(\d{3,4})(?:\s*円)?/);
   if (explicit) {
     return { baseHourly: Number(explicit[1]), confidence: 0.99, reason: 'explicit_base_hourly' };
   }
 
-  // A range close to x1.25 is a common base + statutory night-premium display.
   const range = s.match(/時給\s*[:：]?\s*(\d{3,4})\s*(?:円)?\s*[～~-]\s*(\d{3,4})(?:\s*円)?/);
   if (range) {
     const low = Number(range[1]);
@@ -35,11 +33,11 @@ export function normalizeBaseHourlyStrict(input = '') {
 
   const matches = [...s.matchAll(/時給\s*[:：]?\s*(\d{3,4})(?:\s*円)?/g)];
   for (const m of matches) {
-    const before = s.slice(Math.max(0, m.index - 32), m.index);
-    // Only reject a wage when the wage itself is explicitly labelled as a premium.
-    // A valid base wage is often followed later by "22時～翌5時は25%割増"; that
-    // downstream note must not invalidate the preceding base hourly amount.
-    if (/深夜|夜間|割増|22時|翌\s*5時|25%/.test(before)) continue;
+    // Judge only the immediate label attached to this wage. Looking too far back can
+    // make an earlier headline such as "深夜時給2000円" incorrectly poison a later
+    // legitimate "給与 時給1600円" in the same posting.
+    const immediateBefore = s.slice(Math.max(0, m.index - 10), m.index);
+    if (/(?:深夜|夜間|割増)\s*$|(?:22時|翌\s*5時|25%)\s*[^\s]{0,4}$/.test(immediateBefore)) continue;
     return { baseHourly: Number(m[1]), confidence: 0.95, reason: 'non_premium_hourly' };
   }
 
@@ -146,8 +144,6 @@ export function prepareLiveCandidate(raw = {}, now = new Date()) {
   const posting = classifyPostingStatus(rawText || raw.statusText || '', now);
   const inferred = inferCandidateFields(raw);
 
-  // A search/browser adapter may have opened the detail URL and verified it moments ago.
-  // This can upgrade only an uncertain/recheck page. Explicit ended markers always win.
   const manuallyVerifiedActive = posting.status !== 'ended' && freshManualVerification(raw, now);
   const postingStatus = manuallyVerifiedActive ? 'active' : posting.status;
   const postingConfidence = manuallyVerifiedActive ? Math.max(posting.confidence, 0.98) : posting.confidence;
@@ -168,7 +164,6 @@ export function prepareLiveCandidate(raw = {}, now = new Date()) {
 export function compareLiveCandidates(baseJob, rawCandidates = [], now = new Date()) {
   const prepared = rawCandidates.map(row => prepareLiveCandidate(row, now));
 
-  // Hard trust gates: only active pages with a verified base hourly wage can win.
   const trusted = prepared.filter(row =>
     row.postingStatus === 'active' &&
     Number.isFinite(row.baseHourly) &&
@@ -181,7 +176,6 @@ export function compareLiveCandidates(baseJob, rawCandidates = [], now = new Dat
     sameWorkReasons: comparisonEvidence(baseJob, row)
   }));
 
-  // 70 is a candidate threshold, not a claim of identity. UI still exposes 0-99 + reasons.
   const sameWorkCandidates = withRates.filter(row => row.sameWorkRate >= 70);
   const crossMediaDeduped = dedupeCrossMedia(sameWorkCandidates);
   const perCompany = chooseBestPerCompany(crossMediaDeduped);
