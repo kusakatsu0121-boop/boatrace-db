@@ -1,0 +1,47 @@
+{
+  "captured_at": "2026-09-09T03:56:20+09:00",
+  "purpose": "search-adapter input snapshot; fresh pages verified from current web search results",
+  "candidates": [
+    {
+      "id": "RANDSTAD-RYUTSU-NIGHT-1750",
+      "url": "https://www.randstad.co.jp/factory/r032701/kj108/",
+      "company": "ランスタッド",
+      "activeVerified": true,
+      "verifiedAt": "2026-09-09T03:56:20+09:00",
+      "sourcePriority": 3,
+      "rawText": "給与 時給1,750円。東京都大田区平和島、東京モノレール流通センター駅徒歩5分。トレカのケースセット・仕分け・ピッキング・梱包・マシンオペレーター・検品。派遣。夜勤、22時〜翌5時は深夜手当で時給2,188円。WEBから応募する。"
+    },
+    {
+      "id": "TEMPSTAFF-TS260719667-DAY-1450",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260719667/",
+      "company": "パーソルテンプスタッフ",
+      "activeVerified": true,
+      "verifiedAt": "2026-09-09T03:56:20+09:00",
+      "sourcePriority": 3,
+      "rawText": "勤務地 東京都大田区。東京モノレール流通センター駅徒歩1分。期間2026年10月上旬〜長期。就業時間9:00〜18:00。給与 時給1,450円〜1,450円、通勤交通費全額支給。職種 軽作業／データエントリー業務。トレーディングカード関連。掲載中。"
+    },
+    {
+      "id": "TEMPSTAFF-TS260718012-DAY-1840",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260718012/",
+      "company": "パーソルテンプスタッフ",
+      "activeVerified": true,
+      "verifiedAt": "2026-09-09T03:56:20+09:00",
+      "sourcePriority": 3,
+      "rawText": "勤務地 東京都大田区。東京モノレール流通センター駅徒歩5分。期間2026年10月上旬〜長期。就業時間9:00〜18:00、8:00〜17:00も相談可。給与 時給1,840円〜1,840円、通勤交通費全額支給。職種 軽作業／データエントリー業務。内容 軽作業＆ちょこっと事務、資材の発注。掲載中。"
+    },
+    {
+      "id": "TEMPSTAFF-TS260701398-OFFICE-1950",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-51/TS260701398/",
+      "company": "パーソルテンプスタッフ",
+      "activeVerified": true,
+      "verifiedAt": "2026-09-09T03:56:20+09:00",
+      "sourcePriority": 3,
+      "rawText": "東京都大田区、東京モノレール流通センター駅徒歩2分。2026年10月上旬〜長期。9:00〜18:00。給与 時給1,950円〜1,950円、交通費全額支給。一般事務・OA事務。トレカに関する事務サポート、問い合わせ対応、郵送キット発送手配、申込書の不備連絡・チェック。掲載開始日2026/09/02。"
+    }
+  ],
+  "notes": [
+    "1450/1840/1950 are same station and day shift but not automatically the same job; 1950 is office-role negative control.",
+    "1750 night candidate contains 2188 night-premium amount and is a base-wage normalization regression sample.",
+    "This snapshot is adapter input data, not a permanent jobs database. Freshness must be reverified before ranking in later runs."
+  ]
+}
