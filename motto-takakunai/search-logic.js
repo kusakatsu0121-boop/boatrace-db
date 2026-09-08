@@ -97,8 +97,6 @@ export function generateSearchQueries(job) {
   const top2 = tasks.slice(0, 2).join(' ');
   const top3 = tasks.slice(0, 3).join(' ');
 
-  // Deliberately mix precise and broad queries. Precise queries recover duplicate media;
-  // broad queries discover competing staffing companies that a company-name query misses.
   const raw = [
     [station, product, top2, '派遣 時給'].join(' '),
     [station, product, shiftWord, '派遣'].join(' '),
@@ -151,6 +149,28 @@ function taskSimilarity(a, b) {
   if (!A.size || !B.size) return 0;
   const inter = [...A].filter(x => B.has(x)).length;
   return (2 * inter) / (A.size + B.size);
+}
+
+export function periodClass(input = '') {
+  const s = normalizeText(input);
+  if (!s || /未取得|未確認|記載なし/.test(s)) return 'unknown';
+  if (/長期|\d+\s*(?:か月|ヶ月|ヵ月|カ月|月)\s*以上/.test(s)) return 'long';
+  if (/短期|\d+\s*(?:か月|ヶ月|ヵ月|カ月|月)\s*以内/.test(s)) return 'short';
+  return 'unknown';
+}
+
+export function comparePeriod(basePeriod = '', candidatePeriod = '') {
+  const baseClass = periodClass(basePeriod);
+  const candidateClass = periodClass(candidatePeriod);
+  if (baseClass === 'unknown' || candidateClass === 'unknown') {
+    return { relation: 'unknown', penalty: 0, baseClass, candidateClass };
+  }
+  if (baseClass === candidateClass) {
+    return { relation: 'same', penalty: 0, baseClass, candidateClass };
+  }
+  // Period wording is supporting evidence only. A short/long mismatch must never
+  // override strong workplace, shift and task matches by itself.
+  return { relation: 'different', penalty: 5, baseClass, candidateClass };
 }
 
 export function crossMediaFingerprint(job) {
@@ -227,8 +247,10 @@ export function sameWorkRate(a, b) {
   const shiftConflict = shiftA !== 'unknown' && shiftB !== 'unknown' && shiftA !== shiftB;
   const sameProduct = a.product && b.product && normalizeText(a.product) === normalizeText(b.product);
   const roleConflict = a.role && b.role && a.role !== 'mixed' && b.role !== 'mixed' && a.role !== b.role;
+  const period = comparePeriod(a.period || '', b.period || '');
 
   let score = (sameStation ? 30 : sameCity ? 14 : 0) + (sameShift ? 20 : 0) + (sameProduct ? 15 : 0) + f1 * 35;
+  score -= period.penalty;
   if (shiftConflict) score = Math.min(score, 39);
   else if (!sameShift) score = Math.min(score, 59);
   if (!sameProduct) score = Math.min(score, 49);
@@ -247,9 +269,11 @@ export function chooseBestPerCompany(rows = []) {
     groups.set(key, group);
   }
   return [...groups.values()].map(group => {
+    // One company = one row, but first preserve the candidate that is most likely
+    // to be the same actual work. Only then use pay as the tie-breaker.
     group.sort((a, b) =>
-      (b.baseHourly || 0) - (a.baseHourly || 0) ||
       (b.sameWorkRate || 0) - (a.sameWorkRate || 0) ||
+      (b.baseHourly || 0) - (a.baseHourly || 0) ||
       (Number(b.sourcePriority || 0) - Number(a.sourcePriority || 0))
     );
     return { ...group[0], sameCompanyCandidateCount: group.length };
