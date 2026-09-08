@@ -36,9 +36,10 @@ export function normalizeBaseHourlyStrict(input = '') {
   const matches = [...s.matchAll(/時給\s*[:：]?\s*(\d{3,4})(?:\s*円)?/g)];
   for (const m of matches) {
     const before = s.slice(Math.max(0, m.index - 32), m.index);
-    const after = s.slice(m.index, Math.min(s.length, m.index + 48));
+    // Only reject a wage when the wage itself is explicitly labelled as a premium.
+    // A valid base wage is often followed later by "22時～翌5時は25%割増"; that
+    // downstream note must not invalidate the preceding base hourly amount.
     if (/深夜|夜間|割増|22時|翌\s*5時|25%/.test(before)) continue;
-    if (/深夜(?:帯)?は?\s*\d{3,4}|22時.*25%|25%.*割増/.test(after) && matches.length === 1) continue;
     return { baseHourly: Number(m[1]), confidence: 0.95, reason: 'non_premium_hourly' };
   }
 
