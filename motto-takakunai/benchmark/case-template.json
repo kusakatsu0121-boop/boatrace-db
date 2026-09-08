@@ -1,0 +1,52 @@
+{
+  "case_id": "CASE-001",
+  "tested_at": "2026-09-09T00:00:00+09:00",
+  "occupation_group": "warehouse_lightwork",
+  "difficulty": "normal",
+  "source_job": {
+    "url": "",
+    "evidence": "",
+    "company": "",
+    "base_hourly_wage": null,
+    "location": "",
+    "nearest_station": "",
+    "shift": "day",
+    "period": "",
+    "employment_type": "派遣",
+    "tasks": []
+  },
+  "ground_truth": {
+    "has_higher_same_job": null,
+    "best_verified_hourly_wage": null,
+    "best_verified_url": "",
+    "verified_active": null,
+    "notes": ""
+  },
+  "results": {
+    "motto_takakunai": {
+      "found_higher_same_job": null,
+      "found_hourly_wage": null,
+      "found_url": "",
+      "active_verified": null,
+      "false_same_job_count": 0,
+      "ended_job_count": 0,
+      "base_wage_correct": null,
+      "same_job_rate": null,
+      "same_job_reasons": {
+        "location_match": null,
+        "station_match": null,
+        "workplace_match": null,
+        "shift_match": null,
+        "task_match": null,
+        "period_match": null,
+        "employment_match": null
+      },
+      "clicks": null,
+      "elapsed_seconds": null,
+      "notes": ""
+    },
+    "chatgpt": {},
+    "gemini": {},
+    "perplexity": {}
+  }
+}
