@@ -1,0 +1,31 @@
+{
+  "verified_at": "2026-09-09T06:53:48+09:00",
+  "purpose": "fresh real-job validation for public live comparison logic",
+  "cases": [
+    {
+      "id": "randstad-ffbs112655",
+      "url": "https://www.randstad.co.jp/factory/detail/wnFFBS112655/",
+      "observed": {"headline_premium_hourly": 1750, "base_hourly": 1400, "station": "南船橋", "shift": "night", "employment": "派遣"},
+      "expected_behavior": "normalize to 1400, reject as same job for Ryutsu Center due station/city mismatch"
+    },
+    {
+      "id": "randstad-fnbs103765",
+      "url": "https://www.randstad.co.jp/factory/detail/wnFNBS103765/",
+      "observed": {"headline_premium_hourly": 1750, "base_hourly": 1400, "shift": "night", "employment": "派遣", "work": "coin sorting/sealing"},
+      "expected_behavior": "normalize to 1400; do not confuse night premium headline with base hourly"
+    },
+    {
+      "id": "tempstaff-ts260719667",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260719667/",
+      "observed": {"base_hourly": 1450, "station": "流通センター", "shift": "day", "employment": "派遣", "work": "light work/data entry"},
+      "expected_behavior": "exclude from night comparison because shift differs"
+    },
+    {
+      "id": "randstad-ffbs112427",
+      "url": "https://www.randstad.co.jp/factory/detail/wnFFBS112427/",
+      "observed": {"base_hourly": 1500, "station": "新習志野", "shift": "day", "employment": "派遣", "work": "food scan/inspection"},
+      "expected_behavior": "reject due different station/product/shift relative to Ryutsu Center night trading-card job"
+    }
+  ],
+  "notes": "All four pages were returned as current/active by web retrieval on 2026-09-09. This file is evidence only; candidates are not promoted into highest-wage results unless their own fresh verification and same-work checks pass."
+}
