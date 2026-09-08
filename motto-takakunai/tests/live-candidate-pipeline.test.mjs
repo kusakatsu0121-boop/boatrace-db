@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { normalizeBaseHourlyStrict, compareLiveCandidates, inferCandidateFields, prepareLiveCandidate } from '../live-candidate-pipeline.js';
 
 // Real-world pattern: headline advertises night premium first, body states base wage later.
@@ -94,13 +95,30 @@ const result = compareLiveCandidates(base, [
 ], new Date('2026-09-09T01:00:00+09:00'));
 
 assert.equal(result.preparedCount, 4);
-assert.equal(result.trustedCount, 3); // ended A row is rejected before ranking
-assert.ok(result.companyCount >= 1); // day-shift B cannot become same-work winner
+assert.equal(result.trustedCount, 3);
+assert.ok(result.companyCount >= 1);
 assert.equal(result.bestHigher.baseHourly, 1900);
 assert.ok(result.bestHigher.sameWorkRate < 100);
 assert.equal(result.bestHigher.sameWorkReasons.stationMatch, true);
 assert.equal(result.bestHigher.sameWorkReasons.shiftMatch, true);
 assert.ok(result.bestHigher.sameWorkReasons.commonTaskCount >= 2);
 assert.equal(result.rejectionSummary.ended, 1);
+
+// Fresh live snapshot regression: current Ryutsu Center night trading-card base 1750
+// must surface a verified 1900 candidate, while office/day/food/other-city rows cannot win.
+const liveSnapshot = JSON.parse(fs.readFileSync(new URL('../live-candidates.json', import.meta.url), 'utf8'));
+const snapshotResult = compareLiveCandidates(base, liveSnapshot.candidates, new Date('2026-09-09T06:00:00+09:00'));
+assert.equal(snapshotResult.preparedCount, 7);
+assert.ok(snapshotResult.trustedCount >= 7);
+assert.equal(snapshotResult.bestHigher.baseHourly, 1900);
+assert.ok(snapshotResult.bestHigher.sameWorkRate >= 70 && snapshotResult.bestHigher.sameWorkRate <= 99);
+assert.equal(snapshotResult.bestHigher.sameWorkReasons.stationMatch, true);
+assert.equal(snapshotResult.bestHigher.sameWorkReasons.shiftMatch, true);
+assert.ok(snapshotResult.candidates.every(x => x.sameWorkRate <= 99));
+assert.ok(!snapshotResult.candidates.some(x => x.id === 'TS260701398')); // day office 1950
+assert.ok(!snapshotResult.candidates.some(x => x.id === 'RANDSTAD-FTKB109739')); // food packing 1600
+assert.ok(!snapshotResult.candidates.some(x => x.id === 'RANDSTAD-FFBS112655')); // different city/station
+assert.equal(normalizeBaseHourlyStrict(liveSnapshot.candidates.find(x => x.id === 'RANDSTAD-FTKB109739').rawText).baseHourly, 1600);
+assert.equal(normalizeBaseHourlyStrict(liveSnapshot.candidates.find(x => x.id === 'RANDSTAD-FFBS112655').rawText).baseHourly, 1400);
 
 console.log('live candidate pipeline regression: OK');
