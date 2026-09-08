@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 const cases = JSON.parse(fs.readFileSync(new URL('./cases.json', import.meta.url), 'utf8'));
 const services = ['motto_takakunai', 'chatgpt', 'gemini', 'perplexity'];
+const scoredCases = cases.filter(c => c?.scored === true);
 
 function scoreResult(r = {}) {
   let score = 0;
@@ -16,6 +17,47 @@ function pct(n, d) {
   return d ? Math.round((n / d) * 1000) / 10 : null;
 }
 
+function avg(values) {
+  return values.length ? Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10 : null;
+}
+
+function metricPass(value, op, threshold) {
+  if (value == null) return false;
+  return op === '>=' ? value >= threshold : value <= threshold;
+}
+
+function gateForMotto(stats) {
+  const n = stats.tested_cases;
+  if (n < 10) return { stage: 'COLLECTING', verdict: 'CONTINUE', reason: `${10 - n} scored cases until first gate` };
+
+  if (stats.ended_job_count > 0) {
+    return {
+      stage: n >= 30 ? 'CASE-30' : n >= 20 ? 'CASE-20' : 'CASE-10',
+      verdict: 'STATUS_LOGIC_REVIEW',
+      reason: `ended jobs presented: ${stats.ended_job_count}; final pass requires zero`
+    };
+  }
+
+  if (n >= 30) {
+    const pass = metricPass(stats.higher_same_job_recall_pct, '>=', 65)
+      && metricPass(stats.false_same_job_rate_pct, '<=', 10)
+      && metricPass(stats.base_wage_accuracy_pct, '>=', 95);
+    return { stage: 'CASE-30', verdict: pass ? 'PASS' : 'FAIL_OR_PIVOT', reason: pass ? 'all final thresholds met' : 'one or more final thresholds missed' };
+  }
+
+  if (n >= 20) {
+    const pass = metricPass(stats.higher_same_job_recall_pct, '>=', 60)
+      && metricPass(stats.false_same_job_rate_pct, '<=', 12)
+      && metricPass(stats.base_wage_accuracy_pct, '>=', 90);
+    return { stage: 'CASE-20', verdict: pass ? 'GO' : 'REVIEW_OR_PIVOT', reason: pass ? 'all CASE-20 thresholds met' : 'one or more CASE-20 thresholds missed' };
+  }
+
+  const pass = metricPass(stats.higher_same_job_recall_pct, '>=', 50)
+    && metricPass(stats.false_same_job_rate_pct, '<=', 20)
+    && metricPass(stats.base_wage_accuracy_pct, '>=', 85);
+  return { stage: 'CASE-10', verdict: pass ? 'GO' : 'LOGIC_REVIEW', reason: pass ? 'all CASE-10 thresholds met' : 'one or more CASE-10 thresholds missed' };
+}
+
 const out = {};
 for (const service of services) {
   let score = 0;
@@ -27,15 +69,16 @@ for (const service of services) {
   let ended = 0;
   let wageChecks = 0;
   let wageCorrect = 0;
-  const clicks = [];
-  const times = [];
+  const t1 = [];
+  const t2 = [];
+  const t3 = [];
 
-  for (const c of cases) {
+  for (const c of scoredCases) {
     const r = c?.results?.[service];
     if (!r || !Object.keys(r).length) continue;
     score += scoreResult(r);
 
-    if (c?.ground_truth?.has_higher_same_job === true) {
+    if (c?.ground_truth?.status === 'exists') {
       gtHigher++;
       if (r.found_higher_same_job === true && r.active_verified === true) foundHigher++;
     }
@@ -49,20 +92,32 @@ for (const service of services) {
       wageChecks++;
       if (r.base_wage_correct === true) wageCorrect++;
     }
-    if (Number.isFinite(r.clicks)) clicks.push(r.clicks);
-    if (Number.isFinite(r.elapsed_seconds)) times.push(r.elapsed_seconds);
+    if (Number.isFinite(r.t1_result_seconds)) t1.push(r.t1_result_seconds);
+    if (Number.isFinite(r.t2_open_clicks)) t2.push(r.t2_open_clicks);
+    if (Number.isFinite(r.t3_total_seconds)) t3.push(r.t3_total_seconds);
   }
 
   out[service] = {
     score,
-    tested_cases: cases.filter(c => c?.results?.[service] && Object.keys(c.results[service]).length).length,
+    tested_cases: scoredCases.filter(c => c?.results?.[service] && Object.keys(c.results[service]).length).length,
+    ground_truth_positive_cases: gtHigher,
     higher_same_job_recall_pct: pct(foundHigher, gtHigher),
     false_same_job_rate_pct: pct(falseSame, candidateCount),
     ended_job_rate_pct: pct(ended, highCandidateCount),
+    ended_job_count: ended,
     base_wage_accuracy_pct: pct(wageCorrect, wageChecks),
-    avg_clicks: clicks.length ? Math.round((clicks.reduce((a,b)=>a+b,0)/clicks.length)*10)/10 : null,
-    avg_elapsed_seconds: times.length ? Math.round((times.reduce((a,b)=>a+b,0)/times.length)*10)/10 : null
+    avg_t1_result_seconds: avg(t1),
+    avg_t2_open_clicks: avg(t2),
+    avg_t3_total_seconds: avg(t3)
   };
 }
 
+const mottoGate = gateForMotto(out.motto_takakunai);
+
 console.table(out);
+console.log('\nMotto Takakunai gate:');
+console.log(mottoGate);
+
+if (mottoGate.verdict === 'STATUS_LOGIC_REVIEW' || mottoGate.verdict === 'FAIL_OR_PIVOT') {
+  process.exitCode = 2;
+}
