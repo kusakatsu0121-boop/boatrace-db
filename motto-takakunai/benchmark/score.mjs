@@ -28,15 +28,18 @@ function metricPass(value, op, threshold) {
 
 function gateForMotto(stats) {
   const n = stats.tested_cases;
-  if (n < 10) return { stage: 'COLLECTING', verdict: 'CONTINUE', reason: `${10 - n} scored cases until first gate` };
 
+  // 掲載終了の提示は、正式CASEで1件でも発生した時点で即レビュー対象。
+  // CASE-10/20/30の総合点や他KPIで相殺しない。
   if (stats.ended_job_count > 0) {
     return {
-      stage: n >= 30 ? 'CASE-30' : n >= 20 ? 'CASE-20' : 'CASE-10',
+      stage: n >= 30 ? 'CASE-30' : n >= 20 ? 'CASE-20' : n >= 10 ? 'CASE-10' : 'EARLY',
       verdict: 'STATUS_LOGIC_REVIEW',
       reason: `ended jobs presented: ${stats.ended_job_count}; final pass requires zero`
     };
   }
+
+  if (n < 10) return { stage: 'COLLECTING', verdict: 'CONTINUE', reason: `${10 - n} scored cases until first gate` };
 
   if (n >= 30) {
     const pass = metricPass(stats.higher_same_job_recall_pct, '>=', 65)
