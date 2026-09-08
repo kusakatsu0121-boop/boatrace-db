@@ -61,50 +61,82 @@
       "search_minutes": null,
       "searched_sources": ["tempstaff.co.jp", "townwork.net", "simplyhired.jp", "haken.en-japan.com", "randstad.co.jp"],
       "verified_candidates": [
-        {
-          "company": "パーソルテンプスタッフ",
-          "hourly_wage": 1900,
-          "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260688948/",
-          "active": true,
-          "same_job_reason": "同じ流通センター、09:00-18:00、トレカ軽作業。ケース梱包・チェック・機械セットで作業系列が近い。"
-        }
+        {"company":"パーソルテンプスタッフ","hourly_wage":1900,"url":"https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260688948/","active":true,"same_job_reason":"同じ流通センター、09:00-18:00、トレカ軽作業。ケース梱包・チェック・機械セットで作業系列が近い。"}
       ],
       "best_verified_hourly_wage": 1900,
       "best_verified_url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260688948/",
       "notes": "調整CASE。1,900円案件は別媒体にも転載があり重複統合の検証材料。1,950円の同駅トレカ求人は一般事務のため別仕事として除外対象。探索時間は厳密計測していないためnull。"
     },
     "results": {
+      "motto_takakunai": {"found_higher_same_job":false,"found_hourly_wage":null,"found_url":"","active_verified":null,"presented_candidate_count":0,"presented_higher_candidate_count":0,"false_same_job_count":0,"ended_job_count":0,"base_wage_correct":true,"same_job_rate":null,"same_job_reasons":{},"t1_result_seconds":null,"t2_open_clicks":null,"t3_total_seconds":null,"notes":"現行公開UIは固定RAWで日勤1,900円TS260688948を持たないため未発見。今回作成したlive候補スナップショットには追加済みだが、公開UI接続前なのでここでは公開版結果として×を記録。"},
+      "chatgpt": {"found_higher_same_job":true,"found_hourly_wage":1900,"found_url":"https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260688948/","active_verified":true,"presented_candidate_count":1,"presented_higher_candidate_count":1,"false_same_job_count":0,"ended_job_count":0,"base_wage_correct":true,"t1_result_seconds":null,"t2_open_clicks":null,"t3_total_seconds":null,"notes":"同時点Web検索で時給1,900円の現行詳細ページを確認。1,950円一般事務は別仕事として採用しなかった。"},
+      "gemini": {}, "perplexity": {}
+    }
+  },
+  {
+    "case_id": "CASE-003",
+    "tested_at": "2026-09-09T04:58:00+09:00",
+    "scored": false,
+    "selection_mode": "rotation",
+    "occupation_group": "warehouse_lightwork",
+    "difficulty": "normal",
+    "source_job": {
+      "url": "https://townwork.net/prefectures/tokyo/job_search/ma-013001/sa-013001011/kw/%E3%83%88%E3%83%AC%E3%82%AB/",
+      "evidence": "Current search result: Randstad day-shift trading-card work, Ryutsu Center 5 min, base hourly 1750, 09:00-18:00.",
+      "company": "ランスタッド",
+      "base_hourly_wage": 1750,
+      "location": "東京都大田区",
+      "nearest_station": "流通センター",
+      "shift": "day",
+      "period": "長期",
+      "employment_type": "派遣",
+      "tasks": ["ケース収納", "検品", "撮影"]
+    },
+    "ground_truth": {
+      "status": "exists",
+      "search_minutes": null,
+      "searched_sources": ["townwork.net", "simplyhired.jp", "haken.rikunabi.com", "tempstaff.co.jp"],
+      "verified_candidates": [
+        {"company":"パーソルフィールドスタッフ","hourly_wage":1900,"url":"https://www.simplyhired.jp/job/yVufhvTyJzO1lROgQDYrtTOyWmSFIHm5hIf8NhNeYF4piA5H3gywmw","active":true,"same_job_reason":"流通センター徒歩3分、9:00-18:00、トレカをケースへ収納しズレ・折れをチェック。"},
+        {"company":"パーソルフィールドスタッフ","hourly_wage":1900,"url":"https://townwork.net/viewjob/jobid_04733e405b968431/","active":true,"same_job_reason":"同じ会社・同じ駅・同じ9:00-18:00・同じケース収納系。転載重複として扱う。"},
+        {"company":"パーソルフィールドスタッフ","hourly_wage":1900,"url":"https://townwork.net/prefectures/tokyo/job_search/ma-013001/sa-013001011/oc-004/omc-0145/prf-0404/","active":true,"same_job_reason":"同じ会社・同じ駅・同じ日勤・ラベル貼付/ケース封入/検品。転載重複候補。"}
+      ],
+      "best_verified_hourly_wage": 1900,
+      "best_verified_url": "https://www.simplyhired.jp/job/yVufhvTyJzO1lROgQDYrtTOyWmSFIHm5hIf8NhNeYF4piA5H3gywmw",
+      "notes": "調整CASEの最終件。1,900円が複数媒体に見えるが、同一派遣元・同一駅・同一時間・同一作業系列のためユニーク求人は1件として評価。1,950円の一般事務はGround Truthから除外。"
+    },
+    "results": {
       "motto_takakunai": {
-        "found_higher_same_job": false,
-        "found_hourly_wage": null,
-        "found_url": "",
-        "active_verified": null,
-        "presented_candidate_count": 0,
-        "presented_higher_candidate_count": 0,
-        "false_same_job_count": 0,
-        "ended_job_count": 0,
-        "base_wage_correct": true,
-        "same_job_rate": null,
-        "same_job_reasons": {},
-        "t1_result_seconds": null,
-        "t2_open_clicks": null,
-        "t3_total_seconds": null,
-        "notes": "現行公開UIは固定RAWで日勤1,900円TS260688948を持たないため未発見。今回作成したlive候補スナップショットには追加済みだが、公開UI接続前なのでここでは公開版結果として×を記録。"
-      },
-      "chatgpt": {
         "found_higher_same_job": true,
         "found_hourly_wage": 1900,
-        "found_url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260688948/",
+        "found_url": "https://www.simplyhired.jp/job/yVufhvTyJzO1lROgQDYrtTOyWmSFIHm5hIf8NhNeYF4piA5H3gywmw",
         "active_verified": true,
         "presented_candidate_count": 1,
         "presented_higher_candidate_count": 1,
         "false_same_job_count": 0,
         "ended_job_count": 0,
         "base_wage_correct": true,
+        "same_job_rate": 99,
+        "same_job_reasons": {"station_match":true,"shift_match":true,"product_match":true,"role_match":true,"duplicate_sources":3},
         "t1_result_seconds": null,
         "t2_open_clicks": null,
         "t3_total_seconds": null,
-        "notes": "同時点Web検索で時給1,900円の現行詳細ページを確認。1,950円一般事務は別仕事として採用しなかった。"
+        "notes": "公開UIではなく、今回作成したlive-candidate snapshotを現行pipelineへ通した調整結果。3媒体の1,900円候補を1件へ統合し、1,950円一般事務と南船橋別求人は除外する回帰テストを追加。"
+      },
+      "chatgpt": {
+        "found_higher_same_job": true,
+        "found_hourly_wage": 1900,
+        "found_url": "https://www.simplyhired.jp/job/yVufhvTyJzO1lROgQDYrtTOyWmSFIHm5hIf8NhNeYF4piA5H3gywmw",
+        "active_verified": true,
+        "presented_candidate_count": 3,
+        "presented_higher_candidate_count": 3,
+        "false_same_job_count": 0,
+        "ended_job_count": 0,
+        "base_wage_correct": true,
+        "t1_result_seconds": null,
+        "t2_open_clicks": null,
+        "t3_total_seconds": null,
+        "notes": "Web検索では1,900円の同系案件を複数媒体で発見。媒体重複は手動で同一系列と判定。"
       },
       "gemini": {}, "perplexity": {}
     }
