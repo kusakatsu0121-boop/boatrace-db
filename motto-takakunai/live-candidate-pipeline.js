@@ -112,11 +112,45 @@ export function inferCandidateFields(raw = {}) {
   };
 }
 
+function freshManualVerification(raw = {}, now = new Date()) {
+  if (raw.activeVerified !== true || !raw.verifiedAt) return false;
+  const verifiedAt = new Date(raw.verifiedAt);
+  if (Number.isNaN(verifiedAt.getTime())) return false;
+  const ageMs = now.getTime() - verifiedAt.getTime();
+  return ageMs >= -5 * 60 * 1000 && ageMs <= 24 * 60 * 60 * 1000;
+}
+
+function comparisonEvidence(base = {}, row = {}) {
+  const baseTasks = new Set(canonicalizeTasks(base.tasks || [], base.rawText || ''));
+  const rowTasks = new Set(canonicalizeTasks(row.tasks || [], row.rawText || ''));
+  const commonTasks = [...baseTasks].filter(task => rowTasks.has(task));
+  const normalize = value => normalizeText(value || '');
+  const roleConflict = !!base.role && !!row.role && base.role !== 'mixed' && row.role !== 'mixed' && base.role !== row.role;
+  return {
+    cityMatch: !!base.city && !!row.city && normalize(base.city) === normalize(row.city),
+    stationMatch: !!base.station && !!row.station && normalize(base.station) === normalize(row.station),
+    shiftMatch: !!base.shift && base.shift !== 'unknown' && base.shift === row.shift,
+    productMatch: !!base.product && !!row.product && normalize(base.product) === normalize(row.product),
+    roleMatch: !roleConflict,
+    commonTasks,
+    commonTaskCount: commonTasks.length,
+    baseTaskCount: baseTasks.size,
+    candidateTaskCount: rowTasks.size
+  };
+}
+
 export function prepareLiveCandidate(raw = {}, now = new Date()) {
   const rawText = String(raw.rawText || '');
   const wage = normalizeBaseHourlyStrict(rawText || raw.wageText || '');
   const posting = classifyPostingStatus(rawText || raw.statusText || '', now);
   const inferred = inferCandidateFields(raw);
+
+  // A search/browser adapter may have opened the detail URL and verified it moments ago.
+  // This can upgrade only an uncertain/recheck page. Explicit ended markers always win.
+  const manuallyVerifiedActive = posting.status !== 'ended' && freshManualVerification(raw, now);
+  const postingStatus = manuallyVerifiedActive ? 'active' : posting.status;
+  const postingConfidence = manuallyVerifiedActive ? Math.max(posting.confidence, 0.98) : posting.confidence;
+  const postingReason = manuallyVerifiedActive ? 'fresh_detail_page_verification' : posting.reason;
 
   return {
     ...raw,
@@ -124,9 +158,9 @@ export function prepareLiveCandidate(raw = {}, now = new Date()) {
     baseHourly: wage.baseHourly,
     wageConfidence: wage.confidence,
     wageReason: wage.reason,
-    postingStatus: posting.status,
-    postingConfidence: posting.confidence,
-    postingReason: posting.reason
+    postingStatus,
+    postingConfidence,
+    postingReason
   };
 }
 
@@ -142,7 +176,8 @@ export function compareLiveCandidates(baseJob, rawCandidates = [], now = new Dat
 
   const withRates = trusted.map(row => ({
     ...row,
-    sameWorkRate: sameWorkRate(baseJob, row)
+    sameWorkRate: sameWorkRate(baseJob, row),
+    sameWorkReasons: comparisonEvidence(baseJob, row)
   }));
 
   // 70 is a candidate threshold, not a claim of identity. UI still exposes 0-99 + reasons.
@@ -154,11 +189,19 @@ export function compareLiveCandidates(baseJob, rawCandidates = [], now = new Dat
     .filter(row => row.baseHourly > Number(baseJob.baseHourly || 0))
     .sort((a, b) => b.baseHourly - a.baseHourly || b.sameWorkRate - a.sameWorkRate);
 
+  const rejectionSummary = prepared.reduce((acc, row) => {
+    if (row.postingStatus === 'ended') acc.ended += 1;
+    else if (row.postingStatus !== 'active') acc.statusUnverified += 1;
+    if (!Number.isFinite(row.baseHourly) || row.baseHourly <= 0) acc.wageUnverified += 1;
+    return acc;
+  }, { ended: 0, statusUnverified: 0, wageUnverified: 0 });
+
   return {
     preparedCount: prepared.length,
     trustedCount: trusted.length,
     sameWorkCandidateCount: sameWorkCandidates.length,
     companyCount: perCompany.length,
+    rejectionSummary,
     rejected: prepared.filter(row => row.postingStatus !== 'active' || !Number.isFinite(row.baseHourly)),
     candidates: perCompany.sort((a, b) => b.baseHourly - a.baseHourly || b.sameWorkRate - a.sameWorkRate),
     bestHigher: higher[0] || null
