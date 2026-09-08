@@ -37,10 +37,20 @@
       "verifiedAt": "2026-09-09T03:56:20+09:00",
       "sourcePriority": 3,
       "rawText": "東京都大田区、東京モノレール流通センター駅徒歩2分。2026年10月上旬〜長期。9:00〜18:00。給与 時給1,950円〜1,950円、交通費全額支給。一般事務・OA事務。トレカに関する事務サポート、問い合わせ対応、郵送キット発送手配、申込書の不備連絡・チェック。掲載開始日2026/09/02。"
+    },
+    {
+      "id": "TEMPSTAFF-TS260688948-DAY-1900",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260688948/",
+      "company": "パーソルテンプスタッフ",
+      "activeVerified": true,
+      "verifiedAt": "2026-09-09T03:56:20+09:00",
+      "sourcePriority": 3,
+      "rawText": "東京都大田区、東京モノレール流通センター駅徒歩5分。9:00〜18:00。時給1,900円。軽作業。トレーディングカードのケース梱包、ラベル折り、ケース選択、チェック、機械セット、梱包。掲載開始日2026/08/31。"
     }
   ],
   "notes": [
     "1450/1840/1950 are same station and day shift but not automatically the same job; 1950 is office-role negative control.",
+    "1900 TS260688948 is a current day-shift higher-pay same-work candidate for CASE-002 and also appears via other staffing/repost listings, making it useful for dedupe validation.",
     "1750 night candidate contains 2188 night-premium amount and is a base-wage normalization regression sample.",
     "This snapshot is adapter input data, not a permanent jobs database. Freshness must be reverified before ranking in later runs."
   ]
