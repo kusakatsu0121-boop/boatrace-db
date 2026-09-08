@@ -1,6 +1,8 @@
 {
   "case_id": "CASE-001",
   "tested_at": "2026-09-09T00:00:00+09:00",
+  "scored": false,
+  "selection_mode": "random",
   "occupation_group": "warehouse_lightwork",
   "difficulty": "normal",
   "source_job": {
@@ -16,10 +18,15 @@
     "tasks": []
   },
   "ground_truth": {
-    "has_higher_same_job": null,
+    "status": "unknown",
+    "search_minutes": null,
+    "searched_sources": [],
+    "search_queries": [],
+    "verified_candidates": [],
     "best_verified_hourly_wage": null,
     "best_verified_url": "",
     "verified_active": null,
+    "updated_after_initial_search": false,
     "notes": ""
   },
   "results": {
@@ -28,8 +35,11 @@
       "found_hourly_wage": null,
       "found_url": "",
       "active_verified": null,
+      "presented_candidate_count": 0,
+      "presented_higher_candidate_count": 0,
       "false_same_job_count": 0,
       "ended_job_count": 0,
+      "case_fail_ended": false,
       "base_wage_correct": null,
       "same_job_rate": null,
       "same_job_reasons": {
@@ -41,8 +51,9 @@
         "period_match": null,
         "employment_match": null
       },
-      "clicks": null,
-      "elapsed_seconds": null,
+      "t1_result_seconds": null,
+      "t2_open_clicks": null,
+      "t3_total_seconds": null,
       "notes": ""
     },
     "chatgpt": {},
