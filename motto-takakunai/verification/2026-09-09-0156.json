@@ -1,0 +1,64 @@
+{
+  "verified_at": "2026-09-09T01:56:47+09:00",
+  "purpose": "Live search/pipeline verification after CASE-001 showed fixed RAW misses active higher-paying matches",
+  "findings": [
+    {
+      "type": "night_premium_normalization",
+      "source": "Randstad",
+      "url": "https://www.randstad.co.jp/factory/detail/wnFTKB109739/",
+      "location": "東京都大田区東海 / 流通センター徒歩10分",
+      "displayed_headline": "深夜時給2000円",
+      "base_hourly_wage": 1600,
+      "shift": "night",
+      "employment": "派遣",
+      "status": "active",
+      "lesson": "Headline premium must never override the base wage in the body."
+    },
+    {
+      "type": "different_job_same_station_product",
+      "source": "Persol Tempstaff",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-51/TS260701398/",
+      "location": "東京都大田区 / 流通センター徒歩2分",
+      "base_hourly_wage": 1950,
+      "shift": "day",
+      "employment": "派遣",
+      "role": "office",
+      "tasks": ["問い合わせ対応", "発送手配", "申込書不備確認"],
+      "status": "active",
+      "lesson": "Same station + same trading-card employer context is insufficient; office vs physical role must gate the match."
+    },
+    {
+      "type": "case001_ground_truth",
+      "source": "Persol Field Staff",
+      "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/BR260639739/",
+      "location": "東京都大田区 / 流通センター",
+      "base_hourly_wage": 1900,
+      "shift": "night",
+      "employment": "派遣",
+      "role": "physical",
+      "tasks": ["ケース封入", "チェック", "機械圧着"],
+      "status": "active",
+      "lesson": "This active 1900 yen result is the concrete miss that fixed RAW could not surface in CASE-001."
+    },
+    {
+      "type": "base_reference",
+      "source": "Randstad",
+      "url": "https://www.randstad.co.jp/factory/r032701/kj108/",
+      "location": "東京都大田区 / 流通センター",
+      "base_hourly_wage": 1750,
+      "shift": "night",
+      "employment": "派遣",
+      "role": "physical",
+      "tasks": ["ケースセット", "検品", "梱包"],
+      "status": "active",
+      "lesson": "CASE-001 base reference."
+    }
+  ],
+  "implementation": {
+    "added": [
+      "motto-takakunai/live-candidate-pipeline.js",
+      "motto-takakunai/tests/live-candidate-pipeline.test.mjs"
+    ],
+    "remaining_blocker": "Public index.html still uses fixed RAW candidates. Live web-search adapters are not connected to the UI yet."
+  }
+}
