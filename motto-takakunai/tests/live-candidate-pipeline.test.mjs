@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { normalizeBaseHourlyStrict, compareLiveCandidates, inferCandidateFields } from '../live-candidate-pipeline.js';
+import { normalizeBaseHourlyStrict, compareLiveCandidates, inferCandidateFields, prepareLiveCandidate } from '../live-candidate-pipeline.js';
 
 // Real-world pattern: headline advertises night premium first, body states base wage later.
 assert.deepEqual(
@@ -42,6 +42,23 @@ assert.equal(inferred.role, 'physical');
 assert.ok(inferred.tasks.includes('検品'));
 assert.ok(inferred.tasks.includes('梱包'));
 
+// Search adapters can verify a detail page separately from extracted text.
+const freshVerified = prepareLiveCandidate({
+  rawText: '時給1840円 トレカ 軽作業 データ入力 東京都大田区 流通センター駅 9:00～18:00',
+  activeVerified: true,
+  verifiedAt: '2026-09-09T03:50:00+09:00'
+}, new Date('2026-09-09T03:56:00+09:00'));
+assert.equal(freshVerified.postingStatus, 'active');
+assert.equal(freshVerified.postingReason, 'fresh_detail_page_verification');
+
+// Explicitly ended pages can never be revived by adapter verification.
+const endedVerified = prepareLiveCandidate({
+  rawText: '時給1900円 掲載終了',
+  activeVerified: true,
+  verifiedAt: '2026-09-09T03:55:00+09:00'
+}, new Date('2026-09-09T03:56:00+09:00'));
+assert.equal(endedVerified.postingStatus, 'ended');
+
 const base = {
   city: '大田区',
   station: '流通センター',
@@ -70,7 +87,9 @@ const result = compareLiveCandidates(base, [
     rawText: '時給1950円 応募する'
   },
   {
-    rawText: `会社名 | パーソルテンプスタッフ（株） 勤務地 | 東京都 大田区 東京モノレール 流通センター駅 徒歩3分 期間 | 2026年09月中旬～長期 就業時間 | 20:00～翌5:00 給与 | 時給 1,900円～2,375円 内容 | トレーディングカードの検品・ケース封入・梱包 WEBで応募`
+    rawText: `会社名 | パーソルテンプスタッフ（株） 勤務地 | 東京都 大田区 東京モノレール 流通センター駅 徒歩3分 期間 | 2026年09月中旬～長期 就業時間 | 20:00～翌5:00 給与 | 時給 1,900円～2,375円 内容 | トレーディングカードの検品・ケース封入・梱包`,
+    activeVerified: true,
+    verifiedAt: '2026-09-09T00:55:00+09:00'
   }
 ], new Date('2026-09-09T01:00:00+09:00'));
 
@@ -79,5 +98,9 @@ assert.equal(result.trustedCount, 3); // ended A row is rejected before ranking
 assert.ok(result.companyCount >= 1); // day-shift B cannot become same-work winner
 assert.equal(result.bestHigher.baseHourly, 1900);
 assert.ok(result.bestHigher.sameWorkRate < 100);
+assert.equal(result.bestHigher.sameWorkReasons.stationMatch, true);
+assert.equal(result.bestHigher.sameWorkReasons.shiftMatch, true);
+assert.ok(result.bestHigher.sameWorkReasons.commonTaskCount >= 2);
+assert.equal(result.rejectionSummary.ended, 1);
 
 console.log('live candidate pipeline regression: OK');
