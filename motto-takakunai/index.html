@@ -2,36 +2,24 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>もっと高くない？</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f6f7f8;color:#17181a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
-main{max-width:1100px;margin:auto;padding:18px 14px 70px}.top{font-weight:900}.hero{text-align:center;padding:24px 0 14px}.hero h1{font-size:clamp(34px,8vw,58px);line-height:1.05;margin:0 0 9px}
-.muted{color:#69717c;font-size:13px}.card{background:#fff;border:1px solid #e4e7eb;border-radius:15px;padding:16px;margin-top:14px}
-textarea{width:100%;min-height:145px;border:1px solid #cbd1d8;border-radius:11px;padding:13px;font:inherit;line-height:1.55}
-button{width:100%;border:0;background:#111827;color:#fff;border-radius:10px;padding:14px;font-weight:900;margin-top:9px;cursor:pointer}
-.answer{border:2px solid #a8e2c7;background:#f3fff9}.answer .delta{font-size:34px;font-weight:950;color:#087f5b}.answer .price{font-size:21px;font-weight:900}
-.tableWrap{overflow-x:auto;margin-top:10px;border:1px solid #e4e7eb;border-radius:12px}.compare{border-collapse:collapse;width:100%;min-width:1060px;font-size:13px}
-.compare th,.compare td{padding:11px 10px;border-bottom:1px solid #e9ebee;text-align:left;white-space:nowrap}.compare th{background:#f8f9fa;font-size:11px;color:#69717c;position:sticky;top:0}
-.compare tr:last-child td{border-bottom:0}.money{font-size:18px;font-weight:950}.up{font-weight:900;color:#087f5b}.base{background:#fafafa}.best{background:#f2fff8}.pct{font-weight:900}.work{max-width:290px;white-space:normal!important;line-height:1.35}
-.sectionTitle{font-size:18px;font-weight:950;margin:0}.sectionSub{font-size:12px;color:#69717c;margin-top:3px}.source{font-size:11px}.source a{color:#4b5563}.status{font-size:10px;font-weight:800;color:#8a5a00}
-.warn{font-size:12px;color:#725300;background:#fff8e8;border:1px solid #f2dda0;border-radius:10px;padding:10px;margin-top:10px}.foot{font-size:11px;color:#7b828b;margin-top:12px;line-height:1.55}
-.tag{display:inline-block;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:900;background:#eef2f7;margin-right:4px}.tag.same{background:#def7e8;color:#086b4c}.tag.other{background:#fff1cf;color:#805800}
-@media(max-width:600px){main{padding:15px 10px 60px}.hero{padding:22px 0 12px}.card{padding:13px}.answer .delta{font-size:30px}.tableWrap{margin-left:-13px;margin-right:-13px;border-radius:0;border-left:0;border-right:0}
-.compare th:first-child,.compare td:first-child{position:sticky;left:0;z-index:2;background:#fff;box-shadow:2px 0 4px #0000000b}.compare th:first-child{background:#f8f9fa}.compare .best td:first-child{background:#f2fff8}.compare .base td:first-child{background:#fafafa}}
+*{box-sizing:border-box}body{margin:0;background:#f5f6f7;color:#17181a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}main{max-width:1100px;margin:auto;padding:16px 14px 72px}.top{font-weight:950;font-size:15px}.hero{text-align:center;padding:20px 0 12px}.hero h1{font-size:clamp(34px,8vw,58px);line-height:1.04;margin:0 0 8px;letter-spacing:-.04em}.muted{color:#69717c;font-size:13px;line-height:1.55}.card{background:#fff;border:1px solid #e3e6e9;border-radius:15px;padding:16px;margin-top:13px}.inputCard textarea{width:100%;min-height:132px;border:1px solid #cbd1d8;border-radius:11px;padding:13px;font:inherit;line-height:1.5;resize:vertical}.primary{width:100%;border:0;background:#111827;color:#fff;border-radius:10px;padding:14px;font-weight:900;margin-top:9px;cursor:pointer}.warn{font-size:11px;color:#725300;background:#fff8e8;border:1px solid #f2dda0;border-radius:9px;padding:9px;margin-top:9px;line-height:1.5}.answer{border:2px solid #9bddbf;background:#f3fff9}.answerLabel{font-size:12px;color:#557064;font-weight:800}.answerMain{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:5px}.answer .delta{font-size:36px;font-weight:950;color:#087f5b;line-height:1}.answer .price{font-size:19px;font-weight:900}.answerMeta{font-size:12px;color:#53615b;margin-top:8px;line-height:1.5}.sectionHead{display:flex;justify-content:space-between;gap:8px;align-items:end;margin-bottom:8px}.sectionTitle{font-size:18px;font-weight:950}.sectionSub{font-size:11px;color:#69717c}.desktopTable{overflow-x:auto;border:1px solid #e4e7eb;border-radius:12px}.compare{border-collapse:collapse;width:100%;min-width:940px;font-size:13px}.compare th,.compare td{padding:10px 9px;border-bottom:1px solid #e9ebee;text-align:left;white-space:nowrap}.compare th{background:#f8f9fa;font-size:11px;color:#69717c}.compare tr:last-child td{border-bottom:0}.money{font-size:17px;font-weight:950}.up{font-weight:900;color:#087f5b}.base{background:#fafafa}.best{background:#f2fff8}.pct{font-weight:900}.work{max-width:300px;white-space:normal!important;line-height:1.35}.source{font-size:10px;margin-top:3px}.source a{color:#4b5563}.status{font-size:10px;color:#8a5a00}.tag{display:inline-block;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:900;background:#eef2f7}.tag.same{background:#def7e8;color:#086b4c}.tag.other{background:#fff1cf;color:#805800}.mobileRows{display:none}.mrow{border-top:1px solid #e5e7eb;padding:12px 0}.mrow:first-child{border-top:0}.mrow.best{background:#f3fff9;margin:0 -12px;padding:12px;border-radius:10px}.mrow.base{background:#fafafa;margin:0 -12px;padding:12px;border-radius:10px}.mmetrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:end}.mmetric small{display:block;font-size:10px;color:#7a818a;margin-bottom:2px}.mmetric b{font-size:18px;line-height:1.1}.mmetric .green{color:#087f5b}.mcompany{font-size:12px;font-weight:900;margin-top:9px}.mdetail{font-size:11px;color:#626b75;line-height:1.45;margin-top:4px}.mwork{font-size:12px;font-weight:750;margin-top:4px}.mlink{font-size:10px;color:#5f6872;margin-top:5px}.foot{font-size:11px;color:#7b828b;margin-top:10px;line-height:1.5}.otherBox{background:#fffdf7}
+@media(max-width:640px){main{padding:12px 10px 60px}.hero{padding:18px 2px 10px}.hero h1{font-size:36px}.card{padding:12px;border-radius:13px}.inputCard textarea{min-height:112px;font-size:14px}.warn{font-size:10px}.answerMain{gap:8px}.answer .delta{font-size:32px}.answer .price{font-size:17px}.sectionTitle{font-size:16px}.desktopTable{display:none}.mobileRows{display:block}.sectionHead{align-items:center}.sectionSub{font-size:10px;text-align:right}.otherBox .mrow{opacity:.92}}
 </style>
 </head>
 <body><main>
 <div class="top">もっと高くない？</div>
-<div class="hero"><h1>その求人、<br>もっと高くない？</h1><div class="muted">求人を貼るだけ。同じ仕事は横1列、作業が違う仕事は別枠で比較します。</div></div>
-<section class="card">
+<div class="hero"><h1>その求人、<br>もっと高くない？</h1><div class="muted">求人を貼るだけ。同じ仕事だけを並べて、基本時給を一目で比較。</div></div>
+<section class="card inputCard">
 <textarea id="t">時給1,750円
 東京都大田区 流通センター駅 徒歩5分
 20:00～翌5:00
 トレカの検品、ラベル照合、データ入力
 派遣社員</textarea>
-<button id="b">もっと高い求人を探す</button>
-<div class="warn">検証版です。基本時給で比較し、深夜割増後の金額は基本時給として扱いません。掲載確認日は求人ごとに表示します。</div>
+<button class="primary" id="b">もっと高い求人を探す</button>
+<div class="warn">検証版。深夜割増後ではなく基本時給で比較します。</div>
 </section>
 <div id="o"></div>
 </main>
@@ -48,64 +36,17 @@ const RAW=[
 {id:'TS26-0676022',ag:'パーソルテンプスタッフ',w:1600,city:'江東区',st:'潮見',wa:10,shift:'day',prod:'スマホ',tasks:['情報確認','入力','スキャン','初期化','発送'],role:'mixed',url:'https://www.tempstaff.co.jp/jbch/job/tokyo/13108/sd-51/TS260676022/',verified:'2026-09-08'},
 {id:'TS26-0676018',ag:'パーソルテンプスタッフ',w:1600,city:'江東区',st:'潮見',wa:10,shift:'day',prod:'スマホ',tasks:['返送物確認','入力','梱包','発送'],role:'mixed',url:'https://www.tempstaff.co.jp/jbch/job/tokyo/13108/sd-66/TS260676018/',verified:'2026-09-08'}
 ];
-const aliases={
-検品:['検品','チェック','傷チェック','キズ確認','確認作業'],照合:['照合','ラベルとリスト','間違いがないか確認'],入力:['入力','データ入力','pc入力','フォーマットに入力'],
-梱包:['梱包','箱詰め','段ボールにつめる'],発送:['発送','出荷','送付準備','配送手配'],開梱:['開梱','開封','箱を開け'],撮影:['撮影'],仕分け:['仕分け'],封入:['封入','ケースへ'],入出荷:['入出荷'],
-情報確認:['情報チェック','情報確認'],スキャン:['スキャン','バーコード'],初期化:['初期化'],返送物確認:['返送物のチェック'],問合せ:['問い合わせ','お問い合わせ対応'],発送手配:['発送手配'],不備確認:['不備連絡','不備確認','申込書の不備']
-};
-function dedupKey(j){return [j.ag,j.city,j.st,j.shift,j.prod,j.role,[...j.tasks].sort().join('|'),j.w].join('::')}
-const J=[...new Map(RAW.map(j=>[dedupKey(j),j])).values()];
+const aliases={検品:['検品','チェック','傷チェック','キズ確認','確認作業'],照合:['照合','ラベル照合','ラベルとリスト','間違いがないか確認'],入力:['入力','データ入力','pc入力','フォーマットに入力'],梱包:['梱包','箱詰め','段ボールにつめる'],発送:['発送','出荷','送付準備','配送手配'],開梱:['開梱','開封','箱を開け'],撮影:['撮影'],仕分け:['仕分け'],封入:['封入','ケースへ'],入出荷:['入出荷'],情報確認:['情報チェック','情報確認'],スキャン:['スキャン','バーコード'],初期化:['初期化'],返送物確認:['返送物のチェック'],問合せ:['問い合わせ','お問い合わせ対応'],発送手配:['発送手配'],不備確認:['不備連絡','不備確認','申込書の不備']};
+function dedupKey(j){return[j.ag,j.city,j.st,j.shift,j.prod,j.role,[...j.tasks].sort().join('|'),j.w].join('::')}const J=[...new Map(RAW.map(j=>[dedupKey(j),j])).values()];
 function norm(s){return s.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/，/g,',').toLowerCase()}
-function parse(s){
- s=norm(s);
- let m=s.replace(/,/g,'').match(/(?:基本時給|通常時給|時給)\s*[:：]?\s*(\d{3,4})/),
- st=(s.match(/([一-龠ぁ-んァ-ヶー]+)駅/)||[])[1]||'',
- city=((s.match(/[一-龠ぁ-んァ-ヶー]+(?:市|区)/g)||[]).pop()||'').replace(/^東京都/,''),
- wa=+(s.match(/徒歩\s*(\d+)\s*分/)||[])[1]||0,
- shift=/20:00|21:00|22:00|夜勤|翌/.test(s)?'night':'day',
- prod=s.includes('トレカ')||s.includes('トレーディングカード')?'トレカ':s.includes('スマホ')||s.includes('携帯')?'スマホ':'',
- tasks=[];
- for(const [k,vs] of Object.entries(aliases))if(vs.some(v=>s.includes(v)))tasks.push(k);
- let officeHits=['問合せ','発送手配','不備確認'].filter(x=>tasks.includes(x)).length;
- let physicalHits=['検品','梱包','開梱','撮影','仕分け','封入','入出荷','照合'].filter(x=>tasks.includes(x)).length;
- let role=officeHits>=2&&physicalHits===0?'office':physicalHits>=2&&officeHits===0?'physical':'mixed';
- return{w:m?+m[1]:null,st,city,wa,shift,prod,tasks,role}
-}
-function taskScore(a,b){
- if(!a.length||!b.length)return{f1:0,mincov:0,inter:0};
- let A=new Set(a),B=new Set(b),inter=[...A].filter(x=>B.has(x)).length,c1=inter/A.size,c2=inter/B.size;
- return{f1:2*inter/(A.size+B.size),mincov:Math.min(c1,c2),inter}
-}
-function classify(i,j){
- let ts=taskScore(i.tasks,j.tasks),site=i.city===j.city&&i.st===j.st,shift=i.shift===j.shift,prod=!!i.prod&&i.prod===j.prod,
- walk=i.wa&&j.wa?Math.max(0,1-Math.abs(i.wa-j.wa)/10):.5,roleConflict=(i.role==='office'&&j.role==='physical')||(i.role==='physical'&&j.role==='office');
- let raw=(site?29:0)+(shift?18:0)+(prod?15:0)+ts.f1*34+walk*4+(i.role===j.role?3:0),rate=Math.min(99,Math.round(raw));
- if(!site)rate=Math.min(rate,39);if(!shift)rate=Math.min(rate,59);if(!prod)rate=Math.min(rate,49);if(roleConflict)rate=Math.min(rate,54);if(i.tasks.length<2)rate=Math.min(rate,69);
- let exact=site&&shift&&prod&&!roleConflict&&i.tasks.length>=2&&j.tasks.length>=2&&ts.inter>=2&&ts.f1>=.72&&ts.mincov>=.60;
- return{...j,rate,exact,ts,roleConflict}
-}
-function tr(x,i,cls=''){
- let d=x.w-i.w;
- return `<tr class="${cls}"><td><b>${x.ag}</b><div class="source"><a href="${x.url}" target="_blank" rel="noopener">${x.id}</a> <span class="status">確認 ${x.verified}</span></div></td><td class="money">${x.w.toLocaleString()}円</td><td class="${d>0?'up':''}">${d===0?'基準':(d>0?'+':'')+d.toLocaleString()+'円'}</td><td class="pct">${x.rate!=null?x.rate+'%':'—'}</td><td class="work">${x.tasks.join('・')}</td><td>${x.shift==='night'?'夜勤':'日勤'}</td><td>${x.st} 徒歩${x.wa}分</td></tr>`
-}
-function table(rows,i,base){
- let h=`<div class="tableWrap"><table class="compare"><thead><tr><th>会社</th><th>基本時給</th><th>差額</th><th>同じ仕事率</th><th>作業内容</th><th>時間帯</th><th>勤務地</th></tr></thead><tbody>`;
- if(base)h+=`<tr class="base"><td><b>あなたの求人</b><div class="source">基準</div></td><td class="money">${i.w.toLocaleString()}円</td><td>基準</td><td>—</td><td class="work">${i.tasks.join('・')}</td><td>${i.shift==='night'?'夜勤':'日勤'}</td><td>${i.st} 徒歩${i.wa||'—'}分</td></tr>`;
- rows.forEach((x,n)=>h+=tr(x,i,n===0&&x.w>i.w?'best':''));
- return h+'</tbody></table></div>'
-}
-function run(){
- let i=parse(document.getElementById('t').value),o=document.getElementById('o');
- if(!i.w||!i.city||!i.st){o.innerHTML='<section class="card"><b>時給・市区・駅を読み取れませんでした。</b><div class="muted">求人本文をもう少し長く貼ってください。</div></section>';return}
- let all=J.map(j=>classify(i,j));
- let same=all.filter(x=>x.exact).sort((a,b)=>b.w-a.w||b.rate-a.rate);
- let other=all.filter(x=>!x.exact&&x.city===i.city&&x.st===i.st&&x.shift===i.shift).sort((a,b)=>b.w-a.w||b.rate-a.rate);
- let best=same.find(x=>x.w>i.w);
- let h=`<section class="card answer"><div class="muted">結論</div>${best?`<div class="delta">+${(best.w-i.w).toLocaleString()}円/時</div><div class="price">同じ仕事で最高 ${best.w.toLocaleString()}円</div><div class="muted">同じ仕事率 ${best.rate}%　${best.ag}</div>`:`<div class="price">同じ仕事でもっと高い求人は未確認</div>`}</section>`;
- h+=`<section class="card"><div class="sectionTitle"><span class="tag same">同じ仕事</span>一目で比較</div><div class="sectionSub">勤務地・勤務帯・商品一致に加え、工程2項目以上一致＋工程F1 72%以上。事務中心と現場作業は同じ仕事にしません。</div>${table(same,i,true)}</section>`;
- if(other.length)h+=`<section class="card"><div class="sectionTitle"><span class="tag other">別仕事</span>似ている別の仕事</div><div class="sectionSub">同じ現場・時間帯でも作業内容が違う求人。最高時給判定には含めません。</div>${table(other,i,false)}</section>`;
- h+=`<div class="foot">比較軸は基本時給。深夜割増後の上限額は基本時給にしません。同じ仕事率は0〜99%で、100%は表示しません。重複は会社・現場・勤務帯・商品・役割・工程・基本時給で除去しています。</div>`;
- o.innerHTML=h
-}
+function parse(s){s=norm(s);let m=s.replace(/,/g,'').match(/(?:基本時給|通常時給|時給)\s*[:：]?\s*(\d{3,4})/),st=(s.match(/([一-龠ぁ-んァ-ヶー]+)駅/)||[])[1]||'',city=((s.match(/[一-龠ぁ-んァ-ヶー]+(?:市|区)/g)||[]).pop()||'').replace(/^東京都/,''),wa=+(s.match(/徒歩\s*(\d+)\s*分/)||[])[1]||0,shift=/20:00|21:00|22:00|夜勤|翌/.test(s)?'night':'day',prod=s.includes('トレカ')||s.includes('トレーディングカード')?'トレカ':s.includes('スマホ')||s.includes('携帯')?'スマホ':'',tasks=[];for(const[k,vs]of Object.entries(aliases))if(vs.some(v=>s.includes(v)))tasks.push(k);let officeHits=['問合せ','発送手配','不備確認'].filter(x=>tasks.includes(x)).length,physicalHits=['検品','梱包','開梱','撮影','仕分け','封入','入出荷','照合'].filter(x=>tasks.includes(x)).length,role=officeHits>=2&&physicalHits===0?'office':physicalHits>=2&&officeHits===0?'physical':'mixed';return{w:m?+m[1]:null,st,city,wa,shift,prod,tasks,role}}
+function taskScore(a,b){if(!a.length||!b.length)return{f1:0,mincov:0,inter:0};let A=new Set(a),B=new Set(b),inter=[...A].filter(x=>B.has(x)).length,c1=inter/A.size,c2=inter/B.size;return{f1:2*inter/(A.size+B.size),mincov:Math.min(c1,c2),inter}}
+function classify(i,j){let ts=taskScore(i.tasks,j.tasks),site=i.city===j.city&&i.st===j.st,shift=i.shift===j.shift,prod=!!i.prod&&i.prod===j.prod,walk=i.wa&&j.wa?Math.max(0,1-Math.abs(i.wa-j.wa)/10):.5,roleConflict=(i.role==='office'&&j.role==='physical')||(i.role==='physical'&&j.role==='office');let raw=(site?29:0)+(shift?18:0)+(prod?15:0)+ts.f1*34+walk*4+(i.role===j.role?3:0),rate=Math.min(99,Math.round(raw));if(!site)rate=Math.min(rate,39);if(!shift)rate=Math.min(rate,59);if(!prod)rate=Math.min(rate,49);if(roleConflict)rate=Math.min(rate,54);if(i.tasks.length<2)rate=Math.min(rate,69);let exact=site&&shift&&prod&&!roleConflict&&i.tasks.length>=2&&j.tasks.length>=2&&ts.inter>=2&&ts.f1>=.72&&ts.mincov>=.60;return{...j,rate,exact,ts,roleConflict}}
+function dtext(d){return d===0?'基準':(d>0?'+':'')+d.toLocaleString()+'円'}
+function desktopRow(x,i,cls=''){let d=x.w-i.w;return`<tr class="${cls}"><td><b>${x.ag}</b><div class="source"><a href="${x.url}" target="_blank" rel="noopener">${x.id}</a> <span class="status">確認 ${x.verified}</span></div></td><td class="money">${x.w.toLocaleString()}円</td><td class="${d>0?'up':''}">${dtext(d)}</td><td class="pct">${x.rate!=null?x.rate+'%':'—'}</td><td class="work">${x.tasks.join('・')}</td><td>${x.shift==='night'?'夜勤':'日勤'}</td><td>${x.st} 徒歩${x.wa}分</td></tr>`}
+function mobileRow(x,i,cls=''){let d=x.w-i.w;return`<div class="mrow ${cls}"><div class="mmetrics"><div class="mmetric"><small>基本時給</small><b>${x.w.toLocaleString()}円</b></div><div class="mmetric"><small>差額</small><b class="${d>0?'green':''}">${dtext(d)}</b></div><div class="mmetric"><small>同じ仕事率</small><b>${x.rate!=null?x.rate+'%':'—'}</b></div></div><div class="mcompany">${x.ag}</div><div class="mwork">${x.tasks.join('・')}</div><div class="mdetail">${x.shift==='night'?'夜勤':'日勤'} ｜ ${x.st} 徒歩${x.wa}分</div><div class="mlink"><a href="${x.url}" target="_blank" rel="noopener">求人を見る</a> ・確認 ${x.verified}</div></div>`}
+function renderSection(title,sub,rows,i,other=false){if(!rows.length)return'';let desk=`<div class="desktopTable"><table class="compare"><thead><tr><th>会社</th><th>基本時給</th><th>差額</th><th>同じ仕事率</th><th>作業内容</th><th>時間帯</th><th>勤務地</th></tr></thead><tbody>${rows.map((x,n)=>desktopRow(x,i,n===0&&!other?'best':'')).join('')}</tbody></table></div>`,mob=`<div class="mobileRows">${rows.map((x,n)=>mobileRow(x,i,n===0&&!other?'best':'')).join('')}</div>`;return`<section class="card ${other?'otherBox':''}"><div class="sectionHead"><div class="sectionTitle">${title}</div><div class="sectionSub">${sub}</div></div>${desk}${mob}</section>`}
+function run(){let i=parse(document.getElementById('t').value);if(!i.w){document.getElementById('o').innerHTML='<section class="card">基本時給を読み取れませんでした。</section>';return}let all=J.map(x=>classify(i,x)),same=all.filter(x=>x.exact).sort((a,b)=>b.w-a.w||b.rate-a.rate),other=all.filter(x=>!x.exact&&x.city===i.city&&x.st===i.st&&x.shift===i.shift&&x.prod===i.prod&&x.rate>=45).sort((a,b)=>b.w-a.w),best=same.find(x=>x.w>i.w),base={ag:'あなたの求人',w:i.w,st:i.st||'—',wa:i.wa||0,shift:i.shift,tasks:i.tasks,rate:null,url:'#',verified:'入力',id:'基準'};let answer=`<section class="card answer"><div class="answerLabel">結論</div>${best?`<div class="answerMain"><div class="delta">+${(best.w-i.w).toLocaleString()}円/時</div><div class="price">${i.w.toLocaleString()}円 → ${best.w.toLocaleString()}円</div></div><div class="answerMeta">同じ仕事率 ${best.rate}% ｜ ${best.ag}</div>`:`<div class="answerMain"><div class="price">同じ仕事で、もっと高い求人は未確認</div></div>`}</section>`;let sameRows=[base,...same];sameRows[0].rate=null;document.getElementById('o').innerHTML=answer+renderSection('同じ仕事','作業内容まで一致した求人だけ',sameRows,i,false)+renderSection('似ている別の仕事','作業内容が違うので別枠',other,i,true)+`<div class="foot">「もっと高い」は同じ仕事だけで判定。作業内容が違う求人は最高時給判定に混ぜません。同じ仕事率は最大99%。</div>`}
 document.getElementById('b').onclick=run;run();
-</script></body></html>
+</script>
+</body></html>
