@@ -16,9 +16,7 @@ export function normalizeBaseHourlyStrict(input = '') {
   const s = normalizeText(input).replace(/,/g, '');
 
   const explicit = s.match(/(?:基本時給|通常時給)\s*[:：]?\s*(\d{3,4})(?:\s*円)?/);
-  if (explicit) {
-    return { baseHourly: Number(explicit[1]), confidence: 0.99, reason: 'explicit_base_hourly' };
-  }
+  if (explicit) return { baseHourly: Number(explicit[1]), confidence: 0.99, reason: 'explicit_base_hourly' };
 
   const range = s.match(/時給\s*[:：]?\s*(\d{3,4})\s*(?:円)?\s*[～~-]\s*(\d{3,4})(?:\s*円)?/);
   if (range) {
@@ -33,14 +31,10 @@ export function normalizeBaseHourlyStrict(input = '') {
 
   const matches = [...s.matchAll(/時給\s*[:：]?\s*(\d{3,4})(?:\s*円)?/g)];
   for (const m of matches) {
-    // Judge only the immediate label attached to this wage. Looking too far back can
-    // make an earlier headline such as "深夜時給2000円" incorrectly poison a later
-    // legitimate "給与 時給1600円" in the same posting.
     const immediateBefore = s.slice(Math.max(0, m.index - 10), m.index);
     if (/(?:深夜|夜間|割増)\s*$|(?:22時|翌\s*5時|25%)\s*[^\s]{0,4}$/.test(immediateBefore)) continue;
     return { baseHourly: Number(m[1]), confidence: 0.95, reason: 'non_premium_hourly' };
   }
-
   return { baseHourly: null, confidence: 0, reason: 'base_hourly_not_verified' };
 }
 
@@ -48,19 +42,14 @@ function inferCompany(text = '') {
   const s = String(text);
   const explicit = s.match(/(?:会社名|派遣元|担当会社|企業名)\s*[:：|]?\s*([^\n|]{2,40})/);
   if (explicit) return explicit[1].trim().replace(/[（(].*$/, '').trim();
-  const known = [
-    'パーソルフィールドスタッフ', 'パーソルテンプスタッフ', 'ランスタッド',
-    'アデコ', 'パソナ', 'スタッフサービス', 'マンパワーグループ'
-  ];
+  const known = ['パーソルフィールドスタッフ', 'パーソルテンプスタッフ', 'ランスタッド', 'アデコ', 'パソナ', 'スタッフサービス', 'マンパワーグループ'];
   return known.find(name => s.includes(name)) || '';
 }
 
 function inferCity(text = '') {
-  const s = String(text);
-  const matches = [...s.matchAll(/(?:東京都\s*)?([一-龠ぁ-んァ-ヶー]+区)/g)];
+  const matches = [...String(text).matchAll(/(?:東京都\s*)?([一-龠ぁ-んァ-ヶー]+区)/g)];
   return matches.length ? matches[matches.length - 1][1] : '';
 }
-
 function inferStation(text = '') {
   const s = String(text);
   const preferred = s.match(/(?:アクセス|勤務地)[\s\S]{0,120}?([一-龠ぁ-んァ-ヶー()（）・]+)駅/);
@@ -68,7 +57,6 @@ function inferStation(text = '') {
   const any = s.match(/([一-龠ぁ-んァ-ヶー()（）・]+)駅/);
   return any ? any[1].replace(/.*[／/]/, '').trim() : '';
 }
-
 function inferPeriod(text = '') {
   const s = String(text);
   const m = s.match(/(?:期間|雇用形態)[\s|:：]*([^\n|]{0,45}(?:長期|短期|\d+\s*(?:か月|ヶ月|ヵ月|カ月|月)\s*(?:以上|以内)?))/);
@@ -77,7 +65,6 @@ function inferPeriod(text = '') {
   if (/短期/.test(s)) return '短期';
   return '';
 }
-
 function inferProduct(text = '') {
   const s = normalizeText(text);
   if (/トレカ|トレーディングカード/.test(s)) return 'トレカ';
@@ -85,7 +72,6 @@ function inferProduct(text = '') {
   if (/pc|パソコン/.test(s)) return 'PC';
   return '';
 }
-
 function inferRole(tasks = [], text = '') {
   const t = new Set(tasks);
   const office = ['問合せ', '入力', '資材発注', '在庫管理'].filter(x => t.has(x)).length;
@@ -119,6 +105,39 @@ function freshManualVerification(raw = {}, now = new Date()) {
   return ageMs >= -5 * 60 * 1000 && ageMs <= 24 * 60 * 60 * 1000;
 }
 
+// A search/list discovery is deliberately non-rankable. It can be promoted only
+// after a concrete detail page is opened and its current content is captured.
+export function promoteDiscoveryFromDetail(discovery = {}, detail = {}, now = new Date()) {
+  const rawText = String(detail.rawText || '');
+  const status = classifyPostingStatus(rawText, now);
+  const wage = normalizeBaseHourlyStrict(rawText || detail.wageText || '');
+  const detailUrl = String(detail.url || '');
+  if (!detailUrl || !/^https?:\/\//.test(detailUrl)) {
+    return { promoted: false, reason: 'detail_url_missing', candidate: null };
+  }
+  if (status.status === 'ended') return { promoted: false, reason: 'detail_page_ended', candidate: null };
+  if (!Number.isFinite(wage.baseHourly) || wage.baseHourly <= 0) {
+    return { promoted: false, reason: 'base_hourly_unverified', candidate: null };
+  }
+  const verifiedAt = now.toISOString();
+  return {
+    promoted: true,
+    reason: 'detail_page_verified',
+    candidate: {
+      id: detail.id || discovery.id || '',
+      company: detail.company || discovery.company || '',
+      url: detailUrl,
+      rawText,
+      activeVerified: true,
+      verifiedAt,
+      discoveryObservedAt: discovery.observedAt || null,
+      discoverySource: discovery.source || null,
+      sourcePriority: detail.sourcePriority ?? 90,
+      detailCompleteness: detail.detailCompleteness ?? 90
+    }
+  };
+}
+
 function comparisonEvidence(base = {}, row = {}) {
   const baseTasks = new Set(canonicalizeTasks(base.tasks || [], base.rawText || ''));
   const rowTasks = new Set(canonicalizeTasks(row.tasks || [], row.rawText || ''));
@@ -143,54 +162,33 @@ export function prepareLiveCandidate(raw = {}, now = new Date()) {
   const wage = normalizeBaseHourlyStrict(rawText || raw.wageText || '');
   const posting = classifyPostingStatus(rawText || raw.statusText || '', now);
   const inferred = inferCandidateFields(raw);
-
   const manuallyVerifiedActive = posting.status !== 'ended' && freshManualVerification(raw, now);
-  const postingStatus = manuallyVerifiedActive ? 'active' : posting.status;
-  const postingConfidence = manuallyVerifiedActive ? Math.max(posting.confidence, 0.98) : posting.confidence;
-  const postingReason = manuallyVerifiedActive ? 'fresh_detail_page_verification' : posting.reason;
-
   return {
     ...raw,
     ...inferred,
     baseHourly: wage.baseHourly,
     wageConfidence: wage.confidence,
     wageReason: wage.reason,
-    postingStatus,
-    postingConfidence,
-    postingReason
+    postingStatus: manuallyVerifiedActive ? 'active' : posting.status,
+    postingConfidence: manuallyVerifiedActive ? Math.max(posting.confidence, 0.98) : posting.confidence,
+    postingReason: manuallyVerifiedActive ? 'fresh_detail_page_verification' : posting.reason
   };
 }
 
 export function compareLiveCandidates(baseJob, rawCandidates = [], now = new Date()) {
   const prepared = rawCandidates.map(row => prepareLiveCandidate(row, now));
-
-  const trusted = prepared.filter(row =>
-    row.postingStatus === 'active' &&
-    Number.isFinite(row.baseHourly) &&
-    row.baseHourly > 0
-  );
-
-  const withRates = trusted.map(row => ({
-    ...row,
-    sameWorkRate: sameWorkRate(baseJob, row),
-    sameWorkReasons: comparisonEvidence(baseJob, row)
-  }));
-
+  const trusted = prepared.filter(row => row.postingStatus === 'active' && Number.isFinite(row.baseHourly) && row.baseHourly > 0);
+  const withRates = trusted.map(row => ({ ...row, sameWorkRate: sameWorkRate(baseJob, row), sameWorkReasons: comparisonEvidence(baseJob, row) }));
   const sameWorkCandidates = withRates.filter(row => row.sameWorkRate >= 70);
   const crossMediaDeduped = dedupeCrossMedia(sameWorkCandidates);
   const perCompany = chooseBestPerCompany(crossMediaDeduped);
-
-  const higher = perCompany
-    .filter(row => row.baseHourly > Number(baseJob.baseHourly || 0))
-    .sort((a, b) => b.baseHourly - a.baseHourly || b.sameWorkRate - a.sameWorkRate);
-
+  const higher = perCompany.filter(row => row.baseHourly > Number(baseJob.baseHourly || 0)).sort((a, b) => b.baseHourly - a.baseHourly || b.sameWorkRate - a.sameWorkRate);
   const rejectionSummary = prepared.reduce((acc, row) => {
     if (row.postingStatus === 'ended') acc.ended += 1;
     else if (row.postingStatus !== 'active') acc.statusUnverified += 1;
     if (!Number.isFinite(row.baseHourly) || row.baseHourly <= 0) acc.wageUnverified += 1;
     return acc;
   }, { ended: 0, statusUnverified: 0, wageUnverified: 0 });
-
   return {
     preparedCount: prepared.length,
     trustedCount: trusted.length,
