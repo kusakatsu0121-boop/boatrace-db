@@ -1,0 +1,80 @@
+{
+  "verified_at": "2026-09-09T09:17:00+09:00",
+  "scope": "Production live-search API and public checker integration",
+  "render": {
+    "static_service": {
+      "name": "motto-takakunai",
+      "service_id": "srv-daflhc5bedkc739pdgj0",
+      "url": "https://motto-takakunai.onrender.com",
+      "deployed_commit": "02841a7f6ad7add1add364da42d6b08279e0d229",
+      "status": "live",
+      "behavior": "POSTs pasted job text to the live comparison API and falls back to a <=24h verified snapshot only if the API request fails."
+    },
+    "api_service": {
+      "name": "motto-takakunai-api",
+      "service_id": "srv-daga6rqjnfac73ainrm0",
+      "url": "https://motto-takakunai-api.onrender.com",
+      "deploy_id": "dep-dagaalu7bikc73fuashg",
+      "deployed_commit": "6e35d0e7c728c733d5fe58429cf2ed801e65269d",
+      "status": "live"
+    }
+  },
+  "production_probe": {
+    "source_job": {
+      "company": "ランスタッド",
+      "base_hourly_wage": 1750,
+      "location": "東京都大田区",
+      "station": "流通センター",
+      "shift": "night",
+      "product": "トレカ",
+      "tasks": ["ケースセット", "検品", "完成品確認", "撮影", "梱包"]
+    },
+    "result": {
+      "elapsed_ms": 1902,
+      "mode": "live_search_plus_fresh_snapshot",
+      "discovered_urls": 16,
+      "detail_checked": 12,
+      "live_verified": 12,
+      "same_work_candidates_before_company_collapse": 10,
+      "best_higher": {
+        "company": "パーソルテンプスタッフ",
+        "base_hourly_wage": 1900,
+        "difference_per_hour": 150,
+        "same_work_rate": 83,
+        "url": "https://www.tempstaff.co.jp/jbch/job/tokyo/13111/sd-66/TS260674618/"
+      }
+    },
+    "provider_diagnostics": [
+      {"provider":"tempstaff","query":"流通センター　トレカ　夜勤","http_status":200,"job_urls_found":35},
+      {"provider":"tempstaff","query":"大田区　夜勤　あり","http_status":200,"job_urls_found":41},
+      {"provider":"tempstaff","query":"流通センター　トレカ　ケース収納","http_status":200,"job_urls_found":22}
+    ]
+  },
+  "before_after": {
+    "old_duckduckgo_discovery": {
+      "elapsed_ms": 24013,
+      "discovered_urls": 0,
+      "live_verified": 0,
+      "mode": "fresh_snapshot_fallback",
+      "failure": "All four external search queries timed out with AbortError."
+    },
+    "direct_tempstaff_discovery": {
+      "elapsed_ms": 1902,
+      "discovered_urls": 16,
+      "live_verified": 12,
+      "mode": "live_search_plus_fresh_snapshot"
+    }
+  },
+  "safety_rules_confirmed": [
+    "Explicit listing-ended markers are rejected before page-length and active checks.",
+    "Only detail pages with an active signal and verified base hourly wage are promoted to rankable candidates.",
+    "Deep-night premium is not used as base hourly wage.",
+    "Same-work rate is capped at 99 and never rendered as 100%.",
+    "Search-list-only discovery is not enough to become the highest-wage result."
+  ],
+  "current_limitations": [
+    "Direct live discovery currently has a production provider for Tempstaff first; additional staffing-site providers still need to be added for broader recall.",
+    "The 1902ms startup probe is backend pipeline time, not the official browser T1 benchmark measurement.",
+    "Formal CASE-004 should not claim T1/T2/T3 until browser-level measurement is captured."
+  ]
+}
