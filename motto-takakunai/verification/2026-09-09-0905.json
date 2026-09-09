@@ -1,0 +1,59 @@
+{
+  "verified_at": "2026-09-09T09:05:00+09:00",
+  "scope": "Ryutsu Center trading-card listings + discovery promotion safety",
+  "observations": [
+    {
+      "source": "randstad.co.jp factory list",
+      "title": "夜勤×月33万越え トレカ倉庫で各チームに商品をお届け",
+      "base_hourly": 1700,
+      "shift": "night",
+      "station": "流通センター",
+      "walk_minutes": 5,
+      "status": "list_current_detail_unverified",
+      "rankable": false
+    },
+    {
+      "source": "randstad.co.jp factory list",
+      "title": "深夜時給2125円 トレカを扱う倉庫で高収入をGet",
+      "base_hourly": 1700,
+      "night_hourly": 2125,
+      "shift": "night",
+      "station": "流通センター",
+      "walk_minutes": 5,
+      "status": "list_current_detail_unverified",
+      "rankable": false
+    },
+    {
+      "source": "randstad.co.jp factory list",
+      "title": "時給1750円×夜勤 有名トレカのケースセット＆軽作業",
+      "base_hourly": 1750,
+      "night_hourly": 2188,
+      "shift": "night",
+      "station": "流通センター",
+      "walk_minutes": 5,
+      "status": "list_current_detail_unverified",
+      "rankable": false
+    },
+    {
+      "source": "randstad.co.jp factory list",
+      "title": "夜勤×高時給 深夜時給2188円 トレカの傷チェック＆入力",
+      "base_hourly": 1750,
+      "night_hourly": 2188,
+      "shift": "night",
+      "station": "流通センター",
+      "walk_minutes": 5,
+      "status": "list_current_detail_unverified",
+      "rankable": false
+    }
+  ],
+  "conclusions": [
+    "1700円と1750円のトレカ夜勤求人が同時に一覧掲載されているため、価格変更として自動統合しない。",
+    "検索一覧だけでは最高額ランキングへ昇格させず、詳細URL・掲載状態・基本時給を確認後にpromotionする。",
+    "live snapshot regressionが古い7件固定・旧ID参照になっていたため、現在の8件スナップショットに合わせて修正した。"
+  ],
+  "code_commits": [
+    "e252a708bc7878db5f5051c7db5505975b832856",
+    "4a53ebb352995abbf26660d5c4b31a69b73417ab",
+    "49879bf99f038b3d400833846ef6fe4753f5613f"
+  ]
+}
