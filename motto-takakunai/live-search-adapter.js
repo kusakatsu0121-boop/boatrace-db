@@ -134,9 +134,10 @@ export async function verifyDetailUrl(url, fetchImpl = fetch, now = new Date(), 
     if (!res.ok) return { ok: false, url, reason: `http_${res.status}` };
     const html = await res.text();
     const text = htmlToText(html);
-    if (text.length < 180) return { ok: false, url, reason: 'detail_too_short' };
     const status = classifyPostingStatus(text, now);
-    if (status.status !== 'active') return { ok: false, url, reason: status.status === 'ended' ? 'detail_ended' : 'active_not_verified' };
+    if (status.status === 'ended') return { ok: false, url, reason: 'detail_ended' };
+    if (text.length < 180) return { ok: false, url, reason: 'detail_too_short' };
+    if (status.status !== 'active') return { ok: false, url, reason: 'active_not_verified' };
     const wage = normalizeBaseHourlyStrict(text);
     if (!Number.isFinite(wage.baseHourly) || wage.baseHourly <= 0) return { ok: false, url, reason: 'base_wage_not_verified' };
 
