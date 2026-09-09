@@ -1,4 +1,4 @@
-import { classifyPostingStatus, generateSearchQueries, normalizeText } from './search-logic.js';
+import { classifyPostingStatus, generateSearchQueries, normalizeText, canonicalizeTasks } from './search-logic.js';
 import { normalizeBaseHourlyStrict } from './live-candidate-pipeline.js';
 
 const ALLOWED_HOSTS = [
@@ -42,6 +42,14 @@ export function isAllowedJobUrl(value = '') {
   }
 }
 
+function resolveUrl(href = '', base = '') {
+  try {
+    return new URL(decodeEntities(href), base || undefined).toString();
+  } catch {
+    return '';
+  }
+}
+
 function unwrapDuckDuckGo(href = '') {
   const decoded = decodeEntities(href);
   try {
@@ -71,6 +79,23 @@ export function extractDirectUrls(html = '') {
   return [...new Set(out)];
 }
 
+export function extractTempstaffJobUrls(html = '') {
+  const out = [];
+  for (const m of String(html).matchAll(/href=["']([^"']+)["']/gi)) {
+    const candidate = resolveUrl(m[1], 'https://www.tempstaff.co.jp/');
+    if (!candidate) continue;
+    let u;
+    try { u = new URL(candidate); } catch { continue; }
+    const host = u.hostname.toLowerCase().replace(/^www\./, '');
+    if (host !== 'tempstaff.co.jp') continue;
+    if (!/^\/jbch\/job\//.test(u.pathname)) continue;
+    if (!/\/(?:TS|BR)\d{8,}\/?$/i.test(u.pathname)) continue;
+    u.hash = '';
+    out.push(u.toString());
+  }
+  return [...new Set(out)];
+}
+
 async function fetchWithTimeout(fetchImpl, url, { timeoutMs = 6500, headers = {} } = {}) {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), timeoutMs);
@@ -89,31 +114,97 @@ async function fetchWithTimeout(fetchImpl, url, { timeoutMs = 6500, headers = {}
   }
 }
 
-export async function discoverUrlsForJob(baseJob, fetchImpl = fetch, options = {}) {
-  const maxQueries = options.maxQueries ?? 4;
-  const maxUrls = options.maxUrls ?? 16;
+function buildTempstaffTerms(baseJob = {}) {
+  const station = String(baseJob.station || '').replace(/駅$/, '').trim();
+  const city = String(baseJob.city || '').trim();
+  const product = String(baseJob.product || '').trim();
+  const shiftWord = baseJob.shift === 'night' ? '夜勤' : baseJob.shift === 'day' ? '日勤' : '';
+  const tasks = canonicalizeTasks(baseJob.tasks || [], baseJob.rawText || '');
+  const terms = [
+    [station, product, shiftWord].filter(Boolean).join('　'),
+    [city, shiftWord, 'あり'].filter(Boolean).join('　'),
+    [station, product, tasks[0] || ''].filter(Boolean).join('　'),
+    [station, tasks[0] || '', tasks[1] || ''].filter(Boolean).join('　')
+  ].filter(x => x.length >= 2);
+  return [...new Set(terms)].slice(0, 4);
+}
+
+async function discoverTempstaff(baseJob, fetchImpl, options = {}) {
+  const terms = buildTempstaffTerms(baseJob);
+  const diagnostics = [];
+  const urls = [];
+  const timeoutMs = options.providerTimeoutMs ?? 4500;
+  const maxProviderQueries = options.maxProviderQueries ?? 3;
+  const selectedTerms = terms.slice(0, maxProviderQueries);
+
+  const responses = await Promise.all(selectedTerms.map(async term => {
+    const searchUrl = `https://www.tempstaff.co.jp/jbch/keyword/${encodeURIComponent(term)}/`;
+    try {
+      const res = await fetchWithTimeout(fetchImpl, searchUrl, { timeoutMs });
+      const body = await res.text();
+      const found = res.ok ? extractTempstaffJobUrls(body) : [];
+      return { term, searchUrl, status: res.status, found, error: null };
+    } catch (error) {
+      return { term, searchUrl, status: null, found: [], error: error?.name || 'provider_error' };
+    }
+  }));
+
+  for (const r of responses) {
+    diagnostics.push({ provider: 'tempstaff', query: r.term, status: r.status, found: r.found.length, error: r.error || undefined });
+    for (const url of r.found) if (!urls.includes(url)) urls.push(url);
+  }
+  return { terms: selectedTerms, urls, diagnostics };
+}
+
+async function discoverExternalFallback(baseJob, fetchImpl, options = {}) {
+  if (options.externalFallback === false) return { queries: [], urls: [], diagnostics: [] };
+  const maxQueries = options.maxExternalQueries ?? 1;
   const queries = generateSearchQueries(baseJob).slice(0, maxQueries);
   const urls = [];
   const diagnostics = [];
-
   for (const query of queries) {
     try {
       const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-      const res = await fetchWithTimeout(fetchImpl, url, { timeoutMs: options.searchTimeoutMs ?? 6500 });
+      const res = await fetchWithTimeout(fetchImpl, url, { timeoutMs: options.externalSearchTimeoutMs ?? 2200 });
       const body = await res.text();
       const found = [...extractDuckDuckGoUrls(body), ...extractDirectUrls(body)];
-      diagnostics.push({ query, status: res.status, found: found.length });
-      for (const item of found) {
-        if (!urls.includes(item)) urls.push(item);
-        if (urls.length >= maxUrls) break;
-      }
-      if (urls.length >= maxUrls) break;
+      diagnostics.push({ provider: 'duckduckgo', query, status: res.status, found: found.length });
+      for (const item of found) if (!urls.includes(item)) urls.push(item);
     } catch (error) {
-      diagnostics.push({ query, error: error?.name || 'search_error', found: 0 });
+      diagnostics.push({ provider: 'duckduckgo', query, error: error?.name || 'search_error', found: 0 });
+    }
+  }
+  return { queries, urls, diagnostics };
+}
+
+export async function discoverUrlsForJob(baseJob, fetchImpl = fetch, options = {}) {
+  const maxUrls = options.maxUrls ?? 16;
+  const urls = [];
+  const diagnostics = [];
+
+  const direct = await discoverTempstaff(baseJob, fetchImpl, options);
+  diagnostics.push(...direct.diagnostics);
+  for (const item of direct.urls) {
+    if (!urls.includes(item)) urls.push(item);
+    if (urls.length >= maxUrls) break;
+  }
+
+  let external = { queries: [], urls: [], diagnostics: [] };
+  const minimumDirectUrls = options.minimumDirectUrls ?? 4;
+  if (urls.length < minimumDirectUrls) {
+    external = await discoverExternalFallback(baseJob, fetchImpl, options);
+    diagnostics.push(...external.diagnostics);
+    for (const item of external.urls) {
+      if (!urls.includes(item)) urls.push(item);
+      if (urls.length >= maxUrls) break;
     }
   }
 
-  return { queries, urls: urls.slice(0, maxUrls), diagnostics };
+  return {
+    queries: [...direct.terms, ...external.queries],
+    urls: urls.slice(0, maxUrls),
+    diagnostics
+  };
 }
 
 function detailCompleteness(text = '') {
@@ -165,9 +256,9 @@ export async function searchAndVerifyCandidates(baseJob, fetchImpl = fetch, now 
   const selected = discovery.urls.slice(0, maxDetails);
   const verified = [];
   const rejected = [];
-
   const concurrency = Math.max(1, Math.min(4, options.concurrency ?? 3));
   let cursor = 0;
+
   async function worker() {
     while (cursor < selected.length) {
       const index = cursor++;
@@ -178,10 +269,5 @@ export async function searchAndVerifyCandidates(baseJob, fetchImpl = fetch, now 
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, selected.length || 1) }, () => worker()));
 
-  return {
-    ...discovery,
-    detailChecked: selected.length,
-    verified,
-    rejected
-  };
+  return { ...discovery, detailChecked: selected.length, verified, rejected };
 }
