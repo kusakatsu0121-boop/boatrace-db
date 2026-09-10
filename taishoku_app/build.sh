@@ -6,7 +6,7 @@ rm -rf "$RUNTIME"
 mkdir -p "$RUNTIME"
 cat "$ROOT"/bundle/part*.txt | base64 -d > /tmp/taishoku_app.zip
 unzip -q /tmp/taishoku_app.zip -d "$RUNTIME"
-python3 -m pip install --user --no-cache-dir pymupdf==1.26.3
+python3 -m pip install --no-cache-dir pymupdf==1.26.3
 python3 - <<'PY'
 import fitz
 print('PyMuPDF', fitz.VersionBind)
