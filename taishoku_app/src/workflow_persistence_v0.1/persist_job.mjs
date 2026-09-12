@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { Client } from 'pg';
+import pg from 'pg';
+const { Client } = pg;
 
 function arg(name, fallback = null) {
   const i = process.argv.indexOf(name);
