@@ -81,7 +81,11 @@ function spawnDetached(scriptPath, args, stdio = 'ignore') {
 }
 
 function startWorker(queueRoot, outputRoot) {
-  spawnDetached(workerPath, ['--queue-root', queueRoot, '--output-root', outputRoot]);
+  console.log(JSON.stringify({ status: 'worker_starting', queue_root: queueRoot, output_root: outputRoot, automatic_delivery: false }));
+  const child = spawnDetached(workerPath, ['--queue-root', queueRoot, '--output-root', outputRoot], ['ignore', 'inherit', 'inherit']);
+  child.on('error', error => {
+    console.error(JSON.stringify({ status: 'worker_spawn_error', error: error.message || String(error), automatic_delivery: false }));
+  });
 }
 
 function startPersistence(outputRoot, id, payload) {
