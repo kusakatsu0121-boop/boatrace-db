@@ -1,0 +1,58 @@
+name: taishoku-release-check
+
+on:
+  push:
+    branches:
+      - taishoku-neon-persistence
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build exact runtime with approved overlays
+        shell: bash
+        run: bash taishoku_app/build.sh
+      - name: Verify legal patch without changing calculations
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=taishoku_app/runtime/report_template_v0.1/render_report.py
+          T=taishoku_app/runtime/report_template_v0.1/report_template.html
+          J=taishoku_app/runtime/workflow_rule_package_v0.1/workflow_rules_v0.1.json
+          grep -q "TEMPLATE_VERSION = '0.2.5'" "$R"
+          grep -q '「退職給付金」という名前について' "$T"
+          grep -q '退職給付金」という名称の公的制度が別にあるわけではありません' "$T"
+          for u in \
+            'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000160564_00050.html' \
+            'https://jsite.mhlw.go.jp/okinawa-roudoukyoku/naha_retirement_benefits_202603.html' \
+            'https://www.kokusen.go.jp/news/data/n-20251203_1.html'; do
+            grep -q "$u" "$R"
+            grep -q "$u" "$J"
+          done
+          python3 - <<'PY'
+          import json
+          d=json.load(open('taishoku_app/runtime/workflow_rule_package_v0.1/workflow_rules_v0.1.json',encoding='utf-8'))
+          assert d['rule_version']=='0.2.0'
+          assert d['verified_at']=='2026-09-07'
+          print('LEGAL_PATCH_OK')
+          PY
+      - name: Run existing rule tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd taishoku_app/runtime/workflow_rule_package_v0.1
+          for f in test_*.mjs; do
+            [ -f "$f" ] || continue
+            echo "RUN $f"
+            node "$f"
+          done
+      - name: Smoke render known-good normalized fixture when available
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check taishoku_app/runtime/workflow_webhook_v0.1/webhook_server.mjs
+          node --check taishoku_app/runtime/workflow_persistence_v0.1/persist_job.mjs
+          node --check taishoku_app/runtime/workflow_persistence_v0.1/restore_job.mjs
+          echo RELEASE_CHECK_OK
