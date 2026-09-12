@@ -4,10 +4,12 @@ import http from 'node:http';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolveReportAccess } from '../workflow_report_access_v0.1/report_access.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(here, '..');
 const workerPath = path.join(here, 'queue_worker.mjs');
+const persistencePath = path.join(projectRoot, 'workflow_persistence_v0.1', 'persist_job.mjs');
 
 function sendJson(res, status, body) {
   const encoded = Buffer.from(`${JSON.stringify(body)}\n`, 'utf8');
@@ -17,6 +19,19 @@ function sendJson(res, status, body) {
     'cache-control': 'no-store',
   });
   res.end(encoded);
+}
+
+function sendPrivateReport(res, htmlBytes) {
+  const body = Buffer.isBuffer(htmlBytes) ? htmlBytes : Buffer.from(htmlBytes || '');
+  res.writeHead(200, {
+    'content-type': 'text/html; charset=utf-8',
+    'content-length': body.length,
+    'cache-control': 'private, no-store',
+    'x-robots-tag': 'noindex, nofollow, noarchive',
+    'referrer-policy': 'no-referrer',
+    'x-content-type-options': 'nosniff',
+  });
+  res.end(body);
 }
 
 function safeId(value) {
@@ -32,6 +47,11 @@ function eventId(payload, rawBody) {
   const candidate = safeId(payload?.eventId ?? payload?.event_id ?? payload?.data?.responseId ?? payload?.data?.submissionId);
   if (candidate) return candidate;
   return crypto.createHash('sha256').update(rawBody).digest('hex').slice(0, 24);
+}
+
+function referenceId(payload) {
+  const candidate = safeId(payload?.data?.responseId ?? payload?.data?.submissionId);
+  return candidate ? `WF-${candidate}` : null;
 }
 
 function signatureMatches(payload, received, secret) {
@@ -63,14 +83,44 @@ function enqueue(queueRoot, id, payload) {
   return target;
 }
 
-function startWorker(queueRoot, outputRoot) {
-  const child = spawn(process.execPath, [workerPath, '--queue-root', queueRoot, '--output-root', outputRoot], {
+function spawnDetached(scriptPath, args, stdio = 'ignore') {
+  const child = spawn(process.execPath, [scriptPath, ...args], {
     cwd: projectRoot,
     detached: true,
-    stdio: 'ignore',
+    stdio,
     env: process.env,
   });
   child.unref();
+  return child;
+}
+
+function startWorker(queueRoot, outputRoot) {
+  console.log(JSON.stringify({ status: 'worker_starting', queue_root: queueRoot, output_root: outputRoot, automatic_delivery: false }));
+  const child = spawnDetached(workerPath, ['--queue-root', queueRoot, '--output-root', outputRoot], ['ignore', 'inherit', 'inherit']);
+  child.on('error', error => {
+    console.error(JSON.stringify({ status: 'worker_spawn_error', error: error.message || String(error), automatic_delivery: false }));
+  });
+}
+
+function startPersistence(outputRoot, id, payload) {
+  if (!process.env.DATABASE_URL || !fs.existsSync(persistencePath)) {
+    console.log(JSON.stringify({ status: 'persistence_not_started', database_url: Boolean(process.env.DATABASE_URL), persistence_path_exists: fs.existsSync(persistencePath), automatic_delivery: false }));
+    return;
+  }
+  const ref = referenceId(payload);
+  if (!ref) {
+    console.log(JSON.stringify({ status: 'persistence_not_started', reason: 'missing_reference_id', automatic_delivery: false }));
+    return;
+  }
+  console.log(JSON.stringify({ status: 'persistence_starting', reference_id: ref, event_id: id, output_root: outputRoot, automatic_delivery: false }));
+  const child = spawnDetached(persistencePath, [
+    '--output-root', outputRoot,
+    '--reference-id', ref,
+    '--event-id', id,
+  ], ['ignore', 'inherit', 'inherit']);
+  child.on('error', error => {
+    console.error(JSON.stringify({ status: 'persistence_spawn_error', reference_id: ref, error: error.message || String(error), automatic_delivery: false }));
+  });
 }
 
 async function readBody(req, limitBytes) {
@@ -96,18 +146,49 @@ export function createWebhookServer(options = {}) {
   const allowUnsigned = options.allowUnsigned ?? process.env.ALLOW_UNSIGNED_WEBHOOKS === 'true';
   const launchWorker = options.launchWorker ?? true;
   const bodyLimit = options.bodyLimit ?? 2 * 1024 * 1024;
+  const persistenceConfigured = Boolean(process.env.DATABASE_URL);
+  const persistenceRequired = process.env.REQUIRE_PERSISTENCE === 'true';
 
   if (!signingSecret && !allowUnsigned) {
     throw new Error('TALLY_SIGNING_SECRET がありません。署名なしで起動する場合は開発時のみ ALLOW_UNSIGNED_WEBHOOKS=true を設定してください');
+  }
+  if (persistenceRequired && !persistenceConfigured) {
+    throw new Error('REQUIRE_PERSISTENCE=true ですが DATABASE_URL がありません');
   }
   ensureQueue(queueRoot);
 
   return http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', 'http://localhost');
     if (req.method === 'GET' && url.pathname === '/health') {
-      sendJson(res, 200, { status: 'ok', automatic_delivery: false });
+      sendJson(res, 200, {
+        status: 'ok',
+        automatic_delivery: false,
+        persistence: persistenceConfigured ? 'configured' : 'ephemeral',
+        secret_report_access: persistenceConfigured ? 'configured' : 'unavailable',
+      });
       return;
     }
+
+    if (req.method === 'GET' && url.pathname.startsWith('/r/')) {
+      const token = url.pathname.slice(3);
+      if (!/^[A-Za-z0-9_-]{43}$/.test(token)) {
+        sendJson(res, 404, { error: 'not_found' });
+        return;
+      }
+      try {
+        const report = await resolveReportAccess(token);
+        if (!report) {
+          sendJson(res, 404, { error: 'not_found' });
+          return;
+        }
+        sendPrivateReport(res, report.htmlBytes);
+      } catch (error) {
+        console.error(JSON.stringify({ status: 'report_access_error', error: error.message || String(error), automatic_delivery: false }));
+        sendJson(res, 404, { error: 'not_found' });
+      }
+      return;
+    }
+
     if (req.method !== 'POST' || url.pathname !== '/webhooks/tally') {
       sendJson(res, 404, { error: 'not_found' });
       return;
@@ -141,14 +222,16 @@ export function createWebhookServer(options = {}) {
 
       const id = eventId(payload, rawBody);
       if (eventExists(queueRoot, id)) {
-        sendJson(res, 200, { status: 'duplicate', event_id: id });
+        sendJson(res, 200, { status: 'duplicate', event_id: id, automatic_delivery: false });
+        startPersistence(outputRoot, id, payload);
         return;
       }
       try {
         enqueue(queueRoot, id, payload);
       } catch (error) {
         if (error.code === 'EEXIST') {
-          sendJson(res, 200, { status: 'duplicate', event_id: id });
+          sendJson(res, 200, { status: 'duplicate', event_id: id, automatic_delivery: false });
+          startPersistence(outputRoot, id, payload);
           return;
         }
         throw error;
@@ -156,6 +239,7 @@ export function createWebhookServer(options = {}) {
 
       sendJson(res, 202, { status: 'accepted', event_id: id, automatic_delivery: false });
       if (launchWorker) startWorker(queueRoot, outputRoot);
+      startPersistence(outputRoot, id, payload);
     } catch (error) {
       sendJson(res, error.statusCode || 500, { error: error.message || 'internal_error' });
     }
@@ -170,7 +254,15 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const outputRoot = path.resolve(process.env.WORKFLOW_OUTPUT_ROOT ?? path.join(projectRoot, 'output', 'jobs'));
     const server = createWebhookServer({ queueRoot, outputRoot });
     server.listen(port, host, () => {
-      console.log(JSON.stringify({ status: 'listening', host, port, endpoint: '/webhooks/tally', automatic_delivery: false }));
+      console.log(JSON.stringify({
+        status: 'listening',
+        host,
+        port,
+        endpoint: '/webhooks/tally',
+        automatic_delivery: false,
+        persistence: process.env.DATABASE_URL ? 'configured' : 'ephemeral',
+        secret_report_access: process.env.DATABASE_URL ? 'configured' : 'unavailable',
+      }));
       startWorker(queueRoot, outputRoot);
     });
   } catch (error) {

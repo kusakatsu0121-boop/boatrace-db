@@ -1,0 +1,56 @@
+name: taishoku-persistence-e2e
+
+on:
+  push:
+    branches:
+      - taishoku-neon-persistence
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Wait for staging health
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in {1..60}; do
+            code=$(curl -sS -o /tmp/health.json -w '%{http_code}' --max-time 30 https://taishoku-persistence-test.onrender.com/health || true)
+            echo "health attempt $i: $code $(cat /tmp/health.json 2>/dev/null || true)"
+            if [ "$code" = "200" ]; then break; fi
+            sleep 5
+          done
+          grep -q '"persistence":"configured"' /tmp/health.json
+          grep -q '"automatic_delivery":false' /tmp/health.json
+
+      - name: Build known-good Tally payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL 'https://raw.githubusercontent.com/kusakatsu0121-boop/boatrace-db/taishoku-e2e-test-20260912/taishoku_app/e2e_payload_20260912.json' -o /tmp/payload.json
+          python3 - <<'PY'
+          import json
+          p='/tmp/payload.json'
+          d=json.load(open(p,encoding='utf-8'))
+          d['eventId']='persistence-e2e-20260912-04'
+          d['createdAt']='2026-09-12T14:26:00.000Z'
+          d['data']['responseId']='PERSISTE2E20260912D'
+          d['data']['submissionId']='PERSISTE2E20260912D'
+          d['data']['createdAt']='2026-09-12T14:26:00.000Z'
+          for f in d['data']['fields']:
+              if f.get('key')=='f6459a23-198b-485f-a76e-dd3bb2daa6ea': f['value']='Persistence-E2E-D'
+              if f.get('key')=='b35166f9-990b-4e4c-89c4-2c56defafe77': f['value']='persistence-e2e-d@example.com'
+              if f.get('key')=='3452a118-280d-47e3-bc28-f6db09786c8d': f['value']='Persistence E2E D。実在利用者ではありません。納品不要。'
+          json.dump(d,open(p,'w',encoding='utf-8'),ensure_ascii=False)
+          PY
+
+      - name: POST Tally-shaped test payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/body.json -w '%{http_code}' --max-time 90 -H 'content-type: application/json' --data-binary @/tmp/payload.json https://taishoku-persistence-test.onrender.com/webhooks/tally)
+          echo "WEBHOOK_HTTP=$code BODY=$(cat /tmp/body.json)"
+          test "$code" = "202" -o "$code" = "200"
+
+      - name: Wait for processing and persistence
+        run: sleep 25
