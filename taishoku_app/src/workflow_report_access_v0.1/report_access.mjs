@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 const { Client } = pg;
 
@@ -177,7 +178,7 @@ async function cli() {
   throw new Error('usage: report_access.mjs issue|revoke ...');
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   cli().catch(error => {
     console.error(JSON.stringify({ status: 'report_access_failed', error: error.message || String(error), automatic_delivery: false }));
     process.exitCode = 1;
