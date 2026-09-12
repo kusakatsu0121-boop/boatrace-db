@@ -4,6 +4,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolveReportAccess } from '../workflow_report_access_v0.1/report_access.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(here, '..');
@@ -18,6 +19,19 @@ function sendJson(res, status, body) {
     'cache-control': 'no-store',
   });
   res.end(encoded);
+}
+
+function sendPrivateReport(res, htmlBytes) {
+  const body = Buffer.isBuffer(htmlBytes) ? htmlBytes : Buffer.from(htmlBytes || '');
+  res.writeHead(200, {
+    'content-type': 'text/html; charset=utf-8',
+    'content-length': body.length,
+    'cache-control': 'private, no-store',
+    'x-robots-tag': 'noindex, nofollow, noarchive',
+    'referrer-policy': 'no-referrer',
+    'x-content-type-options': 'nosniff',
+  });
+  res.end(body);
 }
 
 function safeId(value) {
@@ -150,9 +164,31 @@ export function createWebhookServer(options = {}) {
         status: 'ok',
         automatic_delivery: false,
         persistence: persistenceConfigured ? 'configured' : 'ephemeral',
+        secret_report_access: persistenceConfigured ? 'configured' : 'unavailable',
       });
       return;
     }
+
+    if (req.method === 'GET' && url.pathname.startsWith('/r/')) {
+      const token = url.pathname.slice(3);
+      if (!/^[A-Za-z0-9_-]{43}$/.test(token)) {
+        sendJson(res, 404, { error: 'not_found' });
+        return;
+      }
+      try {
+        const report = await resolveReportAccess(token);
+        if (!report) {
+          sendJson(res, 404, { error: 'not_found' });
+          return;
+        }
+        sendPrivateReport(res, report.htmlBytes);
+      } catch (error) {
+        console.error(JSON.stringify({ status: 'report_access_error', error: error.message || String(error), automatic_delivery: false }));
+        sendJson(res, 404, { error: 'not_found' });
+      }
+      return;
+    }
+
     if (req.method !== 'POST' || url.pathname !== '/webhooks/tally') {
       sendJson(res, 404, { error: 'not_found' });
       return;
@@ -225,6 +261,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
         endpoint: '/webhooks/tally',
         automatic_delivery: false,
         persistence: process.env.DATABASE_URL ? 'configured' : 'ephemeral',
+        secret_report_access: process.env.DATABASE_URL ? 'configured' : 'unavailable',
       }));
       startWorker(queueRoot, outputRoot);
     });
