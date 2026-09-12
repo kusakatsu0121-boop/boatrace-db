@@ -10,16 +10,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack and audit approval/webhook flow
+      - name: Audit recovered bundle and maintained overlays
         shell: bash
         run: |
           set -euo pipefail
           rm -rf /tmp/taishoku-audit && mkdir -p /tmp/taishoku-audit
           cat taishoku_app/bundle/part*.txt | base64 -d > /tmp/app.zip
           unzip -q /tmp/app.zip -d /tmp/taishoku-audit
-          echo '=== TOP LEVEL ==='
-          find /tmp/taishoku-audit -maxdepth 2 -type f | sort
-          echo '=== APPROVE JOB ==='
-          sed -n '1,360p' /tmp/taishoku-audit/workflow_pipeline_v0.1/approve_job.mjs
-          echo '=== ORIGINAL WEBHOOK SERVER ==='
-          sed -n '1,380p' /tmp/taishoku-audit/workflow_webhook_v0.1/webhook_server.mjs
+          test -f /tmp/taishoku-audit/workflow_pipeline_v0.1/process_tally_submission.mjs
+          test -f /tmp/taishoku-audit/workflow_webhook_v0.1/webhook_server.mjs
+          test -f taishoku_app/src/workflow_pipeline_v0.1/approve_job.mjs
+          test -f taishoku_app/src/workflow_report_access_v0.1/report_access.mjs
+          test -f taishoku_app/src/workflow_persistence_v0.1/persist_job.mjs
+          bash taishoku_app/build.sh
+          test -f taishoku_app/runtime/workflow_pipeline_v0.1/approve_job.mjs
+          test -f taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
+          grep -q "approved_for_manual_delivery" taishoku_app/runtime/workflow_pipeline_v0.1/approve_job.mjs
+          grep -q "randomBytes(32)" taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
+          grep -q "url.pathname.startsWith('/r/')" taishoku_app/runtime/workflow_webhook_v0.1/webhook_server.mjs
+          echo BUNDLE_OVERLAY_AUDIT_OK
