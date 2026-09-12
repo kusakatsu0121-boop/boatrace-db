@@ -1,0 +1,142 @@
+name: taishoku-render-direct-e2e
+
+on:
+  push:
+    branches:
+      - taishoku-e2e-test-20260912
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rebuild exact app bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/taishoku-runtime /tmp/taishoku-queue /tmp/taishoku-jobs
+          mkdir -p /tmp/taishoku-runtime /tmp/taishoku-queue /tmp/taishoku-jobs
+          cat taishoku_app/bundle/part*.txt | base64 -d > /tmp/taishoku_app.zip
+          echo "ZIP_SHA256=$(sha256sum /tmp/taishoku_app.zip | awk '{print $1}')"
+          unzip -q /tmp/taishoku_app.zip -d /tmp/taishoku-runtime
+          python3 -m pip install --quiet pymupdf==1.26.3
+          node --check /tmp/taishoku-runtime/workflow_webhook_v0.1/webhook_server.mjs
+          node --check /tmp/taishoku-runtime/workflow_pipeline_v0.1/process_tally_submission.mjs
+          echo "=== TOP FILES ==="
+          find /tmp/taishoku-runtime -maxdepth 2 -type f | sort | head -80
+
+      - name: Build known-good Tally-equivalent fixture
+        shell: bash
+        run: |
+          cat > /tmp/tally_e2e_payload.json <<'JSON'
+          {
+            "eventId": "render-direct-e2e-20260912-01",
+            "eventType": "FORM_RESPONSE",
+            "createdAt": "2026-09-12T09:55:00.000Z",
+            "data": {
+              "responseId": "E2ERENDER20260912",
+              "submissionId": "E2ERENDER20260912",
+              "respondentId": "e2e-test",
+              "formId": "QKyVpY",
+              "formName": "あなた専用｜退職前後ワークフロー",
+              "createdAt": "2026-09-12T09:55:00.000Z",
+              "fields": [
+                {"key":"f6459a23-198b-485f-a76e-dd3bb2daa6ea","label":"レポートに表示するニックネームを入力してください","type":"INPUT_TEXT","value":"E2E-Render-Direct"},
+                {"key":"b35166f9-990b-4e4c-89c4-2c56defafe77","label":"納品先メールアドレス","type":"INPUT_EMAIL","value":"e2e-render-direct@example.com"},
+                {"key":"7b83690e-7554-4279-b34a-9aed960d5a0e","label":"現在の状態に最も近いもの","type":"MULTIPLE_CHOICE","value":["すでに退職した"]},
+                {"key":"a497578d-0f64-42ea-ba39-212afdf2a85b","label":"今の仕事を続けることや、休職・退職を考えるきっかけになっていることを選んでください。※いくつ選んでも構いません。","type":"CHECKBOXES","value":["仕事内容が合わない・今後のキャリア"]},
+                {"key":"ca2dcdc1-78e0-4aa5-80bd-62b7046dec0d","label":"体調などを考えると、次の仕事は始められそうですか？","type":"DROPDOWN","value":["始められそう"]},
+                {"key":"3f63703e-475e-4c46-8728-1189e665307e","label":"退職時の年齢","type":"INPUT_NUMBER","value":42},
+                {"key":"18238c9c-3b3d-4f52-9af1-89ccf0a43020","label":"雇用保険に加入して働いた期間","type":"DROPDOWN","value":["1年以上5年未満"]},
+                {"key":"09450e73-9117-4077-bd7c-51298550017e","label":"退職日","type":"INPUT_DATE","value":"2026-08-01"},
+                {"key":"dd7bb653-ee89-4c54-91ef-39794ced708d","label":"会社や窓口から、返答・署名・提出などの期限を示されていますか？","type":"MULTIPLE_CHOICE","value":["ない"]},
+                {"key":"ed57d9e6-9a51-431b-9d93-20183e41352b","label":"離職票は届いていますか？","type":"MULTIPLE_CHOICE","value":["まだ届いていない"]},
+                {"key":"47568c87-3082-4b72-9352-4d0b402d9704","label":"選んだ理由の中で、一番大きな理由を1つ選んでください","type":"MULTIPLE_CHOICE","value":["キャリア・仕事内容"]},
+                {"key":"f4ec527c-7757-43c3-a787-9f3acc2b17c5","label":"退職日に出勤しましたか、または出勤する予定ですか？","type":"MULTIPLE_CHOICE","value":["出勤していない・出勤しない予定"]},
+                {"key":"a278285f-708a-49e2-a305-5ff63d6911c9","label":"この先、仕事についてどう考えていますか？","type":"MULTIPLE_CHOICE","value":["仕事を探すつもり"]},
+                {"key":"a1509f23-1bfc-47c3-a1cb-6865ca099f3f","label":"退職前6か月の賃金の入力方法を選んでください","type":"MULTIPLE_CHOICE","value":["6か月分の合計額を入力する"]},
+                {"key":"541e0cfe-1608-4773-a21f-652bd0bec4d4","label":"6か月分の合計額を入力してください","type":"INPUT_NUMBER","value":1800000},
+                {"key":"5de35d76-8705-4d28-b0c8-f461cee523bf","label":"今回のレポートで、特に知りたい・整理したいことを選んでください。","type":"CHECKBOXES","value":["失業手当の金額と受け取り方"]},
+                {"key":"46b66790-089c-496b-b115-05fbd57b1217","label":"連続する3日間を含め、4日以上仕事に就けなかった期間がありますか？","type":"MULTIPLE_CHOICE","value":["いいえ"]},
+                {"key":"d97182b8-174d-4708-b601-e9f96aa4ea19","label":"現在、手元にあるものを選んでください","type":"CHECKBOXES","value":["特にない"]},
+                {"key":"3452a118-280d-47e3-bc28-f6db09786c8d","label":"そのほか伝えておきたいこと","type":"TEXTAREA","value":"Render移行後の直接E2Eテスト。実在顧客ではありません。納品不要です。"},
+                {"key":"890e6e05-b0a9-4ea4-b1cb-2313d168456c","label":"ご利用上の確認事項","type":"CHECKBOXES","value":["回答内容をもとに、個別レポートを作成することに同意します。\n給与や離職理由の最終決定、申請代行、会社との交渉を行うサービスではないことを確認しました。"]}
+              ]
+            }
+          }
+          JSON
+          python3 -m json.tool /tmp/tally_e2e_payload.json >/dev/null
+
+      - name: Run exact bundle locally through webhook to report generation
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PORT=3111
+          export HOST=127.0.0.1
+          export TALLY_FORM_ID=QKyVpY
+          export ALLOW_UNSIGNED_WEBHOOKS=true
+          export WORKFLOW_QUEUE_ROOT=/tmp/taishoku-queue
+          export WORKFLOW_OUTPUT_ROOT=/tmp/taishoku-jobs
+          export WORKFLOW_PYTHON="$(command -v python3)"
+          node /tmp/taishoku-runtime/workflow_webhook_v0.1/webhook_server.mjs >/tmp/taishoku_server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3111/health >/tmp/local_health.json; then break; fi
+            sleep 1
+          done
+          echo "LOCAL_HEALTH=$(cat /tmp/local_health.json)"
+          LOCAL_CODE=$(curl -sS -o /tmp/local_webhook_body.json -w '%{http_code}' -H 'content-type: application/json' --data-binary @/tmp/tally_e2e_payload.json http://127.0.0.1:3111/webhooks/tally)
+          echo "LOCAL_WEBHOOK_HTTP=$LOCAL_CODE"
+          cat /tmp/local_webhook_body.json
+          test "$LOCAL_CODE" = "202" -o "$LOCAL_CODE" = "200"
+          for i in {1..45}; do
+            if find /tmp/taishoku-jobs -type f \( -name 'report_preview.html' -o -name 'job_manifest.json' \) | grep -q .; then
+              sleep 2
+              break
+            fi
+            sleep 1
+          done
+          echo "=== LOCAL GENERATED FILES ==="
+          find /tmp/taishoku-jobs -maxdepth 4 -type f -printf '%p %s bytes\n' | sort
+          echo "=== SERVER LOG ==="
+          cat /tmp/taishoku_server.log
+          MANIFEST=$(find /tmp/taishoku-jobs -type f -name 'job_manifest.json' | head -1 || true)
+          NORMALIZED=$(find /tmp/taishoku-jobs -type f -name 'normalized_answer.json' | head -1 || true)
+          HTML=$(find /tmp/taishoku-jobs -type f -name 'report_preview.html' | head -1 || true)
+          PDF=$(find /tmp/taishoku-jobs -type f -name 'report_preview.pdf' | head -1 || true)
+          echo "MANIFEST=$MANIFEST"
+          echo "NORMALIZED=$NORMALIZED"
+          echo "HTML=$HTML"
+          echo "PDF=$PDF"
+          test -n "$MANIFEST"
+          test -n "$HTML"
+          if [ -n "$NORMALIZED" ]; then
+            python3 - "$NORMALIZED" <<'PY'
+          import json,sys
+          p=sys.argv[1]
+          d=json.load(open(p,encoding='utf-8'))
+          keys=['display_name','wage_6m_total','reference_id']
+          print('NORMALIZED_SUMMARY='+json.dumps({k:d.get(k) for k in keys},ensure_ascii=False))
+          PY
+          fi
+          python3 - "$MANIFEST" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1],encoding='utf-8'))
+          keys=['status','delivery_allowed','automatic_delivery','reference_id']
+          print('MANIFEST_SUMMARY='+json.dumps({k:d.get(k) for k in keys},ensure_ascii=False))
+          PY
+
+      - name: Probe actual Render webhook without changing Render configuration
+        shell: bash
+        run: |
+          set +e
+          EXT_CODE=$(curl --retry 2 --retry-delay 3 --max-time 90 -sS -o /tmp/render_webhook_body.json -w '%{http_code}' -H 'content-type: application/json' --data-binary @/tmp/tally_e2e_payload.json https://taishoku-workflow-production-free.onrender.com/webhooks/tally)
+          echo "RENDER_WEBHOOK_HTTP=$EXT_CODE"
+          echo "RENDER_WEBHOOK_BODY=$(cat /tmp/render_webhook_body.json 2>/dev/null)"
+          HEALTH_CODE=$(curl --max-time 90 -sS -o /tmp/render_health.json -w '%{http_code}' https://taishoku-workflow-production-free.onrender.com/health)
+          echo "RENDER_HEALTH_HTTP=$HEALTH_CODE"
+          echo "RENDER_HEALTH_BODY=$(cat /tmp/render_health.json 2>/dev/null)"
+          exit 0
