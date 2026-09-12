@@ -38,6 +38,25 @@ jobs:
           assert d['verified_at']=='2026-09-07'
           print('LEGAL_PATCH_OK')
           PY
+      - name: Verify manual approval and secret report safeguards
+        shell: bash
+        run: |
+          set -euo pipefail
+          W=taishoku_app/runtime/workflow_webhook_v0.1/webhook_server.mjs
+          A=taishoku_app/runtime/workflow_pipeline_v0.1/approve_job.mjs
+          X=taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
+          test -f "$A"
+          test -f "$X"
+          grep -q "approved_for_manual_delivery" "$A"
+          grep -q "automatic_delivery: false" "$A"
+          grep -q "randomBytes(32)" "$X"
+          grep -q "hashReportToken" "$X"
+          grep -q "approved_for_manual_delivery" "$X"
+          grep -q "private, no-store" "$W"
+          grep -q "noindex, nofollow, noarchive" "$W"
+          grep -q "no-referrer" "$W"
+          grep -q "url.pathname.startsWith('/r/')" "$W"
+          echo SECRET_REPORT_GUARDS_OK
       - name: Run existing rule tests
         shell: bash
         run: |
@@ -48,11 +67,13 @@ jobs:
             echo "RUN $f"
             node "$f"
           done
-      - name: Smoke render known-good normalized fixture when available
+      - name: Syntax and release smoke checks
         shell: bash
         run: |
           set -euo pipefail
           node --check taishoku_app/runtime/workflow_webhook_v0.1/webhook_server.mjs
+          node --check taishoku_app/runtime/workflow_pipeline_v0.1/approve_job.mjs
           node --check taishoku_app/runtime/workflow_persistence_v0.1/persist_job.mjs
           node --check taishoku_app/runtime/workflow_persistence_v0.1/restore_job.mjs
+          node --check taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
           echo RELEASE_CHECK_OK
