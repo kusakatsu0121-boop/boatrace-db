@@ -10,22 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack and audit legal/report version
+      - name: Unpack and audit report access and approval flow
         shell: bash
         run: |
           set -euo pipefail
           rm -rf /tmp/taishoku-audit && mkdir -p /tmp/taishoku-audit
           cat taishoku_app/bundle/part*.txt | base64 -d > /tmp/app.zip
           unzip -q /tmp/app.zip -d /tmp/taishoku-audit
-          R=/tmp/taishoku-audit/report_template_v0.1/render_report.py
-          J=/tmp/taishoku-audit/workflow_rule_package_v0.1/workflow_rules_v0.1.json
-          echo '=== VERSION/SOURCES TOP ==='
-          sed -n '1,110p' "$R"
-          echo '=== BENEFIT STRING LOCATIONS ==='
-          grep -n "失業手当\|基本手当\|SOURCE_URLS\|source_urls" "$R" || true
-          echo '=== RENDER BODY 250-430 ==='
-          sed -n '250,430p' "$R"
-          echo '=== RULES TOP ==='
-          sed -n '1,30p' "$J"
-          echo '=== RULES SOURCES TAIL ==='
-          sed -n '155,195p' "$J"
+          echo '=== REPORT ACCESS MODULE ==='
+          sed -n '1,320p' /tmp/taishoku-audit/workflow_report_access_v0.1/report_access.mjs
+          echo '=== APPROVE JOB ==='
+          sed -n '1,320p' /tmp/taishoku-audit/workflow_pipeline_v0.1/approve_job.mjs
+          echo '=== ORIGINAL WEBHOOK SERVER REPORT ROUTES ==='
+          grep -n "report_access\|/r/\|resolveReport\|serveReport" /tmp/taishoku-audit/workflow_webhook_v0.1/webhook_server.mjs || true
+          sed -n '1,340p' /tmp/taishoku-audit/workflow_webhook_v0.1/webhook_server.mjs
