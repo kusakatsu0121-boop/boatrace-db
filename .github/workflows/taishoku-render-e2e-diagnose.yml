@@ -1,0 +1,58 @@
+name: taishoku-render-e2e-diagnose
+
+on:
+  push:
+    branches:
+      - taishoku-e2e-test-20260912
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decode bundle and run local webhook
+        shell: bash
+        run: |
+          set -u
+          rm -rf /tmp/rt /tmp/q /tmp/jobs
+          mkdir -p /tmp/rt /tmp/q /tmp/jobs
+          cat taishoku_app/bundle/part*.txt | base64 -d > /tmp/app.zip
+          unzip -q /tmp/app.zip -d /tmp/rt
+          python3 -m pip install --quiet pymupdf==1.26.3
+          export PORT=3112 HOST=127.0.0.1 TALLY_FORM_ID=QKyVpY ALLOW_UNSIGNED_WEBHOOKS=true
+          export WORKFLOW_QUEUE_ROOT=/tmp/q WORKFLOW_OUTPUT_ROOT=/tmp/jobs WORKFLOW_PYTHON="$(command -v python3)"
+          node /tmp/rt/workflow_webhook_v0.1/webhook_server.mjs >/tmp/server.log 2>&1 &
+          PID=$!
+          trap 'kill $PID 2>/dev/null || true' EXIT
+          for i in {1..30}; do curl -fsS http://127.0.0.1:3112/health >/tmp/health.json 2>/dev/null && break; sleep 1; done
+          echo "HEALTH=$(cat /tmp/health.json 2>/dev/null)"
+          CODE=$(curl -sS -o /tmp/body.json -w '%{http_code}' -H 'content-type: application/json' --data-binary @taishoku_app/e2e_payload_20260912.json http://127.0.0.1:3112/webhooks/tally)
+          echo "LOCAL_HTTP=$CODE BODY=$(cat /tmp/body.json)"
+          sleep 5
+          echo '=== JOB FILES ==='
+          find /tmp/jobs -type f -printf '%p %s bytes\n' | sort || true
+          echo '=== MANIFEST ==='
+          M=$(find /tmp/jobs -name job_manifest.json | head -1)
+          [ -n "$M" ] && cat "$M" || true
+          echo
+          echo '=== NORMALIZED ==='
+          N=$(find /tmp/jobs -name normalized_answer.json | head -1)
+          [ -n "$N" ] && cat "$N" || true
+          echo
+          echo '=== SERVER LOG ==='
+          cat /tmp/server.log || true
+
+      - name: Probe actual Render webhook
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          CODE=$(curl --retry 2 --retry-delay 3 --max-time 90 -sS -o /tmp/render_body.json -w '%{http_code}' -H 'content-type: application/json' --data-binary @taishoku_app/e2e_payload_20260912.json https://taishoku-workflow-production-free.onrender.com/webhooks/tally)
+          echo "RENDER_WEBHOOK_HTTP=$CODE"
+          echo "RENDER_WEBHOOK_BODY=$(cat /tmp/render_body.json 2>/dev/null)"
+          HC=$(curl --max-time 90 -sS -o /tmp/render_health.json -w '%{http_code}' https://taishoku-workflow-production-free.onrender.com/health)
+          echo "RENDER_HEALTH_HTTP=$HC"
+          echo "RENDER_HEALTH_BODY=$(cat /tmp/render_health.json 2>/dev/null)"
+          exit 0
