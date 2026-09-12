@@ -17,13 +17,15 @@ jobs:
           rm -rf /tmp/taishoku-audit && mkdir -p /tmp/taishoku-audit
           cat taishoku_app/bundle/part*.txt | base64 -d > /tmp/app.zip
           unzip -q /tmp/app.zip -d /tmp/taishoku-audit
-          echo '=== TEMPLATE VERSION ==='
-          grep -R -n "TEMPLATE_VERSION" /tmp/taishoku-audit/report_template_v0.1 || true
-          echo '=== RETIREMENT BENEFIT NOTICE ==='
-          grep -R -n "退職給付金" /tmp/taishoku-audit/report_template_v0.1 || true
-          echo '=== REQUIRED SOURCE URLS ==='
-          grep -R -n "0000160564_00050\|naha_retirement_benefits_202603\|n-20251203_1" /tmp/taishoku-audit || true
-          echo '=== VERIFIED AT ==='
-          grep -R -n '"verified_at"' /tmp/taishoku-audit/workflow_rule_package_v0.1 || true
-          echo '=== FILE LIST ==='
-          find /tmp/taishoku-audit -maxdepth 2 -type f | sort
+          R=/tmp/taishoku-audit/report_template_v0.1/render_report.py
+          J=/tmp/taishoku-audit/workflow_rule_package_v0.1/workflow_rules_v0.1.json
+          echo '=== VERSION/SOURCES TOP ==='
+          sed -n '1,110p' "$R"
+          echo '=== BENEFIT STRING LOCATIONS ==='
+          grep -n "失業手当\|基本手当\|SOURCE_URLS\|source_urls" "$R" || true
+          echo '=== RENDER BODY 250-430 ==='
+          sed -n '250,430p' "$R"
+          echo '=== RULES TOP ==='
+          sed -n '1,30p' "$J"
+          echo '=== RULES SOURCES TAIL ==='
+          sed -n '155,195p' "$J"
