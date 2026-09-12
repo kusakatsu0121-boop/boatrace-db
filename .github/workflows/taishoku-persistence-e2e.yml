@@ -29,18 +29,18 @@ jobs:
           set -euo pipefail
           cat > /tmp/payload.json <<'JSON'
           {
-            "eventId":"persistence-e2e-20260912-01",
+            "eventId":"persistence-e2e-20260912-02",
             "eventType":"FORM_RESPONSE",
-            "createdAt":"2026-09-12T14:20:00.000Z",
+            "createdAt":"2026-09-12T14:21:00.000Z",
             "data":{
-              "responseId":"PERSISTE2E20260912",
-              "submissionId":"PERSISTE2E20260912",
+              "responseId":"PERSISTE2E20260912B",
+              "submissionId":"PERSISTE2E20260912B",
               "formId":"QKyVpY",
               "formName":"あなた専用｜退職前後ワークフロー",
-              "createdAt":"2026-09-12T14:20:00.000Z",
+              "createdAt":"2026-09-12T14:21:00.000Z",
               "fields":[
-                {"key":"f6459a23-198b-485f-a76e-dd3bb2daa6ea","label":"レポートに表示するニックネームを入力してください","type":"INPUT_TEXT","value":"Persistence-E2E"},
-                {"key":"b35166f9-990b-4e4c-89c4-2c56defafe77","label":"納品先メールアドレス","type":"INPUT_EMAIL","value":"persistence-e2e@example.com"},
+                {"key":"f6459a23-198b-485f-a76e-dd3bb2daa6ea","label":"レポートに表示するニックネームを入力してください","type":"INPUT_TEXT","value":"Persistence-E2E-B"},
+                {"key":"b35166f9-990b-4e4c-89c4-2c56defafe77","label":"納品先メールアドレス","type":"INPUT_EMAIL","value":"persistence-e2e-b@example.com"},
                 {"key":"7b83690e-7554-4279-b34a-9aed960d5a0e","label":"現在の状態に最も近いもの","type":"MULTIPLE_CHOICE","value":["すでに退職した"]},
                 {"key":"a497578d-0f64-42ea-ba39-212afdf2a85b","label":"今の仕事を続けることや、休職・退職を考えるきっかけになっていることを選んでください。※いくつ選んでも構いません。","type":"CHECKBOXES","value":["仕事内容が合わない・今後のキャリア"]},
                 {"key":"ca2dcdc1-78e0-4aa5-80bd-62b7046dec0d","label":"体調などを考えると、次の仕事は始められそうですか？","type":"DROPDOWN","value":["始められそう"]},
@@ -57,7 +57,7 @@ jobs:
                 {"key":"5de35d76-8705-4d28-b0c8-f461cee523bf","label":"今回のレポートで、特に知りたい・整理したいことを選んでください。","type":"CHECKBOXES","value":["失業手当の金額と受け取り方"]},
                 {"key":"46b66790-089c-496b-b115-05fbd57b1217","label":"連続する3日間を含め、4日以上仕事に就けなかった期間がありますか？","type":"MULTIPLE_CHOICE","value":["いいえ"]},
                 {"key":"d97182b8-174d-4708-b601-e9f96aa4ea19","label":"現在、手元にあるものを選んでください","type":"CHECKBOXES","value":["特にない"]},
-                {"key":"3452a118-280d-47e3-bc28-f6db09786c8d","label":"そのほか伝えておきたいこと","type":"TEXTAREA","value":"Persistence E2E。実在利用者ではありません。納品不要。"},
+                {"key":"3452a118-280d-47e3-bc28-f6db09786c8d","label":"そのほか伝えておきたいこと","type":"TEXTAREA","value":"Persistence E2E B。実在利用者ではありません。納品不要。"},
                 {"key":"890e6e05-b0a9-4ea4-b1cb-2313d168456c","label":"ご利用上の確認事項","type":"CHECKBOXES","value":["回答内容をもとに、個別レポートを作成することに同意します。\n給与や離職理由の最終決定、申請代行、会社との交渉を行うサービスではないことを確認しました。"]}
               ]
             }
@@ -68,4 +68,4 @@ jobs:
           test "$code" = "202" -o "$code" = "200"
 
       - name: Wait for processing window
-        run: sleep 12
+        run: sleep 20
