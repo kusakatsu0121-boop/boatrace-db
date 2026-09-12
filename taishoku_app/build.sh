@@ -13,6 +13,9 @@ if [ -d "$ROOT/src" ]; then
   cp -R "$ROOT/src/." "$RUNTIME/"
 fi
 
+# Apply the already-approved legal/source update without changing calculations.
+python3 "$ROOT/patch_legal_20260912.py" "$RUNTIME"
+
 python3 -m pip install --no-cache-dir pymupdf==1.26.3
 python3 - <<'PY'
 import fitz
