@@ -69,14 +69,15 @@ function enqueue(queueRoot, id, payload) {
   return target;
 }
 
-function spawnDetached(scriptPath, args) {
+function spawnDetached(scriptPath, args, stdio = 'ignore') {
   const child = spawn(process.execPath, [scriptPath, ...args], {
     cwd: projectRoot,
     detached: true,
-    stdio: 'ignore',
+    stdio,
     env: process.env,
   });
   child.unref();
+  return child;
 }
 
 function startWorker(queueRoot, outputRoot) {
@@ -84,14 +85,24 @@ function startWorker(queueRoot, outputRoot) {
 }
 
 function startPersistence(outputRoot, id, payload) {
-  if (!process.env.DATABASE_URL || !fs.existsSync(persistencePath)) return;
+  if (!process.env.DATABASE_URL || !fs.existsSync(persistencePath)) {
+    console.log(JSON.stringify({ status: 'persistence_not_started', database_url: Boolean(process.env.DATABASE_URL), persistence_path_exists: fs.existsSync(persistencePath), automatic_delivery: false }));
+    return;
+  }
   const ref = referenceId(payload);
-  if (!ref) return;
-  spawnDetached(persistencePath, [
+  if (!ref) {
+    console.log(JSON.stringify({ status: 'persistence_not_started', reason: 'missing_reference_id', automatic_delivery: false }));
+    return;
+  }
+  console.log(JSON.stringify({ status: 'persistence_starting', reference_id: ref, event_id: id, output_root: outputRoot, automatic_delivery: false }));
+  const child = spawnDetached(persistencePath, [
     '--output-root', outputRoot,
     '--reference-id', ref,
     '--event-id', id,
-  ]);
+  ], ['ignore', 'inherit', 'inherit']);
+  child.on('error', error => {
+    console.error(JSON.stringify({ status: 'persistence_spawn_error', reference_id: ref, error: error.message || String(error), automatic_delivery: false }));
+  });
 }
 
 async function readBody(req, limitBytes) {
