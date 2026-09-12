@@ -31,9 +31,15 @@ PY
 
 node --check "$RUNTIME/workflow_webhook_v0.1/webhook_server.mjs"
 node --check "$RUNTIME/workflow_pipeline_v0.1/process_tally_submission.mjs"
+if [ -f "$RUNTIME/workflow_pipeline_v0.1/approve_job.mjs" ]; then
+  node --check "$RUNTIME/workflow_pipeline_v0.1/approve_job.mjs"
+fi
 if [ -f "$RUNTIME/workflow_persistence_v0.1/persist_job.mjs" ]; then
   node --check "$RUNTIME/workflow_persistence_v0.1/persist_job.mjs"
   node --check "$RUNTIME/workflow_persistence_v0.1/restore_job.mjs"
+fi
+if [ -f "$RUNTIME/workflow_report_access_v0.1/report_access.mjs" ]; then
+  node --check "$RUNTIME/workflow_report_access_v0.1/report_access.mjs"
 fi
 
 echo "taishoku build ready"
