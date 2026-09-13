@@ -34,6 +34,9 @@ node --check "$RUNTIME/workflow_pipeline_v0.1/process_tally_submission.mjs"
 if [ -f "$RUNTIME/workflow_pipeline_v0.1/approve_job.mjs" ]; then
   node --check "$RUNTIME/workflow_pipeline_v0.1/approve_job.mjs"
 fi
+if [ -f "$RUNTIME/workflow_pipeline_v0.1/instant_finalize.mjs" ]; then
+  node --check "$RUNTIME/workflow_pipeline_v0.1/instant_finalize.mjs"
+fi
 if [ -f "$RUNTIME/workflow_persistence_v0.1/persist_job.mjs" ]; then
   node --check "$RUNTIME/workflow_persistence_v0.1/persist_job.mjs"
   node --check "$RUNTIME/workflow_persistence_v0.1/restore_job.mjs"
