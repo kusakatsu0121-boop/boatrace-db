@@ -15,8 +15,8 @@ new_duplicate = """        sendJson(res, 200, { status: 'duplicate', event_id: i
         else startPersistence(outputRoot, id, payload);
         return;"""
 count = text.count(old_duplicate)
-if count != 2:
-    raise SystemExit(f'expected 2 duplicate persistence blocks, found {count}')
+if count < 1:
+    raise SystemExit('duplicate persistence block not found')
 text = text.replace(old_duplicate, new_duplicate)
 
 old_new = """      sendJson(res, 202, { status: 'accepted', event_id: id, automatic_delivery: false });
@@ -32,4 +32,4 @@ if text.count(old_new) != 1:
 text = text.replace(old_new, new_new)
 
 path.write_text(text, encoding='utf-8')
-print('instant persistence race patch applied')
+print(f'instant persistence race patch applied (duplicate blocks={count})')
