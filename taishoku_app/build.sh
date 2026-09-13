@@ -16,6 +16,10 @@ fi
 # Apply the already-approved legal/source update without changing calculations.
 python3 "$ROOT/patch_legal_20260912.py" "$RUNTIME"
 
+# Instant-report flow must not run the standalone persistence writer in parallel
+# with approve_job persistence; serialize it to avoid Postgres deadlocks.
+python3 "$ROOT/patch_instant_persistence_race.py" "$RUNTIME"
+
 python3 -m pip install --no-cache-dir pymupdf==1.26.3
 python3 - <<'PY'
 import fitz
