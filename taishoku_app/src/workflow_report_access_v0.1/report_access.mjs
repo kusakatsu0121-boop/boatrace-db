@@ -41,14 +41,14 @@ export async function ensureReportAccessSchema(client) {
   await client.query(`CREATE INDEX IF NOT EXISTS taishoku_report_access_reference_idx ON taishoku_report_access(reference_id)`);
 }
 
-export async function createReportAccess({ referenceId, htmlBytes, approvedBy = null, approvalNote = null, expiresAt = null, baseUrl = null }) {
+export async function createReportAccess({ referenceId, htmlBytes, approvedBy = null, approvalNote = null, expiresAt = null, baseUrl = null, token = null }) {
   if (!REFERENCE_ID_RE.test(String(referenceId || ''))) throw new Error('invalid_reference_id');
   const content = Buffer.isBuffer(htmlBytes) ? htmlBytes : Buffer.from(htmlBytes || '');
   if (!content.length) throw new Error('empty_report_html');
 
-  const token = crypto.randomBytes(32).toString('base64url');
-  if (!TOKEN_RE.test(token)) throw new Error('invalid_generated_token');
-  const tokenHash = hashReportToken(token);
+  const reportToken = token == null ? crypto.randomBytes(32).toString('base64url') : String(token);
+  if (!TOKEN_RE.test(reportToken)) throw new Error('invalid_generated_token');
+  const tokenHash = hashReportToken(reportToken);
   const reportId = `rpt_${crypto.randomBytes(18).toString('base64url')}`;
   const htmlSha256 = crypto.createHash('sha256').update(content).digest('hex');
   const client = makeClient();
@@ -74,11 +74,11 @@ export async function createReportAccess({ referenceId, htmlBytes, approvedBy = 
     await client.end().catch(() => {});
   }
   const cleanBase = baseUrl ? String(baseUrl).replace(/\/+$/, '') : '';
-  const reportPath = `/r/${token}`;
+  const reportPath = `/r/${reportToken}`;
   return {
     reportId,
     referenceId,
-    token,
+    token: reportToken,
     tokenHash,
     reportPath,
     reportUrl: cleanBase ? `${cleanBase}${reportPath}` : reportPath,
@@ -158,6 +158,7 @@ async function cli() {
       approvalNote: arg('--approval-note', null),
       expiresAt: arg('--expires-at', null),
       baseUrl: arg('--base-url', process.env.REPORT_BASE_URL || process.env.RENDER_EXTERNAL_URL || null),
+      token: arg('--token', null),
     });
     console.log(JSON.stringify({
       status: 'report_access_issued',

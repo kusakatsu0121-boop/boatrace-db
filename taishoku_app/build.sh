@@ -16,6 +16,10 @@ fi
 # Apply the already-approved legal/source update without changing calculations.
 python3 "$ROOT/patch_legal_20260912.py" "$RUNTIME"
 
+# Instant-report flow must not run the standalone persistence writer in parallel
+# with approve_job persistence; serialize it to avoid Postgres deadlocks.
+python3 "$ROOT/patch_instant_persistence_race.py" "$RUNTIME"
+
 python3 -m pip install --no-cache-dir pymupdf==1.26.3
 python3 - <<'PY'
 import fitz
@@ -33,6 +37,9 @@ node --check "$RUNTIME/workflow_webhook_v0.1/webhook_server.mjs"
 node --check "$RUNTIME/workflow_pipeline_v0.1/process_tally_submission.mjs"
 if [ -f "$RUNTIME/workflow_pipeline_v0.1/approve_job.mjs" ]; then
   node --check "$RUNTIME/workflow_pipeline_v0.1/approve_job.mjs"
+fi
+if [ -f "$RUNTIME/workflow_pipeline_v0.1/instant_finalize.mjs" ]; then
+  node --check "$RUNTIME/workflow_pipeline_v0.1/instant_finalize.mjs"
 fi
 if [ -f "$RUNTIME/workflow_persistence_v0.1/persist_job.mjs" ]; then
   node --check "$RUNTIME/workflow_persistence_v0.1/persist_job.mjs"

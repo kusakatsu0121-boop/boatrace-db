@@ -10,6 +10,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(here, '..');
 const workerPath = path.join(here, 'queue_worker.mjs');
 const persistencePath = path.join(projectRoot, 'workflow_persistence_v0.1', 'persist_job.mjs');
+const instantFinalizePath = path.join(projectRoot, 'workflow_pipeline_v0.1', 'instant_finalize.mjs');
+const REPORT_TOKEN_RE = /^[A-Za-z0-9_-]{43}$/;
 
 function sendJson(res, status, body) {
   const encoded = Buffer.from(`${JSON.stringify(body)}\n`, 'utf8');
@@ -19,6 +21,19 @@ function sendJson(res, status, body) {
     'cache-control': 'no-store',
   });
   res.end(encoded);
+}
+
+function sendHtml(res, status, html) {
+  const body = Buffer.from(String(html || ''), 'utf8');
+  res.writeHead(status, {
+    'content-type': 'text/html; charset=utf-8',
+    'content-length': body.length,
+    'cache-control': 'private, no-store',
+    'x-robots-tag': 'noindex, nofollow, noarchive',
+    'referrer-policy': 'no-referrer',
+    'x-content-type-options': 'nosniff',
+  });
+  res.end(body);
 }
 
 function sendPrivateReport(res, htmlBytes) {
@@ -32,6 +47,36 @@ function sendPrivateReport(res, htmlBytes) {
     'x-content-type-options': 'nosniff',
   });
   res.end(body);
+}
+
+function redirect(res, location) {
+  res.writeHead(302, {
+    location,
+    'cache-control': 'no-store',
+    'referrer-policy': 'no-referrer',
+  });
+  res.end();
+}
+
+function processingPage() {
+  return `<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="2">
+<title>レポートを作成しています</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f7f7f5;color:#202124}
+main{max-width:560px;margin:12vh auto;padding:32px 24px;text-align:center}
+.card{background:#fff;border:1px solid #e6e6e2;border-radius:18px;padding:34px 24px;box-shadow:0 6px 24px rgba(0,0,0,.05)}
+.spinner{width:34px;height:34px;border:4px solid #ddd;border-top-color:#333;border-radius:50%;margin:0 auto 22px;animation:s 1s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+h1{font-size:22px;margin:0 0 12px}p{line-height:1.7;margin:0;color:#555}
+</style>
+</head>
+<body><main><div class="card"><div class="spinner"></div><h1>あなたのレポートを作成しています</h1><p>通常は数十秒で表示されます。<br>この画面は自動で更新されます。</p></div></main></body>
+</html>`;
 }
 
 function safeId(value) {
@@ -52,6 +97,43 @@ function eventId(payload, rawBody) {
 function referenceId(payload) {
   const candidate = safeId(payload?.data?.responseId ?? payload?.data?.submissionId);
   return candidate ? `WF-${candidate}` : null;
+}
+
+function scalar(value) {
+  if (Array.isArray(value)) return value.length ? scalar(value[0]) : '';
+  if (value && typeof value === 'object' && 'value' in value) return scalar(value.value);
+  return value == null ? '' : String(value);
+}
+
+function extractInstantToken(payload, fieldName) {
+  const candidates = [
+    payload?.data?.[fieldName],
+    payload?.data?.hiddenFields?.[fieldName],
+    payload?.data?.hidden_fields?.[fieldName],
+  ];
+  for (const value of candidates) {
+    const token = scalar(value).trim();
+    if (REPORT_TOKEN_RE.test(token)) return token;
+  }
+
+  const hiddenCollections = [payload?.data?.hiddenFields, payload?.data?.hidden_fields];
+  for (const collection of hiddenCollections) {
+    if (!Array.isArray(collection)) continue;
+    for (const item of collection) {
+      if (String(item?.name ?? item?.key ?? item?.label ?? '') !== fieldName) continue;
+      const token = scalar(item?.value ?? item?.answer).trim();
+      if (REPORT_TOKEN_RE.test(token)) return token;
+    }
+  }
+
+  const fields = Array.isArray(payload?.data?.fields) ? payload.data.fields : [];
+  for (const field of fields) {
+    const names = [field?.name, field?.label, field?.key].map(v => String(v ?? ''));
+    if (!names.includes(fieldName)) continue;
+    const token = scalar(field?.value ?? field?.answer).trim();
+    if (REPORT_TOKEN_RE.test(token)) return token;
+  }
+  return null;
 }
 
 function signatureMatches(payload, received, secret) {
@@ -123,6 +205,16 @@ function startPersistence(outputRoot, id, payload) {
   });
 }
 
+function startInstantFinalize(outputRoot, payload, token) {
+  const ref = referenceId(payload);
+  if (!ref || !REPORT_TOKEN_RE.test(String(token || '')) || !fs.existsSync(instantFinalizePath)) return;
+  console.log(JSON.stringify({ status: 'instant_report_starting', reference_id: ref, automatic_delivery: false }));
+  const child = spawnDetached(instantFinalizePath, [outputRoot, ref, token], ['ignore', 'inherit', 'inherit']);
+  child.on('error', error => {
+    console.error(JSON.stringify({ status: 'instant_report_spawn_error', reference_id: ref, error: error.message || String(error), automatic_delivery: false }));
+  });
+}
+
 async function readBody(req, limitBytes) {
   const chunks = [];
   let total = 0;
@@ -148,6 +240,9 @@ export function createWebhookServer(options = {}) {
   const bodyLimit = options.bodyLimit ?? 2 * 1024 * 1024;
   const persistenceConfigured = Boolean(process.env.DATABASE_URL);
   const persistenceRequired = process.env.REQUIRE_PERSISTENCE === 'true';
+  const instantEnabled = options.instantEnabled ?? process.env.INSTANT_WEB_REPORT === 'true';
+  const instantFieldName = options.instantFieldName ?? process.env.INSTANT_TOKEN_FIELD ?? 'instant_token';
+  const tallyPublicUrl = options.tallyPublicUrl ?? process.env.TALLY_PUBLIC_URL ?? 'https://tally.so/r/QKyVpY';
 
   if (!signingSecret && !allowUnsigned) {
     throw new Error('TALLY_SIGNING_SECRET がありません。署名なしで起動する場合は開発時のみ ALLOW_UNSIGNED_WEBHOOKS=true を設定してください');
@@ -165,26 +260,44 @@ export function createWebhookServer(options = {}) {
         automatic_delivery: false,
         persistence: persistenceConfigured ? 'configured' : 'ephemeral',
         secret_report_access: persistenceConfigured ? 'configured' : 'unavailable',
+        instant_web_report: instantEnabled ? 'enabled' : 'disabled',
       });
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/start' && instantEnabled) {
+      const token = crypto.randomBytes(32).toString('base64url');
+      const target = new URL(tallyPublicUrl);
+      target.searchParams.set(instantFieldName, token);
+      for (const [key, value] of url.searchParams) {
+        if (key === instantFieldName) continue;
+        target.searchParams.append(key, value);
+      }
+      redirect(res, target.toString());
       return;
     }
 
     if (req.method === 'GET' && url.pathname.startsWith('/r/')) {
       const token = url.pathname.slice(3);
-      if (!/^[A-Za-z0-9_-]{43}$/.test(token)) {
+      if (!REPORT_TOKEN_RE.test(token)) {
         sendJson(res, 404, { error: 'not_found' });
         return;
       }
       try {
         const report = await resolveReportAccess(token);
         if (!report) {
-          sendJson(res, 404, { error: 'not_found' });
+          if (instantEnabled) {
+            sendHtml(res, 202, processingPage());
+          } else {
+            sendJson(res, 404, { error: 'not_found' });
+          }
           return;
         }
         sendPrivateReport(res, report.htmlBytes);
       } catch (error) {
         console.error(JSON.stringify({ status: 'report_access_error', error: error.message || String(error), automatic_delivery: false }));
-        sendJson(res, 404, { error: 'not_found' });
+        if (instantEnabled) sendHtml(res, 202, processingPage());
+        else sendJson(res, 404, { error: 'not_found' });
       }
       return;
     }
@@ -221,9 +334,11 @@ export function createWebhookServer(options = {}) {
       }
 
       const id = eventId(payload, rawBody);
+      const instantToken = instantEnabled ? extractInstantToken(payload, instantFieldName) : null;
       if (eventExists(queueRoot, id)) {
         sendJson(res, 200, { status: 'duplicate', event_id: id, automatic_delivery: false });
         startPersistence(outputRoot, id, payload);
+        if (instantToken) startInstantFinalize(outputRoot, payload, instantToken);
         return;
       }
       try {
@@ -232,6 +347,7 @@ export function createWebhookServer(options = {}) {
         if (error.code === 'EEXIST') {
           sendJson(res, 200, { status: 'duplicate', event_id: id, automatic_delivery: false });
           startPersistence(outputRoot, id, payload);
+          if (instantToken) startInstantFinalize(outputRoot, payload, instantToken);
           return;
         }
         throw error;
@@ -240,6 +356,7 @@ export function createWebhookServer(options = {}) {
       sendJson(res, 202, { status: 'accepted', event_id: id, automatic_delivery: false });
       if (launchWorker) startWorker(queueRoot, outputRoot);
       startPersistence(outputRoot, id, payload);
+      if (instantToken) startInstantFinalize(outputRoot, payload, instantToken);
     } catch (error) {
       sendJson(res, error.statusCode || 500, { error: error.message || 'internal_error' });
     }
@@ -262,6 +379,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
         automatic_delivery: false,
         persistence: process.env.DATABASE_URL ? 'configured' : 'ephemeral',
         secret_report_access: process.env.DATABASE_URL ? 'configured' : 'unavailable',
+        instant_web_report: process.env.INSTANT_WEB_REPORT === 'true' ? 'enabled' : 'disabled',
       }));
       startWorker(queueRoot, outputRoot);
     });

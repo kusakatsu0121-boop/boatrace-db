@@ -54,7 +54,7 @@ function runPersistence(jobDir, referenceId, eventId) {
   return String(result.stdout || '').trim();
 }
 
-async function approve(jobDirArg, approvedByArg, approvalNoteArg) {
+async function approve(jobDirArg, approvedByArg, approvalNoteArg, options = {}) {
   const jobDir = path.resolve(jobDirArg || '');
   const manifestPath = path.join(jobDir, 'job_manifest.json');
   const approvalPath = path.join(jobDir, 'approval.json');
@@ -76,6 +76,7 @@ async function approve(jobDirArg, approvedByArg, approvalNoteArg) {
   if (!REFERENCE_ID_RE.test(referenceId)) throw new Error('invalid_reference_id');
   const approvedBy = String(approvedByArg || 'manual-review').trim().slice(0, 200) || 'manual-review';
   const approvalNote = String(approvalNoteArg || '').trim().slice(0, 1000) || null;
+  const reportToken = options?.reportToken == null ? null : String(options.reportToken);
   const sourcePayload = fs.existsSync(sourcePayloadPath) ? readJson(sourcePayloadPath) : null;
   const eventId = eventIdFrom(sourcePayload, manifest);
   const htmlBytes = fs.readFileSync(htmlPath);
@@ -95,6 +96,7 @@ async function approve(jobDirArg, approvedByArg, approvalNoteArg) {
       approvedBy,
       approvalNote,
       baseUrl: process.env.REPORT_BASE_URL || process.env.RENDER_EXTERNAL_URL || null,
+      token: reportToken,
     });
 
     const approvedAt = new Date().toISOString();
