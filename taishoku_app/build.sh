@@ -20,36 +20,33 @@ python3 "$ROOT/patch_legal_20260912.py" "$RUNTIME"
 # with approve_job persistence; serialize it to avoid Postgres deadlocks.
 python3 "$ROOT/patch_instant_persistence_race.py" "$RUNTIME"
 
-# The production flow now publishes the report to a secret web URL and no longer
-# collects a delivery email address. Remove only the legacy blocker that treated
-# a missing delivery email as a fatal validation error. All other validations stay intact.
+# Diagnostic only: locate the remaining legacy email-delivery requirement in
+# the recovered runtime. Do not alter runtime behavior in this step.
 python3 - "$RUNTIME" <<'PY'
 from pathlib import Path
 import sys
 
 root = Path(sys.argv[1])
-needle = '納品先メールアドレスがありません'
-matched = 0
-changed = 0
+needles = [
+    '納品先メールアドレスがありません',
+    '納品先メールアドレス',
+    'delivery_email',
+    'recipient_email',
+]
 for path in root.rglob('*'):
-    if not path.is_file() or path.suffix not in {'.mjs', '.js', '.cjs'}:
+    if not path.is_file() or path.suffix not in {'.mjs', '.js', '.cjs', '.json', '.py'}:
         continue
     try:
-        text = path.read_text(encoding='utf-8')
+        lines = path.read_text(encoding='utf-8').splitlines()
     except Exception:
         continue
-    if needle not in text:
-        continue
-    matched += 1
-    lines = text.splitlines(keepends=True)
-    patched = ''.join(line for line in lines if needle not in line)
-    if patched != text:
-        path.write_text(patched, encoding='utf-8')
-        changed += 1
-        print(f'optional delivery-email patch: {path.relative_to(root)}')
-if matched != 1 or changed != 1:
-    raise SystemExit(f'unexpected delivery-email blocker count: matched={matched}, changed={changed}')
-print('optional delivery-email patch applied')
+    for i, line in enumerate(lines):
+        if any(n in line for n in needles):
+            lo = max(0, i - 4)
+            hi = min(len(lines), i + 5)
+            print(f'EMAIL_DIAG {path.relative_to(root)}:{i+1}')
+            for j in range(lo, hi):
+                print(f'{j+1:04d}: {lines[j]}')
 PY
 
 python3 -m pip install --no-cache-dir pymupdf==1.26.3
