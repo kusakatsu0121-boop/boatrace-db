@@ -20,33 +20,23 @@ python3 "$ROOT/patch_legal_20260912.py" "$RUNTIME"
 # with approve_job persistence; serialize it to avoid Postgres deadlocks.
 python3 "$ROOT/patch_instant_persistence_race.py" "$RUNTIME"
 
-# Diagnostic only: locate the remaining legacy email-delivery requirement in
-# the recovered runtime. Do not alter runtime behavior in this step.
+# Instant web reports no longer collect a delivery email address. Remove only
+# delivery_email from the core required-field list. Keep the mapping and the
+# format check so historical/email-bearing submissions remain compatible.
 python3 - "$RUNTIME" <<'PY'
 from pathlib import Path
 import sys
 
 root = Path(sys.argv[1])
-needles = [
-    '納品先メールアドレスがありません',
-    '納品先メールアドレス',
-    'delivery_email',
-    'recipient_email',
-]
-for path in root.rglob('*'):
-    if not path.is_file() or path.suffix not in {'.mjs', '.js', '.cjs', '.json', '.py'}:
-        continue
-    try:
-        lines = path.read_text(encoding='utf-8').splitlines()
-    except Exception:
-        continue
-    for i, line in enumerate(lines):
-        if any(n in line for n in needles):
-            lo = max(0, i - 4)
-            hi = min(len(lines), i + 5)
-            print(f'EMAIL_DIAG {path.relative_to(root)}:{i+1}')
-            for j in range(lo, hi):
-                print(f'{j+1:04d}: {lines[j]}')
+path = root / 'workflow_pipeline_v0.1' / 'process_tally_submission.mjs'
+text = path.read_text(encoding='utf-8')
+old = "    ['delivery_email', '納品先メールアドレス'],\n"
+count = text.count(old)
+if count != 1:
+    raise SystemExit(f'unexpected delivery_email required-entry count: {count}')
+text = text.replace(old, '', 1)
+path.write_text(text, encoding='utf-8')
+print('optional delivery-email patch applied')
 PY
 
 python3 -m pip install --no-cache-dir pymupdf==1.26.3
