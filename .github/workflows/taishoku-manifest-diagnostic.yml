@@ -1,0 +1,41 @@
+name: Taishoku manifest diagnostic (no secrets or deploy)
+on:
+  push:
+    branches:
+      - diagnose/taishoku-manifest-timeout-20260918
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect recovered worker status transitions (source only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/taishoku-diagnostic
+          cat taishoku_app/bundle/part*.txt | base64 -d > /tmp/taishoku-diagnostic/source.zip
+          unzip -q /tmp/taishoku-diagnostic/source.zip -d /tmp/taishoku-diagnostic/src
+          cp -R taishoku_app/src/. /tmp/taishoku-diagnostic/src/
+          python3 taishoku_app/patch_instant_persistence_race.py /tmp/taishoku-diagnostic/src
+          python3 taishoku_app/patch_instant_failure_visibility.py /tmp/taishoku-diagnostic/src
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('/tmp/taishoku-diagnostic/src')
+          for name in ['workflow_webhook_v0.1/queue_worker.mjs','workflow_pipeline_v0.1/process_tally_submission.mjs','workflow_pipeline_v0.1/instant_finalize.mjs','workflow_persistence_v0.1/persist_job.mjs']:
+              p=root/name
+              print('\n=== FILE:',name,'EXISTS:',p.exists(),'===')
+              if not p.exists(): continue
+              lines=p.read_text().splitlines()
+              needles=['reference_id','referenceId','job_manifest','ready_for_manual_delivery','review_required','processed','failed','delivery_allowed','status:', 'function startWorker', 'function process', 'async function main', 'function main', 'workDir', 'outputRoot', 'queueRoot', 'processTally']
+              windows=set()
+              for i,line in enumerate(lines):
+                  if any(n in line for n in needles):
+                      for k in range(max(0,i-5),min(len(lines),i+7)): windows.add(k)
+              if len(windows)>500: windows={i for i in sorted(windows)[:500]}
+              for i in sorted(windows):
+                  line=lines[i]
+                  if 'process.env.' in line: line=line.replace('process.env.', 'ENV.');
+                  print(f'{i+1:04d}: {line[:220]}')
+          PY
