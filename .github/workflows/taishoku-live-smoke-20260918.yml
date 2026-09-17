@@ -1,0 +1,48 @@
+name: Taishoku live read-only smoke
+on:
+  push:
+    branches:
+      - diagnose/taishoku-manifest-timeout-20260918
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify public health and form redirect without exposing tokens
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, re, urllib.request, urllib.error
+          origin='https://taishoku-workflow-production-free.onrender.com'
+          def fetch(path):
+              req=urllib.request.Request(origin+path,headers={'User-Agent':'taishoku-readonly-healthcheck/1.0'})
+              try:
+                  with urllib.request.urlopen(req, timeout=25) as res:
+                      return res.status,res.headers, res.read(3000)
+              except urllib.error.HTTPError as error:
+                  return error.code,error.headers,error.read(3000)
+          status, headers, body=fetch('/health')
+          data=json.loads(body)
+          assert status==200, ('health_status',status)
+          assert data['automatic_delivery'] is False, 'automatic_delivery must remain false'
+          assert data['persistence']=='configured', 'persistence unavailable'
+          assert data['secret_report_access']=='configured','secret report unavailable'
+          assert data['instant_web_report']=='enabled','instant flow unavailable'
+          print('PASS: HEALTH_200_PERSISTENCE_CONFIGURED_SECRET_ACCESS_CONFIGURED_INSTANT_ENABLED_AUTOMATIC_DELIVERY_FALSE')
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,req,fp,code,msg,headers,newurl): return None
+          opener=urllib.request.build_opener(NoRedirect())
+          try:
+              opener.open(origin+'/start',timeout=25)
+              raise AssertionError('unexpected start success')
+          except urllib.error.HTTPError as err:
+              location=err.headers.get('Location','')
+              assert err.code==302 and location.startswith('https://tally.so/r/QKyVpY?'), 'start redirect mismatch'
+              assert re.search(r'(?<![A-Za-z0-9_])instant_token=[A-Za-z0-9_-]{43}(?:&|$)',location), 'no secure report token'
+              print('PASS: START_302_TALLY_REDIRECT_TOKEN_FORMAT_VALID (token withheld)')
+          status, _, _=fetch('/r/not-a-token')
+          assert status==404,('invalid_token_status',status)
+          print('PASS: INVALID_TOKEN_404')
+          PY
