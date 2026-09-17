@@ -20,6 +20,10 @@ python3 "$ROOT/patch_legal_20260912.py" "$RUNTIME"
 # with approve_job persistence; serialize it to avoid Postgres deadlocks.
 python3 "$ROOT/patch_instant_persistence_race.py" "$RUNTIME"
 
+# Fail fast on review-required reports, expose a safe error page instead of an
+# endless spinner, and persist failed jobs without auto-approving them.
+python3 "$ROOT/patch_instant_failure_visibility.py" "$RUNTIME"
+
 # Instant web reports no longer collect a delivery email address. Remove only
 # delivery_email from the core required-field list. Keep the mapping and the
 # format check so historical/email-bearing submissions remain compatible.

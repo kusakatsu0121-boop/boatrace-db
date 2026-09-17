@@ -1,0 +1,56 @@
+name: taishoku-instant-fix-check
+on:
+  push:
+    branches:
+      - fix/taishoku-instant-finalize-timeout-20260917
+      - taishoku-production-free
+  pull_request:
+    branches:
+      - taishoku-production-free
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build application from real bundled runtime
+        run: bash taishoku_app/build.sh
+      - name: Validate safe failure handling and normal release guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          F=taishoku_app/runtime/workflow_pipeline_v0.1/instant_finalize.mjs
+          W=taishoku_app/runtime/workflow_webhook_v0.1/webhook_server.mjs
+          P=taishoku_app/runtime/workflow_persistence_v0.1/persist_job.mjs
+          grep -q "status === 'review_required'" "$F"
+          grep -q 'instant_finalize_timeout:' "$F"
+          grep -q 'instantReportFailed(outputRoot, token)' "$W"
+          grep -q 'reportUnavailablePage()' "$W"
+          grep -q "'review_required'" "$P"
+          grep -q 'automatic_delivery: false' "$W"
+          grep -q 'approved_for_manual_delivery' taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
+          node --check "$F"
+          node --check "$W"
+          node --check "$P"
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import os from 'node:os';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+          import { finalizeInstantReport } from './taishoku_app/runtime/workflow_pipeline_v0.1/instant_finalize.mjs';
+          const root = fs.mkdtempSync(path.join(os.tmpdir(),'taishoku-regression-'));
+          const token = crypto.randomBytes(32).toString('base64url');
+          const ref = 'WF-test-review';
+          const job = path.join(root, ref);
+          fs.mkdirSync(job);
+          fs.writeFileSync(path.join(job,'job_manifest.json'),JSON.stringify({status:'review_required',delivery_allowed:false,automatic_delivery:false}));
+          let blocked=false;
+          try { await finalizeInstantReport({outputRoot:root,referenceId:ref,token,timeoutMs:250}); }
+          catch(e) { blocked=String(e.message).includes('job_not_publishable:review_required'); }
+          assert.equal(blocked,true,'review_required must fail immediately');
+          assert.equal(fs.existsSync(path.join(job,'approval.json')),false,'review_required must not be approved');
+          fs.rmSync(root,{recursive:true,force:true});
+          console.log('REVIEW_REQUIRED_FAIL_CLOSED_OK');
+          JS
+          echo INSTANT_FIX_CHECK_OK
