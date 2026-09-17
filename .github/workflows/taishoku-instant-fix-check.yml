@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - fix/taishoku-instant-finalize-timeout-20260917
+      - taishoku-production-free
   pull_request:
     branches:
       - taishoku-production-free
