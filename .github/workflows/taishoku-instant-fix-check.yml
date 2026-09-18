@@ -15,6 +15,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build application from real bundled runtime
         run: bash taishoku_app/build.sh
+      - name: Inspect source-only salary and review paths (temporary)
+        shell: bash
+        run: |
+          echo '=== RELEVANT RUNTIME FILENAMES ==='
+          find taishoku_app/runtime -maxdepth 3 -type f \( -name '*.mjs' -o -name '*.py' \) | grep -v node_modules | sort | sed -n '1,90p'
+          echo '=== SOURCE CODE REFERENCES ONLY; NO USER DATA ==='
+          grep -R -n -E 'wage_6m_total_or_regular_month|wage_input_method|human_review|review_required|missing_inputs|cause_work_related|waiting_three_days_completed' taishoku_app/runtime --include='*.mjs' --exclude-dir=node_modules | sed -n '1,125p' || true
       - name: Validate safe failure handling and normal release guards
         shell: bash
         run: |
