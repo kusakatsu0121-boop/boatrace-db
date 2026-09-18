@@ -25,7 +25,9 @@ jobs:
           grep -q "status === 'review_required'" "$F"
           grep -q 'instant_finalize_timeout:' "$F"
           grep -q 'instantReportFailed(outputRoot, token)' "$W"
-          grep -q 'reportUnavailablePage()' "$W"
+          grep -q 'reportUnavailablePage(outputRoot, token)' "$W"
+          grep -q '確認が必要な項目があります' "$W"
+          grep -q "state?.status === 'review_required'" "$W"
           grep -q "'review_required'" "$P"
           grep -q 'automatic_delivery: false' "$W"
           grep -q 'approved_for_manual_delivery' taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
