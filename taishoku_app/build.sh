@@ -31,6 +31,10 @@ python3 "$ROOT/patch_review_guidance_20260918.py" "$RUNTIME"
 # previously saved review-required status via its exact secret token, read-only.
 python3 "$ROOT/patch_durable_review_lookup_20260918.py" "$RUNTIME"
 
+# Supply an actionable, non-decisional interim guide only for review-required
+# submissions. Never relax report access, benefit rules, or approval.
+python3 "$ROOT/patch_partial_guidance_20260918.py" "$RUNTIME"
+
 # Instant web reports no longer collect a delivery email address. Remove only
 # delivery_email from the core required-field list. Keep the mapping and the
 # format check so historical/email-bearing submissions remain compatible.
@@ -64,6 +68,7 @@ PY
 )
 
 node --check "$RUNTIME/workflow_webhook_v0.1/webhook_server.mjs"
+node --check "$RUNTIME/workflow_webhook_v0.1/partial_guidance.mjs"
 node --check "$RUNTIME/workflow_pipeline_v0.1/process_tally_submission.mjs"
 if [ -f "$RUNTIME/workflow_pipeline_v0.1/approve_job.mjs" ]; then
   node --check "$RUNTIME/workflow_pipeline_v0.1/approve_job.mjs"
