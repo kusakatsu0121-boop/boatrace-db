@@ -1,0 +1,39 @@
+name: Taishoku public form controls diagnostic (read only)
+on:
+  push:
+    branches: [test/taishoku-free-live-e2e-20260918]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    if: github.event.head_commit.message == 'Diagnose form controls without submitting'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/control-check && cd /tmp/control-check
+          npm init -y >/dev/null
+          npm install --silent playwright@1.55.1
+          npx playwright install --with-deps chromium >/dev/null
+          cat > inspect.mjs <<'JS'
+          import {chromium} from 'playwright';
+          const b=await chromium.launch({headless:true});
+          const page=await b.newPage({viewport:{width:390,height:844}});
+          try {
+            await page.goto('https://taishoku-workflow-production-free.onrender.com/start',{waitUntil:'domcontentloaded',timeout:90000});
+            await page.getByText('あなた専用｜退職前後ワークフロー',{exact:true}).first().waitFor();
+            const targets=page.getByText('通常勤務中',{exact:true});
+            console.log('MATCH_COUNT',await targets.count());
+            for(let i=0;i<Math.min(8,await targets.count());i++) {
+              const el=targets.nth(i);
+              console.log('TEXT_MATCH',i,JSON.stringify({visible:await el.isVisible(),html:(await el.evaluate(n=>n.outerHTML)).slice(0,400),parent:(await el.evaluate(n=>n.parentElement?.outerHTML||'')).slice(0,800)}));
+            }
+            const radios=page.getByRole('radio');
+            console.log('RADIOS',await radios.count());
+            for(let i=0;i<Math.min(9,await radios.count());i++)console.log('RADIO',i,JSON.stringify({visible:await radios.nth(i).isVisible(),html:(await radios.nth(i).evaluate(n=>n.outerHTML)).slice(0,500)}));
+            console.log('NO_SUBMIT');
+          } finally {await b.close();}
+          JS
+          node inspect.mjs
