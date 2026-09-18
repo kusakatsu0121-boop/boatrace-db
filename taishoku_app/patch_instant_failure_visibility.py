@@ -86,7 +86,23 @@ new_start = """function startInstantFinalize(outputRoot, payload, token, id) {
   }
   const child = spawnDetached(instantFinalizePath, [outputRoot, ref, token], ['ignore', 'inherit', 'inherit']);
   child.on('exit', code => {
-    if (code === 0) return;
+    if (code === 0) {
+      // A successful finalizer still needs a persisted job for report access.
+      // Do not mark the token ready before persistence actually succeeds, and
+      // never create approval.json or enable automatic delivery here.
+      console.log(JSON.stringify({ status: 'instant_finalize_exit', reference_id: ref, exit_code: code, automatic_delivery: false }));
+      if (fs.existsSync(path.join(outputRoot, ref, 'job_manifest.json'))) {
+        startPersistence(outputRoot, id, payload);
+      } else {
+        console.error(JSON.stringify({ status: 'instant_manifest_missing_on_success', reference_id: ref, automatic_delivery: false }));
+        try {
+          writeInstantStatus(outputRoot, token, { status: 'failed', finished_at: Date.now() });
+        } catch (error) {
+          console.error(JSON.stringify({ status: 'instant_status_write_error', error: error.message || String(error), automatic_delivery: false }));
+        }
+      }
+      return;
+    }
     console.error(JSON.stringify({ status: 'instant_finalize_exit', reference_id: ref, exit_code: code, automatic_delivery: false }));
     try {
       writeInstantStatus(outputRoot, token, { status: 'failed', finished_at: Date.now() });
