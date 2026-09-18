@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import crypto from 'node:crypto';
 import vm from 'node:vm';
 import { interimGuidanceHtml } from '../runtime/workflow_webhook_v0.1/partial_guidance.mjs';
+import { finalizeInstantReport } from '../runtime/workflow_pipeline_v0.1/instant_finalize.mjs';
 
 const W = fs.readFileSync(new URL('../runtime/workflow_webhook_v0.1/webhook_server.mjs', import.meta.url), 'utf8');
 assert.match(W, /import \{ interimGuidanceHtml \} from '\.\/partial_guidance\.mjs'/);
@@ -44,3 +48,28 @@ const failed = pageFor({status:'failed',missing_inputs:[wageCode]});
 assert.doesNotMatch(failed, /確認待ちの暫定道案内/);
 assert.match(failed, /回答内容に問題があると決まったわけではありません/);
 console.log('PARTIAL_GUIDANCE_REVIEW_ONLY_OK');
+
+// Isolated readiness check: prove a ready report reaches the existing
+// persistence boundary, but do not contact production Neon or submit Tally.
+const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'taishoku-ready-smoke-'));
+const referenceId = 'WF-synthetic-ready';
+const job = path.join(temp, referenceId);
+const token = crypto.randomBytes(32).toString('base64url');
+fs.mkdirSync(job);
+fs.writeFileSync(path.join(job, 'job_manifest.json'), JSON.stringify({reference_id:referenceId,status:'ready_for_manual_delivery',delivery_allowed:true,automatic_delivery:false}));
+fs.writeFileSync(path.join(job, 'report_preview.html'), '<!doctype html><title>synthetic only</title>');
+const oldDb = process.env.DATABASE_URL;
+delete process.env.DATABASE_URL;
+try {
+  await assert.rejects(
+    finalizeInstantReport({outputRoot:temp,referenceId,token,timeoutMs:300}),
+    /DATABASE_URL is not configured/,
+    'ready case must reach persistence, not timeout or auto-publish'
+  );
+  assert.equal(fs.existsSync(path.join(job,'approval.json')),false);
+} finally {
+  if (oldDb === undefined) delete process.env.DATABASE_URL;
+  else process.env.DATABASE_URL = oldDb;
+  fs.rmSync(temp, {recursive:true,force:true});
+}
+console.log('READY_PATH_REACHES_PERSISTENCE_BOUNDARY_OK (not a Tally/Neon E2E)');
