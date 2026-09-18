@@ -6,7 +6,7 @@ permissions:
   contents: read
 jobs:
   inspect:
-    if: github.event.head_commit.message == 'Diagnose form controls without submitting'
+    if: github.event.head_commit.message == 'Diagnose dropdown controls without submitting [20260918]'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -24,16 +24,23 @@ jobs:
           try {
             await page.goto('https://taishoku-workflow-production-free.onrender.com/start',{waitUntil:'domcontentloaded',timeout:90000});
             await page.getByText('あなた専用｜退職前後ワークフロー',{exact:true}).first().waitFor();
-            const targets=page.getByText('通常勤務中',{exact:true});
-            console.log('MATCH_COUNT',await targets.count());
-            for(let i=0;i<Math.min(8,await targets.count());i++) {
-              const el=targets.nth(i);
-              console.log('TEXT_MATCH',i,JSON.stringify({visible:await el.isVisible(),html:(await el.evaluate(n=>n.outerHTML)).slice(0,400),parent:(await el.evaluate(n=>n.parentElement?.outerHTML||'')).slice(0,800)}));
+            const label=page.getByText('通常勤務中',{exact:true}).first();
+            await label.evaluate(el=>el.click());
+            console.log('COMBOBOXES',await page.getByRole('combobox').count());
+            const box=page.getByRole('combobox').first();
+            console.log('COMBOBOX_BEFORE',JSON.stringify(await box.evaluate(n=>({outer:n.outerHTML.slice(0,1000),parent:n.parentElement?.outerHTML.slice(0,2200)}))));
+            await box.click({force:true});
+            console.log('OPTIONS_BY_ROLE',await page.getByRole('option').count());
+            console.log('MATCH_TEXT',await page.getByText('1年以上5年未満',{exact:true}).count());
+            const body=(await page.locator('body').innerText());
+            console.log('DROPDOWN_AROUND',JSON.stringify(body.slice(body.indexOf('雇用保険に加入して働いた期間'),body.indexOf('雇用保険に加入して働いた期間')+1200)));
+            console.log('POPUP_DOM',JSON.stringify((await page.locator('[role="listbox"], [role="option"], [data-state="open"], [cmdk-root]').evaluateAll(nodes=>nodes.slice(0,12).map(n=>n.outerHTML.slice(0,1200))))));
+            const candidates=page.getByText('1年以上5年未満',{exact:true});
+            for(let i=0;i<Math.min(await candidates.count(),6);i++){
+              const el=candidates.nth(i);
+              console.log('MATCH',i,JSON.stringify({visible:await el.isVisible(),outer:(await el.evaluate(n=>n.outerHTML)).slice(0,1000),parent:(await el.evaluate(n=>n.parentElement?.outerHTML||'')).slice(0,1600)}));
             }
-            const radios=page.getByRole('radio');
-            console.log('RADIOS',await radios.count());
-            for(let i=0;i<Math.min(9,await radios.count());i++)console.log('RADIO',i,JSON.stringify({visible:await radios.nth(i).isVisible(),html:(await radios.nth(i).evaluate(n=>n.outerHTML)).slice(0,500)}));
-            console.log('NO_SUBMIT');
-          } finally {await b.close();}
+            console.log('NO_FORM_SUBMISSION');
+          }finally{await b.close();}
           JS
           node inspect.mjs
