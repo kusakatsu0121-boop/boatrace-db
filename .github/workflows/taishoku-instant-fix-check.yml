@@ -22,18 +22,24 @@ jobs:
           F=taishoku_app/runtime/workflow_pipeline_v0.1/instant_finalize.mjs
           W=taishoku_app/runtime/workflow_webhook_v0.1/webhook_server.mjs
           P=taishoku_app/runtime/workflow_persistence_v0.1/persist_job.mjs
+          A=taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
           grep -q "status === 'review_required'" "$F"
           grep -q 'instant_finalize_timeout:' "$F"
           grep -q 'instantReportFailed(outputRoot, token)' "$W"
-          grep -q 'reportUnavailablePage(outputRoot, token)' "$W"
+          grep -q 'reportUnavailablePage(outputRoot, token, durableReview)' "$W"
+          grep -q 'safeResolvePendingReview(token)' "$W"
           grep -q '確認が必要な項目があります' "$W"
           grep -q "state?.status === 'review_required'" "$W"
+          grep -q 'export async function resolvePendingReview(token)' "$A"
+          grep -q "field->>'value' = \$1" "$A"
+          grep -q "j.status = 'review_required'" "$A"
           grep -q "'review_required'" "$P"
           grep -q 'automatic_delivery: false' "$W"
-          grep -q 'approved_for_manual_delivery' taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
+          grep -q 'approved_for_manual_delivery' "$A"
           node --check "$F"
           node --check "$W"
           node --check "$P"
+          node --check "$A"
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
           import fs from 'node:fs';
