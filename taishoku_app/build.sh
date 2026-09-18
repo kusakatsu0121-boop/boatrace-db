@@ -27,6 +27,10 @@ python3 "$ROOT/patch_instant_failure_visibility.py" "$RUNTIME"
 # Tell the submitter why a review is needed without publishing an unapproved report.
 python3 "$ROOT/patch_review_guidance_20260918.py" "$RUNTIME"
 
+# The instance's temporary status files disappear during deploys. Recover a
+# previously saved review-required status via its exact secret token, read-only.
+python3 "$ROOT/patch_durable_review_lookup_20260918.py" "$RUNTIME"
+
 # Instant web reports no longer collect a delivery email address. Remove only
 # delivery_email from the core required-field list. Keep the mapping and the
 # format check so historical/email-bearing submissions remain compatible.
