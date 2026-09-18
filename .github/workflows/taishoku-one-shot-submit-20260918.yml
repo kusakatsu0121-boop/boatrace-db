@@ -6,7 +6,7 @@ permissions:
   contents: read
 jobs:
   submit-once:
-    if: github.event.head_commit.message == 'Run synthetic end-to-end submission once [correct visible selectors]'
+    if: github.event.head_commit.message == 'Run synthetic end-to-end submission once [insurance dropdown verified]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -26,10 +26,10 @@ jobs:
           import assert from 'node:assert/strict';
           const root='https://taishoku-workflow-production-free.onrender.com';
           const browser=await chromium.launch({headless:true});
-          let stage='start',submitted=false;
+          let stage='start',submitClicked=false;
           try {
             const page=await browser.newPage({viewport:{width:390,height:844}});
-            page.setDefaultTimeout(16000);
+            page.setDefaultTimeout(18000);
             await page.goto(root+'/start',{waitUntil:'domcontentloaded',timeout:90000});
             await page.getByText('あなた専用｜退職前後ワークフロー',{exact:true}).first().waitFor();
             assert.match(new URL(page.url()).searchParams.get('instant_token')||'',/^[A-Za-z0-9_-]{43}$/);
@@ -48,8 +48,11 @@ jobs:
             await select('まだ決まっていない');
             await fill('例：42','38');
             stage='insurance dropdown';
-            await page.getByRole('combobox').first().click({force:true});
-            await page.getByText('1年以上5年未満',{exact:true}).last().evaluate(el=>el.click());
+            const insurance=page.getByRole('combobox').nth(1);
+            assert.equal(await insurance.getAttribute('aria-labelledby'),'label_18238c9c-3b3d-4f52-9af1-89ccf0a43020');
+            await insurance.click({force:true});
+            await page.getByRole('option',{name:'1年以上5年未満'}).click();
+            assert.equal(await insurance.inputValue(),'1年以上5年未満');
             await select('まだ何も伝えていない');
             await select('ない');
             await select('キャリア・仕事内容');
@@ -61,7 +64,7 @@ jobs:
             await select('回答内容をもとに、個別レポートを作成することに同意します。\n給与や離職理由の最終決定、申請代行、会社との交渉を行うサービスではないことを確認しました。');
             console.log('PASS synthetic answers, all required items selected');
             stage='submit';
-            submitted=true;
+            submitClicked=true;
             await page.getByRole('button',{name:'無料レポートを申し込む'}).click({force:true});
             await page.waitForURL(url=>url.hostname==='taishoku-workflow-production-free.onrender.com'&&url.pathname.startsWith('/r/'),{timeout:90000});
             const reportUrl=page.url();
@@ -80,7 +83,7 @@ jobs:
             assert.ok(formal,'final formal report not displayed');
             console.log('PASS FULL_LIVE_TALLY_TO_REPORT_E2E');
           }catch(e){
-            console.error('E2E_FAILURE',JSON.stringify({stage,submitted,type:e?.name||'Error',message:String(e?.message||'').split('\n')[0].slice(0,160)}));
+            console.error('E2E_FAILURE',JSON.stringify({stage,submitClicked,type:e?.name||'Error',message:String(e?.message||'').split('\n')[0].slice(0,160)}));
             process.exitCode=1;
           }finally{await browser.close();}
           JS
