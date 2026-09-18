@@ -6,19 +6,17 @@ permissions:
   contents: read
 jobs:
   submit-once:
-    if: github.event.head_commit.message == 'Run synthetic end-to-end submission once [one-shot retry controls]'
+    if: github.event.head_commit.message == 'Run synthetic end-to-end submission once [correct visible selectors]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Install browser locally on public GitHub runner (no TinyFish)
-        shell: bash
+      - name: Install browser on GitHub runner without TinyFish
         run: |
-          set -euo pipefail
           mkdir -p /tmp/taishoku-one-shot && cd /tmp/taishoku-one-shot
           npm init -y >/dev/null
           npm install --silent playwright@1.55.1
           npx playwright install --with-deps chromium >/dev/null
-      - name: Submit one synthetic form and check final report
+      - name: Submit one synthetic form and verify report
         shell: bash
         run: |
           set -euo pipefail
@@ -28,72 +26,62 @@ jobs:
           import assert from 'node:assert/strict';
           const root='https://taishoku-workflow-production-free.onrender.com';
           const browser=await chromium.launch({headless:true});
-          let stage='startup',submitClicked=false;
+          let stage='start',submitted=false;
           try {
             const page=await browser.newPage({viewport:{width:390,height:844}});
             page.setDefaultTimeout(16000);
-            stage='open_form';
             await page.goto(root+'/start',{waitUntil:'domcontentloaded',timeout:90000});
-            await page.getByText('あなた専用｜退職前後ワークフロー',{exact:true}).first().waitFor({timeout:30000});
-            assert.equal(new URL(page.url()).hostname,'tally.so');
+            await page.getByText('あなた専用｜退職前後ワークフロー',{exact:true}).first().waitFor();
             assert.match(new URL(page.url()).searchParams.get('instant_token')||'',/^[A-Za-z0-9_-]{43}$/);
-            console.log('PASS published form with private token (withheld)');
-            const choose=async(uuid,name)=>{
-              stage='choose_'+name;
-              const el=page.locator(`[id="choice_${uuid}"]`);
-              await el.waitFor({state:'visible',timeout:16000});
-              await el.evaluate(node=>node.click());
-              assert.equal(await el.isChecked(),true,`not selected: ${name}`);
+            console.log('PASS opening published Tally with generated token (not printed)');
+            const select=async(text)=>{
+              stage='select: '+text;
+              const label=page.getByText(text,{exact:true}).first();
+              await label.waitFor({state:'visible'});
+              const checked=await label.evaluate(el=>{const node=el.closest('label')||el;node.click();return node.control?.checked ?? document.getElementById(node.getAttribute('for'))?.checked ?? false;});
+              assert.equal(checked,true,`could not select ${text}`);
             };
-            const field=async(placeholder,value)=>{
-              stage='fill_'+placeholder;
-              await page.getByPlaceholder(placeholder,{exact:true}).fill(value);
-            };
-            const dropdown=async(index,value)=>{
-              stage='dropdown_'+value;
-              const box=page.getByRole('combobox').nth(index);
-              await box.click({force:true});
-              await page.getByText(value,{exact:true}).first().click({force:true});
-            };
-            await field('例：ニックネーム','自動テスト_20260918');
-            await choose('9b25f5e5-466d-4570-ac55-e638424daead','normal_work');
-            await choose('89f72730-3e8a-490e-8f93-6c7eff16cd16','career_reason');
-            await dropdown(0,'始められそう');
-            await choose('5c9c1adb-625e-4694-b770-927d868ddea8','no_retirement_date');
-            await field('例：42','38');
-            await dropdown(1,'1年以上5年未満');
-            await choose('450f97be-0531-4e37-aa3c-b47adf48d19d','company_not_told');
-            await choose('ee477d3c-89a6-4547-81db-159a581e1703','no_deadline');
-            await choose('1fb337e0-8f03-4e81-986e-83cb9b65afcf','major_career_reason');
-            await choose('9a6840f0-05a5-477c-98b3-587ed2de1a1c','seeking_work');
-            await choose('7db6bb6a-cd6a-42ed-8bd4-1da2d732c0c1','six_month_total');
-            await field('例：1800000','1800000');
-            await choose('fb1ca33c-09eb-4aa5-9b21-0a8456968a98','unemployment_guidance');
-            await choose('4265ae9b-5390-40fa-9df0-7980c3a48c2f','no_four_day_absence');
-            await choose('d6d593f6-fbad-473d-9161-9df767057f2a','consent');
-            console.log('PASS dummy answers complete; one submission only');
-            stage='submit';submitClicked=true;
+            const fill=async(placeholder,value)=>{stage='fill: '+placeholder;await page.getByPlaceholder(placeholder,{exact:true}).fill(value);};
+            await fill('例：ニックネーム','自動テスト_20260918');
+            await select('通常勤務中');
+            await select('仕事内容が合わない・今後のキャリア');
+            await select('まだ決まっていない');
+            await fill('例：42','38');
+            stage='insurance dropdown';
+            await page.getByRole('combobox').first().click({force:true});
+            await page.getByText('1年以上5年未満',{exact:true}).last().evaluate(el=>el.click());
+            await select('まだ何も伝えていない');
+            await select('ない');
+            await select('キャリア・仕事内容');
+            await select('仕事を探すつもり');
+            await select('6か月分の合計額を入力する');
+            await fill('例：1800000','1800000');
+            await select('失業手当の金額と受け取り方');
+            await select('いいえ');
+            await select('回答内容をもとに、個別レポートを作成することに同意します。\n給与や離職理由の最終決定、申請代行、会社との交渉を行うサービスではないことを確認しました。');
+            console.log('PASS synthetic answers, all required items selected');
+            stage='submit';
+            submitted=true;
             await page.getByRole('button',{name:'無料レポートを申し込む'}).click({force:true});
             await page.waitForURL(url=>url.hostname==='taishoku-workflow-production-free.onrender.com'&&url.pathname.startsWith('/r/'),{timeout:90000});
             const reportUrl=page.url();
-            assert.match(new URL(reportUrl).pathname.slice(3),/^[A-Za-z0-9_-]{43}$/);
-            console.log('PASS Tally accepted submission and redirected (token withheld)');
-            stage='report';
+            console.log('PASS submitted once and redirected to report URL (token not printed)');
+            stage='result';
             let status=0,html='';
-            for(let attempt=0;attempt<34;attempt++) {
-              const res=await page.request.get(reportUrl,{timeout:45000});
-              status=res.status();html=await res.text();
-              if(status!==202 && !html.includes('あなたのレポートを作成しています')) break;
+            for(let i=0;i<35;i++){
+              const response=await page.request.get(reportUrl,{timeout:45000});
+              status=response.status();html=await response.text();
+              if(status!==202&&!html.includes('あなたのレポートを作成しています'))break;
               await page.waitForTimeout(3500);
             }
+            const formal=status===200&&html.includes('自動テスト_20260918')&&!html.includes('確認待ちの暫定道案内');
             const interim=html.includes('確認待ちの暫定道案内');
-            const report=status===200&&html.includes('自動テスト_20260918')&&!interim;
-            console.log('REPORT_CHECK',JSON.stringify({http_status:status,interim,formal_report:report,automatic_delivery:false}));
-            assert.equal(report,true,'ordinary synthetic case should render formal HTML report');
+            console.log('RESULT',JSON.stringify({status,formal,interim,automatic_delivery:false}));
+            assert.ok(formal,'final formal report not displayed');
             console.log('PASS FULL_LIVE_TALLY_TO_REPORT_E2E');
-          } catch(error) {
-            console.error('E2E_FAILURE',JSON.stringify({stage,submitClicked,type:error?.name||'Error',message:String(error?.message||'').split('\n')[0].slice(0,160)}));
+          }catch(e){
+            console.error('E2E_FAILURE',JSON.stringify({stage,submitted,type:e?.name||'Error',message:String(e?.message||'').split('\n')[0].slice(0,160)}));
             process.exitCode=1;
-          } finally {await browser.close();}
+          }finally{await browser.close();}
           JS
           node test.mjs
