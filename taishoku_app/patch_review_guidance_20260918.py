@@ -50,13 +50,14 @@ new_exit = '''    console.error(JSON.stringify({ status: 'instant_finalize_exit'
     let manifest = null;
     try { manifest = JSON.parse(fs.readFileSync(path.join(outputRoot, ref, 'job_manifest.json'), 'utf8')); } catch {}
     const reviewRequired = manifest?.status === 'review_required';
+    const humanReview = manifest?.human_review;
     try {
       writeInstantStatus(outputRoot, token, {
         status: reviewRequired ? 'review_required' : 'failed',
         finished_at: Date.now(),
         ...(reviewRequired ? {
-          missing_inputs: Array.isArray(manifest?.missing_inputs) ? manifest.missing_inputs : [],
-          review_reasons: Array.isArray(manifest?.review_reasons) ? manifest.review_reasons : [],
+          missing_inputs: Array.isArray(humanReview?.missing_inputs) ? humanReview.missing_inputs : [],
+          review_reasons: Array.isArray(humanReview?.reasons) ? humanReview.reasons : [],
         } : {}),
       });'''
 replace_once(old_exit, new_exit, 'classify finalizer exit')
