@@ -6,7 +6,7 @@ permissions:
   contents: read
 jobs:
   inspect:
-    if: github.event.head_commit.message == 'Diagnose insurance dropdown specifically [20260918]'
+    if: github.event.head_commit.message == 'Diagnose required fields before submit without sending [20260918]'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -24,20 +24,32 @@ jobs:
           try {
             await page.goto('https://taishoku-workflow-production-free.onrender.com/start',{waitUntil:'domcontentloaded',timeout:90000});
             await page.getByText('あなた専用｜退職前後ワークフロー',{exact:true}).first().waitFor();
-            await page.getByText('通常勤務中',{exact:true}).first().evaluate(el=>el.click());
-            const boxes=page.getByRole('combobox');
-            console.log('COUNT',await boxes.count());
-            for(let i=0;i<await boxes.count();i++){
-              const el=boxes.nth(i);
-              console.log('BOX',i,JSON.stringify(await el.evaluate(n=>({id:n.id,label:document.getElementById(n.getAttribute('aria-labelledby'))?.innerText,parent:n.parentElement?.parentElement?.innerText.slice(0,300),outer:n.outerHTML.slice(0,300)}))));
-            }
-            const box=boxes.nth(1);
-            await box.click({force:true});
-            console.log('EXPANDED',await box.getAttribute('aria-expanded'));
-            console.log('OPTIONS',await page.getByRole('option').count());
-            console.log('MATCH',await page.getByText('1年以上5年未満',{exact:true}).count());
-            console.log('LISTBOX',JSON.stringify((await page.locator('[role="listbox"]').evaluateAll(nodes=>nodes.map(n=>n.outerHTML.slice(0,1600))))));
-            console.log('BODY_END',JSON.stringify((await page.locator('body').innerText()).slice(0,1700)));
+            const select=async(text)=>{const el=page.getByText(text,{exact:true}).first();await el.waitFor({state:'visible'});await el.evaluate(n=>n.click());};
+            await page.getByPlaceholder('例：ニックネーム',{exact:true}).fill('自動テスト_20260918');
+            await select('通常勤務中');
+            await select('仕事内容が合わない・今後のキャリア');
+            const health=page.getByRole('combobox').nth(0);
+            console.log('HEALTH_VISIBLE',await health.isVisible());
+            await health.click({force:true});
+            console.log('HEALTH_OPTIONS',JSON.stringify(await page.getByRole('option').allTextContents()));
+            await page.getByRole('option',{name:'始められそう'}).click();
+            await select('まだ決まっていない');
+            await page.getByPlaceholder('例：42',{exact:true}).fill('38');
+            const insurance=page.getByRole('combobox').nth(1);
+            await insurance.click({force:true});
+            await page.getByRole('option',{name:'1年以上5年未満'}).click();
+            await select('まだ何も伝えていない');
+            await select('ない');
+            await select('キャリア・仕事内容');
+            await select('仕事を探すつもり');
+            await select('6か月分の合計額を入力する');
+            await page.getByPlaceholder('例：1800000',{exact:true}).fill('1800000');
+            await select('失業手当の金額と受け取り方');
+            await select('いいえ');
+            await select('回答内容をもとに、個別レポートを作成することに同意します。\n給与や離職理由の最終決定、申請代行、会社との交渉を行うサービスではないことを確認しました。');
+            console.log('INVALID_FIELDS',JSON.stringify(await page.locator('input:invalid,textarea:invalid,select:invalid').evaluateAll(nodes=>nodes.map(n=>({type:n.type,id:n.id,role:n.getAttribute('role'),required:n.required,outer:n.outerHTML.slice(0,300)})).slice(0,40))));
+            console.log('UNSELECTED_REQUIRED',JSON.stringify(await page.locator('input[required]').evaluateAll(nodes=>nodes.filter(n=>(n.type==='checkbox'||n.type==='radio')&&!Array.from(document.getElementsByName(n.name)).some(x=>x.checked)).map(n=>({name:n.name,type:n.type})).slice(0,20))));
+            console.log('FORM_VALID',await page.locator('form').evaluateAll(nodes=>nodes.map(n=>n.checkValidity())));
             console.log('NO_SUBMISSION');
           }finally{await b.close();}
           JS
