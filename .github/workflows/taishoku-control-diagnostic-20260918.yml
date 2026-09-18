@@ -6,7 +6,7 @@ permissions:
   contents: read
 jobs:
   inspect:
-    if: github.event.head_commit.message == 'Diagnose dropdown controls without submitting [20260918]'
+    if: github.event.head_commit.message == 'Diagnose insurance dropdown specifically [20260918]'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -24,23 +24,21 @@ jobs:
           try {
             await page.goto('https://taishoku-workflow-production-free.onrender.com/start',{waitUntil:'domcontentloaded',timeout:90000});
             await page.getByText('あなた専用｜退職前後ワークフロー',{exact:true}).first().waitFor();
-            const label=page.getByText('通常勤務中',{exact:true}).first();
-            await label.evaluate(el=>el.click());
-            console.log('COMBOBOXES',await page.getByRole('combobox').count());
-            const box=page.getByRole('combobox').first();
-            console.log('COMBOBOX_BEFORE',JSON.stringify(await box.evaluate(n=>({outer:n.outerHTML.slice(0,1000),parent:n.parentElement?.outerHTML.slice(0,2200)}))));
-            await box.click({force:true});
-            console.log('OPTIONS_BY_ROLE',await page.getByRole('option').count());
-            console.log('MATCH_TEXT',await page.getByText('1年以上5年未満',{exact:true}).count());
-            const body=(await page.locator('body').innerText());
-            console.log('DROPDOWN_AROUND',JSON.stringify(body.slice(body.indexOf('雇用保険に加入して働いた期間'),body.indexOf('雇用保険に加入して働いた期間')+1200)));
-            console.log('POPUP_DOM',JSON.stringify((await page.locator('[role="listbox"], [role="option"], [data-state="open"], [cmdk-root]').evaluateAll(nodes=>nodes.slice(0,12).map(n=>n.outerHTML.slice(0,1200))))));
-            const candidates=page.getByText('1年以上5年未満',{exact:true});
-            for(let i=0;i<Math.min(await candidates.count(),6);i++){
-              const el=candidates.nth(i);
-              console.log('MATCH',i,JSON.stringify({visible:await el.isVisible(),outer:(await el.evaluate(n=>n.outerHTML)).slice(0,1000),parent:(await el.evaluate(n=>n.parentElement?.outerHTML||'')).slice(0,1600)}));
+            await page.getByText('通常勤務中',{exact:true}).first().evaluate(el=>el.click());
+            const boxes=page.getByRole('combobox');
+            console.log('COUNT',await boxes.count());
+            for(let i=0;i<await boxes.count();i++){
+              const el=boxes.nth(i);
+              console.log('BOX',i,JSON.stringify(await el.evaluate(n=>({id:n.id,label:document.getElementById(n.getAttribute('aria-labelledby'))?.innerText,parent:n.parentElement?.parentElement?.innerText.slice(0,300),outer:n.outerHTML.slice(0,300)}))));
             }
-            console.log('NO_FORM_SUBMISSION');
+            const box=boxes.nth(1);
+            await box.click({force:true});
+            console.log('EXPANDED',await box.getAttribute('aria-expanded'));
+            console.log('OPTIONS',await page.getByRole('option').count());
+            console.log('MATCH',await page.getByText('1年以上5年未満',{exact:true}).count());
+            console.log('LISTBOX',JSON.stringify((await page.locator('[role="listbox"]').evaluateAll(nodes=>nodes.map(n=>n.outerHTML.slice(0,1600))))));
+            console.log('BODY_END',JSON.stringify((await page.locator('body').innerText()).slice(0,1700)));
+            console.log('NO_SUBMISSION');
           }finally{await b.close();}
           JS
           node inspect.mjs
