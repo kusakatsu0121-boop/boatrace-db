@@ -29,9 +29,18 @@ p{font-size:16px;line-height:1.8;color:#4f5a67;margin:0}
 </main>
 <script>
 const params=new URLSearchParams(location.search);
-const token=params.get('instant_token')||'';
+const fragment=location.hash.startsWith('#')?location.hash.slice(1):'';
+const fromQuery=params.get('instant_token')||'';
+const remembered=sessionStorage.getItem('taishoku_instant_token')||'';
+const token=fragment||fromQuery||remembered;
 const valid=/^[A-Za-z0-9_-]{43}$/.test(token);
 const note=document.getElementById('note');
+
+if(valid){
+  sessionStorage.setItem('taishoku_instant_token',token);
+  history.replaceState(null,'',location.pathname);
+}
+
 if(!valid){
   note.textContent='専用番号を確認できませんでした。最初のページからもう一度お試しください。';
 }else{
