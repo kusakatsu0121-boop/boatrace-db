@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f5f7fb">
+<title>退職前後ワークフロー｜無料試験版</title>
+<style>
+:root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#f5f7fb;color:#18202a}
+main{max-width:680px;margin:0 auto;padding:28px 18px 48px}
+.hero{background:#fff;border:1px solid #e5e9ef;border-radius:22px;padding:28px 22px;box-shadow:0 12px 36px rgba(20,35,55,.07)}
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef3ff;font-size:13px;font-weight:700;margin-bottom:12px}
+h1{font-size:29px;line-height:1.35;margin:0 0 14px}
+.lead{font-size:17px;line-height:1.8;color:#46515e;margin:0 0 22px}
+button{width:100%;border:0;border-radius:14px;padding:17px 18px;font-size:17px;font-weight:800;background:#16263a;color:#fff;cursor:pointer}
+button:disabled{opacity:.65;cursor:wait}
+.sub{font-size:13px;color:#687382;line-height:1.7;margin:13px 2px 0}
+section{margin-top:18px;background:#fff;border:1px solid #e5e9ef;border-radius:18px;padding:20px}
+h2{font-size:18px;margin:0 0 10px}
+ul{padding-left:1.25rem;margin:0}
+li{margin:.55rem 0;line-height:1.65}
+small{color:#6c7682;line-height:1.65}
+</style>
+</head>
+<body>
+<main>
+  <div class="hero">
+    <div class="badge">無料・試験運用中</div>
+    <h1>退職前後、何からやるかを整理します</h1>
+    <p class="lead">いくつか質問に答えると、退職前後に確認することや行動の順番を整理します。分からない項目は「分からない」のままでも進められます。</p>
+    <button id="start">無料で試す</button>
+    <p class="sub">利用料金はかかりません。給付の受給可否や確定額を保証するサービスではありません。</p>
+  </div>
+
+  <section>
+    <h2>できること</h2>
+    <ul>
+      <li>退職前後に何を先に確認するか整理する</li>
+      <li>分かる範囲で給付の金額目安を確認する</li>
+      <li>情報が足りない場合は、足りない点と次に確認することを表示する</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>入力前に</h2>
+    <small>氏名・住所・口座番号など、レポート作成に不要な個人情報は入力しないでください。書類添付は任意です。</small>
+  </section>
+</main>
+<script>
+function makeToken(){
+  const bytes=new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  let binary='';
+  for(const b of bytes) binary+=String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+document.getElementById('start').addEventListener('click',()=>{
+  const btn=document.getElementById('start');
+  btn.disabled=true;
+  btn.textContent='フォームを開いています…';
+  const token=makeToken();
+  const target=new URL('https://tally.so/r/QKyVpY');
+  target.searchParams.set('instant_token',token);
+  const here=new URL(location.href);
+  for(const [k,v] of here.searchParams){
+    if(k!=='instant_token') target.searchParams.append(k,v);
+  }
+  location.href=target.toString();
+});
+</script>
+</body>
+</html>
