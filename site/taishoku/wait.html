@@ -16,7 +16,6 @@ main{max-width:620px;margin:0 auto;padding:34px 18px}
 h1{font-size:25px;margin:0 0 12px}
 p{font-size:16px;line-height:1.8;color:#4f5a67;margin:0}
 .note{margin-top:18px;padding:14px;border-radius:12px;background:#f3f6fa;font-size:14px}
-a{color:#16263a;font-weight:700}
 </style>
 </head>
 <body>
@@ -24,8 +23,8 @@ a{color:#16263a;font-weight:700}
   <div class="card">
     <div class="dot"></div>
     <h1>回答を受け付けました</h1>
-    <p>いま、回答内容を整理しています。画面を閉じずにそのままお待ちください。</p>
-    <p class="note" id="note">通常は少し待つとレポート画面へ移動します。</p>
+    <p>いま、回答内容を整理しています。この画面のままで大丈夫です。</p>
+    <p class="note" id="note">準備ができたら、自動で結果画面へ移動します。</p>
   </div>
 </main>
 <script>
@@ -37,16 +36,37 @@ if(!valid){
   note.textContent='専用番号を確認できませんでした。最初のページからもう一度お試しください。';
 }else{
   const base='https://taishoku-workflow-production-free.onrender.com';
-  fetch(base+'/health',{mode:'no-cors',cache:'no-store'}).catch(()=>{});
-  let sec=8;
-  const timer=setInterval(()=>{
-    sec--;
-    note.textContent='回答を整理しています。あと'+Math.max(sec,0)+'秒ほどで確認画面へ移動します。';
-    if(sec<=0){
-      clearInterval(timer);
-      location.replace(base+'/r/'+encodeURIComponent(token));
+  const report=base+'/r/'+encodeURIComponent(token);
+  let elapsed=0;
+  const ticker=setInterval(()=>{
+    elapsed+=5;
+    if(elapsed>=20){
+      note.textContent='まだ準備中です。そのままお待ちください。準備ができ次第、自動で移動します。';
     }
-  },1000);
+  },5000);
+
+  const controller=new AbortController();
+  const fallback=setTimeout(()=>{
+    controller.abort();
+    clearInterval(ticker);
+    note.textContent='結果画面を確認しています…';
+    location.replace(report);
+  },90000);
+
+  fetch(base+'/health',{mode:'no-cors',cache:'no-store',signal:controller.signal})
+    .then(()=>{
+      clearTimeout(fallback);
+      clearInterval(ticker);
+      note.textContent='準備できました。結果画面へ移動します…';
+      setTimeout(()=>location.replace(report),350);
+    })
+    .catch(error=>{
+      if(error && error.name==='AbortError') return;
+      clearTimeout(fallback);
+      clearInterval(ticker);
+      note.textContent='結果画面を確認しています…';
+      setTimeout(()=>location.replace(report),1500);
+    });
 }
 </script>
 </body>
