@@ -12,6 +12,8 @@ assert.match(W, /import \{ interimGuidanceHtml \} from '\.\/partial_guidance\.mj
 assert.match(W, /const interim = review \? interimGuidanceHtml\(missing, reasons\) : '';/);
 assert.match(W, /\$\{details\}\$\{interim\}/);
 assert.match(W, /reportUnavailablePage\(outputRoot, token, durableReview\)/);
+assert.match(W, /回答を整理しています/);
+assert.doesNotMatch(W, /通常は数十秒で表示されます/);
 
 const start = W.indexOf('function reportUnavailablePage(');
 const end = W.indexOf('\n}\n', start);
@@ -27,26 +29,26 @@ function pageFor(state, durable = null) {
 
 const wageCode = 'wage_6m_total_or_regular_month';
 const salary = interimGuidanceHtml([wageCode], []);
-assert.match(salary, /賃金額は未確認/);
-assert.match(salary, /金額目安は算出していません/);
-assert.match(salary, /入力し直す必要はありません/);
+assert.match(salary, /今回は金額だけ出せません/);
+assert.match(salary, /給与明細/);
 assert.doesNotMatch(salary, /受給できます|支給確定/);
 const injected = interimGuidanceHtml(['<script>alert(1)</script>'], ['<img src=x onerror=alert(1)>']);
 assert.doesNotMatch(injected, /<script>|<img|onerror/);
 
 const review = pageFor({status:'review_required',missing_inputs:[wageCode,'cause_work_related'],review_reasons:['離職理由区分に確認が必要']});
-assert.match(review, /確認待ちの暫定道案内/);
-assert.match(review, /金額目安は算出していません/);
+assert.match(review, /回答を受け付けました/);
+assert.match(review, /次に確認すること/);
+assert.match(review, /今回は金額だけ出せません/);
 assert.match(review, /離職票/);
-assert.match(review, /まだ公開していません/);
+assert.match(review, /正式レポートはまだ出していません/);
 assert.doesNotMatch(review, /<script>/);
 
 const persistedReview = pageFor(null, {status:'review_required',missing_inputs:[wageCode],review_reasons:[]});
-assert.match(persistedReview, /確認待ちの暫定道案内/);
-assert.match(persistedReview, /算出していません/);
+assert.match(persistedReview, /次に確認すること/);
+assert.match(persistedReview, /今回は金額だけ出せません/);
 const failed = pageFor({status:'failed',missing_inputs:[wageCode]});
-assert.doesNotMatch(failed, /確認待ちの暫定道案内/);
-assert.match(failed, /回答内容に問題があると決まったわけではありません/);
+assert.doesNotMatch(failed, /次に確認すること/);
+assert.match(failed, /処理に失敗しました/);
 console.log('PARTIAL_GUIDANCE_REVIEW_ONLY_OK');
 
 // Isolated readiness check: prove a ready report reaches the existing
