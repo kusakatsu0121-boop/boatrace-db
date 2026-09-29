@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f5f7fb">
+<title>回答を受け付けました</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#f5f7fb;color:#18202a}
+main{max-width:620px;margin:0 auto;padding:34px 18px}
+.card{margin-top:8vh;background:#fff;border:1px solid #e5e9ef;border-radius:22px;padding:30px 22px;box-shadow:0 12px 36px rgba(20,35,55,.07)}
+.dot{width:14px;height:14px;border-radius:50%;background:#16263a;animation:pulse 1.2s ease-in-out infinite;margin-bottom:20px}
+@keyframes pulse{50%{opacity:.25;transform:scale(.8)}}
+h1{font-size:25px;margin:0 0 12px}
+p{font-size:16px;line-height:1.8;color:#4f5a67;margin:0}
+.note{margin-top:18px;padding:14px;border-radius:12px;background:#f3f6fa;font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <div class="dot"></div>
+    <h1>回答を受け付けました</h1>
+    <p>いま、回答内容を整理しています。この画面のままで大丈夫です。</p>
+    <p class="note" id="note">準備ができたら、自動で結果画面へ移動します。</p>
+  </div>
+</main>
+<script>
+const params=new URLSearchParams(location.search);
+const fragment=location.hash.startsWith('#')?location.hash.slice(1):'';
+const fromQuery=params.get('instant_token')||'';
+const remembered=sessionStorage.getItem('taishoku_instant_token')||'';
+const token=fragment||fromQuery||remembered;
+const valid=/^[A-Za-z0-9_-]{43}$/.test(token);
+const note=document.getElementById('note');
+
+if(valid){
+  sessionStorage.setItem('taishoku_instant_token',token);
+  history.replaceState(null,'',location.pathname);
+}
+
+if(!valid){
+  note.textContent='専用番号を確認できませんでした。最初のページからもう一度お試しください。';
+}else{
+  const base='https://taishoku-workflow-production-free.onrender.com';
+  const report=base+'/r/'+encodeURIComponent(token);
+  let elapsed=0;
+  const ticker=setInterval(()=>{
+    elapsed+=5;
+    if(elapsed>=20){
+      note.textContent='まだ準備中です。そのままお待ちください。準備ができ次第、自動で移動します。';
+    }
+  },5000);
+
+  const controller=new AbortController();
+  const fallback=setTimeout(()=>{
+    controller.abort();
+    clearInterval(ticker);
+    note.textContent='結果画面を確認しています…';
+    location.replace(report);
+  },90000);
+
+  fetch(base+'/health',{mode:'no-cors',cache:'no-store',signal:controller.signal})
+    .then(()=>{
+      clearTimeout(fallback);
+      clearInterval(ticker);
+      note.textContent='準備できました。結果画面へ移動します…';
+      setTimeout(()=>location.replace(report),350);
+    })
+    .catch(error=>{
+      if(error && error.name==='AbortError') return;
+      clearTimeout(fallback);
+      clearInterval(ticker);
+      note.textContent='結果画面を確認しています…';
+      setTimeout(()=>location.replace(report),1500);
+    });
+}
+</script>
+</body>
+</html>
