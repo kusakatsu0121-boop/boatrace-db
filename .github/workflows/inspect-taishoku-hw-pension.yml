@@ -1,0 +1,20 @@
+name: Inspect hello-work pension guidance
+on:
+  push:
+    branches: [fix/taishoku-concrete-hw-pension-20260930]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash taishoku_app/build.sh
+      - name: Show Hello Work and pension copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -RInE 'ハローワーク|離職票|離職理由|年金事務所|国民年金|第3号|厚生年金|市区町村' taishoku_app/runtime \
+            --include='*.mjs' --include='*.html' --include='*.js' --include='*.py' \
+            | head -1100 || true
