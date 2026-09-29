@@ -47,6 +47,9 @@ python3 "$ROOT/patch_public_status_20260929.py" "$RUNTIME"
 # instant report before its immutable approval snapshot is stored.
 python3 "$ROOT/patch_report_caution_20260929.py" "$RUNTIME"
 
+# Speak directly to the reader instead of narrating their answers from the outside.
+python3 "$ROOT/patch_direct_tone_20260929.py" "$RUNTIME"
+
 # Instant web reports no longer collect a delivery email address. Remove only
 # delivery_email from the core required-field list. Keep the mapping and the
 # format check so historical/email-bearing submissions remain compatible.
