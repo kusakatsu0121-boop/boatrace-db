@@ -39,6 +39,10 @@ python3 "$ROOT/patch_partial_guidance_20260918.py" "$RUNTIME"
 # calculations, approval, report access, or delivery controls.
 python3 "$ROOT/patch_user_friendly_status_20260928.py" "$RUNTIME"
 
+# Let the static GitHub Pages wait screen ask only whether the protected result
+# is ready yet. It exposes no report content, benefit decision, amount or token.
+python3 "$ROOT/patch_public_status_20260929.py" "$RUNTIME"
+
 # Instant web reports no longer collect a delivery email address. Remove only
 # delivery_email from the core required-field list. Keep the mapping and the
 # format check so historical/email-bearing submissions remain compatible.
