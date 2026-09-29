@@ -22,5 +22,7 @@ jobs:
           sed -n '1,110p' "$F"
           echo '=== webhook report route ==='
           sed -n '400,455p' "$W"
+          echo '=== approve source ==='
+          sed -n '1,240p' taishoku_app/runtime/workflow_pipeline_v0.1/approve_job.mjs
           echo '=== report access relevant lines ==='
           grep -n -E 'createReportAccess|resolveReportAccess|approved_for_manual_delivery|ready_for_manual_delivery|delivery_allowed|automatic_delivery' "$A" | head -180 || true
