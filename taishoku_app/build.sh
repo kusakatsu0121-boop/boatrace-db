@@ -54,6 +54,10 @@ python3 "$ROOT/patch_direct_tone_20260929.py" "$RUNTIME"
 # insurer name, qualification notice/certificate, and a fallback question for HR.
 python3 "$ROOT/patch_insurance_guidance_20260930.py" "$RUNTIME"
 
+# Make Hello Work and pension instructions concrete: destination, what to say,
+# and the key documents or fallback contact.
+python3 "$ROOT/patch_concrete_hw_pension_20260930.py" "$RUNTIME"
+
 # Instant web reports no longer collect a delivery email address. Remove only
 # delivery_email from the core required-field list. Keep the mapping and the
 # format check so historical/email-bearing submissions remain compatible.
