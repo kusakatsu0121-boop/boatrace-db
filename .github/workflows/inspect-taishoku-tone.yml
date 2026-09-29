@@ -17,5 +17,5 @@ jobs:
           set -euo pipefail
           echo '=== USER FACING COPY ==='
           grep -RInE '回答|入力|今回|あなた|判断|確認|整理|状況|結果|レポート|給付|退職|休職|傷病|失業' taishoku_app/runtime \
-            --include='*.mjs' --include='*.html' --include='*.js' \
+            --include='*.mjs' --include='*.html' --include='*.js' --include='*.py' \
             | head -800 || true
