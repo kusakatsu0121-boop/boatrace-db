@@ -12,7 +12,7 @@ assert.match(W, /import \{ interimGuidanceHtml \} from '\.\/partial_guidance\.mj
 assert.match(W, /const interim = review \? interimGuidanceHtml\(missing, reasons\) : '';/);
 assert.match(W, /\$\{details\}\$\{interim\}/);
 assert.match(W, /reportUnavailablePage\(outputRoot, token, durableReview\)/);
-assert.match(W, /回答を整理しています/);
+assert.match(W, /必要な内容を整理しています/);
 assert.doesNotMatch(W, /通常は数十秒で表示されます/);
 
 const start = W.indexOf('function reportUnavailablePage(');
@@ -29,26 +29,26 @@ function pageFor(state, durable = null) {
 
 const wageCode = 'wage_6m_total_or_regular_month';
 const salary = interimGuidanceHtml([wageCode], []);
-assert.match(salary, /今回は金額だけ出せません/);
+assert.match(salary, /金額まで知りたいときは/);
 assert.match(salary, /給与明細/);
-assert.doesNotMatch(salary, /受給できます|支給確定/);
+assert.doesNotMatch(salary, /受給できます|支給確定|回答しています|入力した内容をもとに/);
 const injected = interimGuidanceHtml(['<script>alert(1)</script>'], ['<img src=x onerror=alert(1)>']);
 assert.doesNotMatch(injected, /<script>|<img|onerror/);
 
 const review = pageFor({status:'review_required',missing_inputs:[wageCode,'cause_work_related'],review_reasons:['離職理由区分に確認が必要']});
-assert.match(review, /回答を受け付けました/);
+assert.match(review, /ここだけ確認してください/);
 assert.match(review, /次に確認すること/);
-assert.match(review, /今回は金額だけ出せません/);
+assert.match(review, /金額まで知りたいときは/);
 assert.match(review, /離職票/);
-assert.match(review, /正式レポートはまだ出していません/);
+assert.match(review, /正式レポートを出す前に/);
 assert.doesNotMatch(review, /<script>/);
 
 const persistedReview = pageFor(null, {status:'review_required',missing_inputs:[wageCode],review_reasons:[]});
 assert.match(persistedReview, /次に確認すること/);
-assert.match(persistedReview, /今回は金額だけ出せません/);
+assert.match(persistedReview, /金額まで知りたいときは/);
 const failed = pageFor({status:'failed',missing_inputs:[wageCode]});
 assert.doesNotMatch(failed, /次に確認すること/);
-assert.match(failed, /処理に失敗しました/);
+assert.match(failed, /うまく処理できませんでした/);
 console.log('PARTIAL_GUIDANCE_REVIEW_ONLY_OK');
 
 // Isolated readiness check: prove a ready report reaches the existing

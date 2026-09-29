@@ -1,0 +1,21 @@
+name: Inspect taishoku user-facing tone
+on:
+  push:
+    branches: [fix/taishoku-direct-tone-20260929]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash taishoku_app/build.sh
+      - name: Show user-facing Japanese copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== USER FACING COPY ==='
+          grep -RInE '回答|入力|今回|あなた|判断|確認|整理|状況|結果|レポート|給付|退職|休職|傷病|失業' taishoku_app/runtime \
+            --include='*.mjs' --include='*.html' --include='*.js' \
+            | head -800 || true
