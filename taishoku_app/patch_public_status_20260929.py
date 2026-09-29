@@ -14,11 +14,21 @@ def replace_once(old, new, label):
         raise SystemExit(f'{label}: expected exactly one match, got {count}')
     text = text.replace(old, new, 1)
 
-replace_once(
-    "function sendJson(res, status, body) {\n  const encoded = Buffer.from(\`\${JSON.stringify(body)}\\n\`, 'utf8');\n  res.writeHead(status, {\n    'content-type': 'application/json; charset=utf-8',\n    'content-length': encoded.length,\n    'cache-control': 'no-store',\n  });\n  res.end(encoded);\n}",
-    "function sendJson(res, status, body) {\n  const encoded = Buffer.from(\`\${JSON.stringify(body)}\\n\`, 'utf8');\n  res.writeHead(status, {\n    'content-type': 'application/json; charset=utf-8',\n    'content-length': encoded.length,\n    'cache-control': 'no-store',\n  });\n  res.end(encoded);\n}\n\nfunction sendPublicStatus(res, body) {\n  const encoded = Buffer.from(\`\${JSON.stringify(body)}\\n\`, 'utf8');\n  res.writeHead(200, {\n    'content-type': 'application/json; charset=utf-8',\n    'content-length': encoded.length,\n    'cache-control': 'no-store',\n    'access-control-allow-origin': 'https://kusakatsu0121-boop.github.io',\n    'vary': 'Origin',\n    'x-content-type-options': 'nosniff',\n  });\n  res.end(encoded);\n}",
-    'status json helper',
-)
+helper = r'''function sendPublicStatus(res, body) {
+  const encoded = Buffer.from(`${JSON.stringify(body)}\n`, 'utf8');
+  res.writeHead(200, {
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': encoded.length,
+    'cache-control': 'no-store',
+    'access-control-allow-origin': 'https://kusakatsu0121-boop.github.io',
+    'vary': 'Origin',
+    'x-content-type-options': 'nosniff',
+  });
+  res.end(encoded);
+}
+
+'''
+replace_once('function sendHtml(res, status, html) {', helper + 'function sendHtml(res, status, html) {', 'status helper insertion')
 
 needle = """    if (req.method === 'GET' && url.pathname.startsWith('/r/')) {"""
 route = """    if (req.method === 'GET' && url.pathname.startsWith('/status/')) {
