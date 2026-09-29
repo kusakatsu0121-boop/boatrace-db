@@ -18,8 +18,8 @@ jobs:
           F=taishoku_app/runtime/workflow_pipeline_v0.1/instant_finalize.mjs
           W=taishoku_app/runtime/workflow_webhook_v0.1/webhook_server.mjs
           A=taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
-          echo '=== instant finalize relevant lines ==='
-          grep -n -E 'ready_for_manual_delivery|approved_for_manual_delivery|approval|report_access|persist|status' "$F" | head -120 || true
+          echo '=== instant finalize source ==='
+          sed -n '1,110p' "$F"
           echo '=== webhook finalizer relevant lines ==='
           grep -n -E 'startInstantFinalize|resolveReportAccess|resolvePendingReview|ready_for_manual_delivery|approved_for_manual_delivery' "$W" | head -160 || true
           echo '=== report access relevant lines ==='
