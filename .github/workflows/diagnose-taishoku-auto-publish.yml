@@ -1,0 +1,26 @@
+name: Diagnose taishoku auto publish points
+on:
+  push:
+    branches: [diagnose/taishoku-auto-publish-20260929]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash taishoku_app/build.sh
+      - name: Print publish-related runtime structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          F=taishoku_app/runtime/workflow_pipeline_v0.1/instant_finalize.mjs
+          W=taishoku_app/runtime/workflow_webhook_v0.1/webhook_server.mjs
+          A=taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
+          echo '=== instant finalize relevant lines ==='
+          grep -n -E 'ready_for_manual_delivery|approved_for_manual_delivery|approval|report_access|persist|status' "$F" | head -120 || true
+          echo '=== webhook finalizer relevant lines ==='
+          grep -n -E 'startInstantFinalize|resolveReportAccess|resolvePendingReview|ready_for_manual_delivery|approved_for_manual_delivery' "$W" | head -160 || true
+          echo '=== report access relevant lines ==='
+          grep -n -E 'createReportAccess|resolveReportAccess|approved_for_manual_delivery|ready_for_manual_delivery|delivery_allowed|automatic_delivery' "$A" | head -180 || true
