@@ -135,7 +135,7 @@ finalizer = root / 'workflow_pipeline_v0.1' / 'instant_finalize.mjs'
 replace_once(
     finalizer,
     '<li><strong>傷病手当金：</strong>加入している健康保険。協会けんぽの場合は<a href="https://www.kyoukaikenpo.or.jp/benefit/injury_and_sickness_allowance/" target="_blank" rel="noopener noreferrer">傷病手当金の公式案内</a></li>',
-    '<li><strong>傷病手当金：</strong>マイナポータルの健康保険の資格情報で加入先を確認してください。協会けんぽなら協会けんぽ、健康保険組合ならその組合へ。分からなければ会社の人事に「傷病手当金の問い合わせ先を教えてください」と聞けば大丈夫です。<a href="https://www.mhlw.go.jp/stf/newpage_50657.html" target="_blank" rel="noopener noreferrer">加入先の確認方法</a></li>',
+    '<li><strong>傷病手当金：</strong>マイナポータルの健康保険の資格情報で加入先を確認してください。協会けんぽなら協会けんぽ、健康保険組合ならその組合へ。分からなければ会社の人事に「傷病手当金の問い合わせ先を教えてください」と聞けば大丈夫です。<a href="https://www.mhlw.go.jp/stf/newpage_50657.html" target="_blank" rel="noopener noreferrer">加入先の確認方法</a>／<a href="https://www.kyoukaikenpo.or.jp/benefit/injury_and_sickness_allowance/" target="_blank" rel="noopener noreferrer">傷病手当金の公式案内</a></li>',
     'finalizer sickness destination'
 )
 replace_once(
