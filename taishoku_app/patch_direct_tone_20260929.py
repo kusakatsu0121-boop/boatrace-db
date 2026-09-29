@@ -147,11 +147,16 @@ replace_exact(
     2,
     'renderer insufficient sequence info'
 )
-replace_exact(
+replace_once(
     renderer,
     'answer.get("display_name", "回答者")',
     'answer.get("display_name", "あなた")',
-    2,
+    'renderer document-title fallback'
+)
+replace_once(
+    renderer,
+    "answer.get('display_name', '回答者')",
+    "answer.get('display_name', 'あなた')",
     'renderer display-name fallback'
 )
 
