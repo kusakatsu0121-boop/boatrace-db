@@ -45,7 +45,7 @@ jobs:
           grep -q 'automatic_delivery: false' "$W"
           grep -q 'approved_for_manual_delivery' "$A"
           grep -q 'data-taishoku-report-caution="v1"' "$F"
-          grep -q '厚生労働省「基本手当について」' "$F"
+          grep -q '手続場所・必要書類・離職理由の公式Q&A' "$F"
           grep -q '傷病手当金の公式案内' "$F"
           grep -q '任意継続の公式案内' "$F"
           grep -q 'マイナポータルの健康保険の資格情報' "$F"
