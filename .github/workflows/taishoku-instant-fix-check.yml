@@ -25,6 +25,8 @@ jobs:
           W=taishoku_app/runtime/workflow_webhook_v0.1/webhook_server.mjs
           P=taishoku_app/runtime/workflow_persistence_v0.1/persist_job.mjs
           A=taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
+          R=taishoku_app/runtime/report_template_v0.1/render_report.py
+          T=taishoku_app/runtime/report_template_v0.1/report_template.html
           grep -q "status === 'review_required'" "$F"
           grep -q 'instant_finalize_timeout:' "$F"
           grep -q 'instantReportFailed(outputRoot, token)' "$W"
@@ -47,6 +49,16 @@ jobs:
           grep -q '傷病手当金の公式案内' "$F"
           grep -q '退職後の健康保険の公式案内' "$F"
           grep -q '年金加入の公式案内' "$F"
+          grep -q 'まず確認すること' "$T"
+          grep -q '離職理由はここでは決めきれません' "$R"
+          grep -q '追加で確認が必要な項目はありません' "$R"
+          grep -q '現在の状況：未選択' "$R"
+          ! grep -q '今の回答では' "$R"
+          ! grep -q 'この回答だけ' "$R"
+          ! grep -q '本人が回答した期限' "$R"
+          ! grep -q '今回のポイントは' "$R"
+          ! grep -q '現在の状況：回答なし' "$R"
+          python3 -m py_compile "$R"
           node --check "$F"
           node --check "$W"
           node --check "$P"

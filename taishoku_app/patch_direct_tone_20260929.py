@@ -12,6 +12,13 @@ def replace_once(path, old, new, label):
         raise SystemExit(f'{label}: expected one match, got {count}')
     path.write_text(text.replace(old, new, 1), encoding='utf-8')
 
+def replace_exact(path, old, new, expected, label):
+    text = path.read_text(encoding='utf-8')
+    count = text.count(old)
+    if count != expected:
+        raise SystemExit(f'{label}: expected {expected} matches, got {count}')
+    path.write_text(text.replace(old, new), encoding='utf-8')
+
 partial = root / 'workflow_webhook_v0.1' / 'partial_guidance.mjs'
 repls = [
 ('賃金額を入力していないため、今回は金額だけ出せません。金額も見たいときは、給与明細などで確認してからもう一度お試しください。',
@@ -80,5 +87,85 @@ replace_once(evaluate,
  "reasons.push('この先仕事を探す意向が未確認');",
  "reasons.push('今後仕事を探す予定がまだ決まっていない');",
  'evaluate job intent reason')
+
+
+renderer = root / 'report_template_v0.1' / 'render_report.py'
+renderer_repls = [
+("'unknown': '現在の状況：回答なし',",
+ "'unknown': '現在の状況：未選択',",
+ 'renderer unknown status'),
+("'本人が回答した期限が7日以内または超過': '回答した期限が近い、またはすでに過ぎています。期限と必要な対応を確認してください',",
+ "'期限が7日以内または超過': '期限が近い、またはすでに過ぎています。期限と必要な対応を確認してください',",
+ 'renderer deadline reason'),
+("'この先仕事を探す意向が未確認': '今後、仕事を探す予定があるかを確認してください',",
+ "'今後仕事を探す予定がまだ決まっていない': '今後、仕事を探す予定があるか確認してください',",
+ 'renderer job intent reason'),
+("'今回のポイントは、体調面を優先しながら、傷病手当金と失業手当の順番を整理することです。'",
+ "'まずは体調面を優先して、傷病手当金と失業手当の順番を確認してください。'",
+ 'renderer overview sick order'),
+("'今回のポイントは、退職前後の手続とあわせて、傷病手当金の条件を確認しておくことです。'",
+ "'まずは退職前後の手続とあわせて、傷病手当金の条件を確認してください。'",
+ 'renderer overview sick conditions'),
+("'今回のポイントは、失業手当の手続とあわせて、離職理由を整理しておくことです。'",
+ "'まずは失業手当の手続とあわせて、離職理由を整理してください。'",
+ 'renderer overview separation'),
+("'今回のポイントは、退職後の手続を順番に整理することです。'",
+ "'まずは退職後の手続きを、必要な順番で進めてください。'",
+ 'renderer overview retired'),
+("'今回のポイントは、退職前に確認しておきたいことを先に整理することです。'",
+ "'まずは退職前に確認しておきたいことから進めてください。'",
+ 'renderer overview default'),
+("今の回答だけで離職理由を決めることはできません。",
+ "離職理由はここでは決めきれません。",
+ 'renderer separation notice'),
+("'SHO_CURRENTLY_UNLIKELY': '今の回答では、「普段の仕事ができない状態」とまでは判断できません。',",
+ "'SHO_CURRENTLY_UNLIKELY': '今の時点では、「普段の仕事ができない状態」とまでは言い切れません。',",
+ 'renderer sickness unlikely'),
+("仕事中・通勤中の事故やけがが関係している場合は、労災保険の対象になる可能性があります。なお、仕事のストレスやハラスメントによる体調不良は、この回答だけで労災と決まるわけではありません。",
+ "仕事中・通勤中の事故やけがが関係している場合は、労災保険の対象になる可能性があります。仕事のストレスやハラスメントによる体調不良は、ここだけで労災と決まるわけではありません。",
+ 'renderer workers comp notice'),
+("「4日以上休んだ」という回答だけでは、最初の3日間（待期）と、4日目以降に休んだ日を分けられないことがあります。実際に休んだ日付を確認してください。",
+ "「4日以上休んだ」だけでは、最初の3日間（待期）と、4日目以降に休んだ日を分けられないことがあります。実際に休んだ日付を確認してください。",
+ 'renderer waiting explanation'),
+("今の回答では、追加で確認が必要な項目はありません。",
+ "追加で確認が必要な項目はありません。",
+ 'renderer no extra confirmation'),
+("or '回答なし'",
+ "or '未選択'",
+ 'renderer no reasons'),
+('STATUS_LABELS.get(answer.get("employment_status"), "現在の状況：回答なし")',
+ 'STATUS_LABELS.get(answer.get("employment_status"), "現在の状況：未選択")',
+ 'renderer status fallback'),
+]
+for old,new,label in renderer_repls:
+    replace_once(renderer,old,new,label)
+
+replace_exact(
+    renderer,
+    '今の回答では順番を決めるための情報が足りません。下の「追加で確認したいこと」を見てください。',
+    'まだ順番を決めるには情報が足りません。下の「追加で確認したいこと」を見てください。',
+    2,
+    'renderer insufficient sequence info'
+)
+replace_once(
+    renderer,
+    'answer.get("display_name", "回答者")',
+    'answer.get("display_name", "あなた")',
+    'renderer document-title fallback'
+)
+replace_once(
+    renderer,
+    "answer.get('display_name', '回答者')",
+    "answer.get('display_name', 'あなた')",
+    'renderer display-name fallback'
+)
+
+template = root / 'report_template_v0.1' / 'report_template.html'
+replace_once(
+    template,
+    '<p class="overview-label">今回の整理ポイント</p>',
+    '<p class="overview-label">まず確認すること</p>',
+    'template overview label'
+)
 
 print('direct reader-facing tone applied')
