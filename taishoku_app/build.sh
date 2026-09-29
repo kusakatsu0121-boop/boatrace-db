@@ -43,6 +43,10 @@ python3 "$ROOT/patch_user_friendly_status_20260928.py" "$RUNTIME"
 # is ready yet. It exposes no report content, benefit decision, amount or token.
 python3 "$ROOT/patch_public_status_20260929.py" "$RUNTIME"
 
+# Add a fixed caution and official confirmation destinations to each successful
+# instant report before its immutable approval snapshot is stored.
+python3 "$ROOT/patch_report_caution_20260929.py" "$RUNTIME"
+
 # Instant web reports no longer collect a delivery email address. Remove only
 # delivery_email from the core required-field list. Keep the mapping and the
 # format check so historical/email-bearing submissions remain compatible.
