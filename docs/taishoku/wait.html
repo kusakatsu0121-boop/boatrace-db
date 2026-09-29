@@ -46,36 +46,38 @@ if(!valid){
 }else{
   const base='https://taishoku-workflow-production-free.onrender.com';
   const report=base+'/r/'+encodeURIComponent(token);
-  let elapsed=0;
-  const ticker=setInterval(()=>{
-    elapsed+=5;
+  const statusUrl=base+'/status/'+encodeURIComponent(token);
+  const started=Date.now();
+  let stopped=false;
+
+  async function check(){
+    if(stopped) return;
+    const elapsed=Math.floor((Date.now()-started)/1000);
     if(elapsed>=20){
-      note.textContent='まだ準備中です。そのままお待ちください。準備ができ次第、自動で移動します。';
+      note.textContent='まだ整理中です。この画面のままで大丈夫です。';
     }
-  },5000);
-
-  const controller=new AbortController();
-  const fallback=setTimeout(()=>{
-    controller.abort();
-    clearInterval(ticker);
-    note.textContent='結果画面を確認しています…';
-    location.replace(report);
-  },90000);
-
-  fetch(base+'/health',{mode:'no-cors',cache:'no-store',signal:controller.signal})
-    .then(()=>{
-      clearTimeout(fallback);
-      clearInterval(ticker);
-      note.textContent='準備できました。結果画面へ移動します…';
-      setTimeout(()=>location.replace(report),350);
-    })
-    .catch(error=>{
-      if(error && error.name==='AbortError') return;
-      clearTimeout(fallback);
-      clearInterval(ticker);
-      note.textContent='結果画面を確認しています…';
-      setTimeout(()=>location.replace(report),1500);
-    });
+    try{
+      const res=await fetch(statusUrl,{cache:'no-store'});
+      if(res.ok){
+        const data=await res.json();
+        if(data && (data.status==='ready' || data.status==='review_required')){
+          stopped=true;
+          note.textContent=data.status==='ready'
+            ? '準備できました。結果を表示します…'
+            : '確認してほしい点を整理できました。表示します…';
+          setTimeout(()=>location.replace(report),350);
+          return;
+        }
+      }
+    }catch(_error){
+      // Renderの無料環境が起動中でも、この静的画面に留めて再確認する。
+    }
+    if(elapsed>=90){
+      note.textContent='少し時間がかかっています。引き続き確認しています。';
+    }
+    setTimeout(check,2000);
+  }
+  check();
 }
 </script>
 </body>
