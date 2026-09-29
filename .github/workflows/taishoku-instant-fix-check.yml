@@ -39,6 +39,11 @@ jobs:
           grep -q "'review_required'" "$P"
           grep -q 'automatic_delivery: false' "$W"
           grep -q 'approved_for_manual_delivery' "$A"
+          grep -q 'data-taishoku-report-caution="v1"' "$F"
+          grep -q '厚生労働省「基本手当について」' "$F"
+          grep -q '傷病手当金の公式案内' "$F"
+          grep -q '退職後の健康保険の公式案内' "$F"
+          grep -q '年金加入の公式案内' "$F"
           node --check "$F"
           node --check "$W"
           node --check "$P"
@@ -50,6 +55,9 @@ jobs:
           import path from 'node:path';
           import crypto from 'node:crypto';
           import { finalizeInstantReport } from './taishoku_app/runtime/workflow_pipeline_v0.1/instant_finalize.mjs';
+          const finalizerSource = fs.readFileSync('./taishoku_app/runtime/workflow_pipeline_v0.1/instant_finalize.mjs','utf8');
+          assert.ok(finalizerSource.indexOf('addReportCaution(jobDir);') > -1,'caution insertion missing');
+          assert.ok(finalizerSource.indexOf('addReportCaution(jobDir);') < finalizerSource.indexOf('const result = await approve('),'caution must be fixed before approval snapshot');
           const root = fs.mkdtempSync(path.join(os.tmpdir(),'taishoku-regression-'));
           const token = crypto.randomBytes(32).toString('base64url');
           const ref = 'WF-test-review';
