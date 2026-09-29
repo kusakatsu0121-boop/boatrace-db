@@ -1,0 +1,20 @@
+name: Inspect 2026 insurance guidance
+on:
+  push:
+    branches: [fix/taishoku-2026-insurance-guidance-20260930]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash taishoku_app/build.sh
+      - name: Show health-insurance user-facing copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -RInE '保険証|健康保険|資格情報|資格確認書|マイナ|傷病手当|任意継続|国民健康保険' taishoku_app/runtime \
+            --include='*.mjs' --include='*.html' --include='*.js' --include='*.py' \
+            | head -900 || true
