@@ -58,6 +58,9 @@ python3 "$ROOT/patch_insurance_guidance_20260930.py" "$RUNTIME"
 # and the key documents or fallback contact.
 python3 "$ROOT/patch_concrete_hw_pension_20260930.py" "$RUNTIME"
 
+# Presentation only; keep all decisions and approval controls unchanged.
+python3 "$ROOT/patch_readability_20261004.py" "$RUNTIME"
+
 # Instant web reports no longer collect a delivery email address. Remove only
 # delivery_email from the core required-field list. Keep the mapping and the
 # format check so historical/email-bearing submissions remain compatible.
