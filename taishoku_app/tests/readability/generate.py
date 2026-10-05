@@ -18,5 +18,5 @@ cases={
 for name,answer in cases.items():
  d=out/name;d.mkdir(parents=True,exist_ok=True)
  (d/'answer.json').write_text(json.dumps(answer,ensure_ascii=False,indent=2))
- subprocess.run(['python3',str(runtime/'report_template_v0.1/render_report.py'),str(d/'answer.json'),'--html',str(d/'report.html'),'--pdf',str(d/'report.pdf'),'--snapshot',str(d/'evaluation.json')],check=True,stdout=subprocess.DEVNULL)
+ subprocess.run(['python3',str(runtime/'report_template_v0.1/render_report.py'),str(d/'answer.json'),'--html',str(d/'report.html'),'--snapshot',str(d/'evaluation.json')],check=True,stdout=subprocess.DEVNULL)
  print(name)

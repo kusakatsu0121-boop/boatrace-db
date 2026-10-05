@@ -49,3 +49,19 @@ node --test taishoku_app/tests/partial_guidance.test.mjs
 ```
 
 `/tmp/before`は変更前ブランチのruntimeで同じgenerate.pyを実行して用意する。出力には架空データのみ使用する。
+
+## PDF廃止（2026-10-05）
+
+ユーザーの指定により、新規レポートはHTMLだけを生成する。build.shの最後でPDF処理とPyMuPDF依存を除去し、manifestのレビュー対象をhtml_previewに変更。保存済みの過去PDFを削除する処理は追加していない。
+
+- 本番順に全パッチを適用したruntimeで検証。
+- 7種類の架空Tallyペイロードを実際の正規化・判定・生成処理へ入力。通常1件、要確認5件、停止1件の状態と判定が変更前後で一致。
+- 生成6件のHTMLはバイト単位で一致。新規PDFは0件。Python -Sでも生成でき、pipパッケージ不要を確認。
+- 承認、最終化、秘密URL、評価器、ルール、保存・復元のファイルハッシュは変更前後で一致。
+- テストは外部サービスへの接続・承認・公開なし。Render廃止や別ホストへの移行は未実施。
+
+```sh
+# BASELINE_RUNTIMEはPDF廃止パッチ直前のruntimeを別フォルダーに保存する
+python3 taishoku_app/tests/readability/generate.py taishoku_app/runtime /tmp/html-fixtures
+node taishoku_app/tests/readability/html_only.test.mjs BASELINE_RUNTIME taishoku_app/runtime /tmp/html-fixtures
+```
