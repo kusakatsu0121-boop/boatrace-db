@@ -25,7 +25,7 @@ s=s.replace('加入していた場合は、退職後に資産を移す手続が�
 s=s.replace('会社の案内や、届いた納付書を確認してください。','会社の給与担当へ「退職後の住民税は、給与から引かれますか。納付書で払いますか」と聞いてください。納付書の内容が不明なら、発行した市区町村の住民税担当へ相談してください。')
 s=s.replace('<p>{{pension_note}}</p>','<p>{{pension_note}}</p><p><a href="https://www.nenkin.go.jp/service/kokunen/kanyu/20140710-03.html" target="_blank" rel="noopener noreferrer">日本年金機構：退職後の手続き・必要書類</a></p>')
 p.write_text(s)
-p=folder/'report.css';p.write_text(p.read_text()+'\n/* Mobile reading: long links and document names must wrap. */\n.report { overflow-wrap: anywhere; }\n.task-detail > div { min-width: 0; }\nsummary { min-height: 44px; padding: 12px 0; cursor: pointer; }\n:target { scroll-margin-top: 16px; }\n')
+p=folder/'report.css';p.write_text(p.read_text()+'\n/* Mobile reading: long links and document names must wrap. */\n.report { overflow-wrap: anywhere; }\n.task-detail > div { min-width: 0; }\nsummary { min-height: 44px; padding: 12px 0; cursor: pointer; }\n:target { scroll-margin-top: 16px; }\n@media screen and (max-width: 640px) { h1 { font-size: 26px; } }\n')
 print('reader guidance applied; evaluation and security unchanged')
 # Keep the caution visible, but fold its duplicated directory of contacts.
 p=root/'workflow_pipeline_v0.1/instant_finalize.mjs';s=p.read_text()
