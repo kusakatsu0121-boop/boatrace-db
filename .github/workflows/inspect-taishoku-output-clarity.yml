@@ -30,5 +30,9 @@ jobs:
           echo '=== claim-state terms across runtime ==='
           grep -RInE '申請中|申請済|受給中|未申請|not_applied|applied|receiving|claim_status|application_status|sickness.*status|benefit.*status' taishoku_app/runtime \
             --include='*.mjs' --include='*.js' --include='*.py' --include='*.json' | head -500 || true
-          echo '=== adapter/schema candidates ==='
-          find taishoku_app/runtime -maxdepth 3 -type f | grep -E 'adapter|schema|normal|answer|field|tally' | head -160 || true
+          echo '=== sickness status schema ==='
+          sed -n '225,245p' taishoku_app/runtime/workflow_rule_package_v0.1/answer.schema.json
+          echo '=== sickness status map ==='
+          sed -n '318,342p' taishoku_app/runtime/workflow_rule_package_v0.1/tally_field_map.v1.json
+          echo '=== process missing flow ==='
+          sed -n '45,165p' "$P"
