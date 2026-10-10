@@ -1,0 +1,29 @@
+name: Inspect taishoku output clarity
+on:
+  push:
+    branches: [fix/taishoku-output-clarity-20261010]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash taishoku_app/build.sh
+      - name: Print relevant renderer and rule sections
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=taishoku_app/runtime/report_template_v0.1/render_report.py
+          T=taishoku_app/runtime/report_template_v0.1/report_template.html
+          E=taishoku_app/runtime/workflow_rule_package_v0.1/evaluate.mjs
+          P=taishoku_app/runtime/workflow_pipeline_v0.1/process_tally_submission.mjs
+          echo '=== renderer 1-460 ==='
+          sed -n '1,460p' "$R"
+          echo '=== template ==='
+          sed -n '1,180p' "$T"
+          echo '=== evaluate 1-430 ==='
+          sed -n '1,430p' "$E"
+          echo '=== input mapper relevant ==='
+          grep -n -E '傷病|手当|申請|受給|離職|wage|absence|health|status|受付|reference|missing|required' "$P" | head -320 || true
