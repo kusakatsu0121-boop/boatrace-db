@@ -1,0 +1,19 @@
+name: Inspect false missing review
+on:
+  push:
+    branches: [fix/taishoku-false-missing-20261010]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash taishoku_app/build.sh
+      - name: Show human review logic
+        shell: bash
+        run: |
+          set -euo pipefail
+          E=taishoku_app/runtime/workflow_rule_package_v0.1/evaluate.mjs
+          sed -n '245,390p' "$E"
