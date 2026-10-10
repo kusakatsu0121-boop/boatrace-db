@@ -58,6 +58,10 @@ python3 "$ROOT/patch_insurance_guidance_20260930.py" "$RUNTIME"
 # and the key documents or fallback contact.
 python3 "$ROOT/patch_concrete_hw_pension_20260930.py" "$RUNTIME"
 
+# Clarify calculation assumptions, application state, real missing fields,
+# insurer identity, statutory deadlines, and optional metadata in the report.
+python3 "$ROOT/patch_output_clarity_20261010.py" "$RUNTIME"
+
 # Instant web reports no longer collect a delivery email address. Remove only
 # delivery_email from the core required-field list. Keep the mapping and the
 # format check so historical/email-bearing submissions remain compatible.
