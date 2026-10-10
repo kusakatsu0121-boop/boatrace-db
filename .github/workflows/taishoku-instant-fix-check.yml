@@ -17,6 +17,8 @@ jobs:
         run: bash taishoku_app/build.sh
       - name: Validate review-only partial guidance and durable fallback
         run: node taishoku_app/tests/partial_guidance.test.mjs
+      - name: Validate report output clarity matrix
+        run: python3 taishoku_app/tests/report_output_clarity.test.py
       - name: Validate safe failure handling and normal release guards
         shell: bash
         run: |
@@ -63,8 +65,12 @@ jobs:
           grep -q '免除や納付猶予を相談したい' "$T"
           grep -q 'まず確認すること' "$T"
           grep -q '離職理由はここでは決めきれません' "$R"
-          grep -q '追加で確認が必要な項目はありません' "$R"
-          grep -q '現在の状況：未選択' "$R"
+          grep -q 'ここに出すのは、まだ確認できていないことだけです' "$R"
+          grep -q '一般の給付日数で仮計算' "$R"
+          grep -q '退職前に本人として加入していた健康保険' "$R"
+          ! grep -q '入力なし' "$R"
+          ! grep -q "reference_id', '未設定'" "$R"
+          ! grep -q '受付番号 {{reference_id}}' "$T"
           ! grep -q '今の回答では' "$R"
           ! grep -q 'この回答だけ' "$R"
           ! grep -q '本人が回答した期限' "$R"
