@@ -141,4 +141,37 @@ assert "known_total = yen(answer.get('known_total_amount')) if answer.get('known
 assert "受付番号 {{reference_id}}" not in template_source
 assert "reference_id', '未設定'" not in renderer_source
 
-print("REPORT_OUTPUT_CLARITY_MATRIX_OK: 9 core status/state combinations + edge cases")
+# 7) Explicit False answers are answers, not missing values in the evaluator.
+import json
+import tempfile
+
+base_eval_answer = {
+    "display_name": "テスト",
+    "employment_status": "retired",
+    "can_start_new_job": "now",
+    "job_intent": "seeking_now",
+    "age_at_exit": 40,
+    "employment_insurance_duration": "5_to_10y",
+    "wage_regular_month_estimate": 300000,
+    "exit_reasons": ["long_hours"],
+    "overtime_evidence": False,
+    "reason_causation": False,
+    "separation_notice_status": "received",
+    "separation_reason_dispute": "no_difference",
+    "post_exit_health_insurance_done": True,
+    "national_pension_done": True,
+}
+with tempfile.TemporaryDirectory() as td:
+    p = Path(td) / "answer.json"
+    p.write_text(json.dumps(base_eval_answer, ensure_ascii=False), encoding="utf-8")
+    evaluated = mod.evaluate(p)
+
+missing = evaluated["employment_insurance"]["missing_inputs"]
+assert "overtime_hours_last_6m" in missing
+assert "overtime_evidence" not in missing
+assert "reason_causation" not in missing
+# The separation-reason review safety remains independent from missing-input cleanup.
+assert evaluated["human_review"]["required"] is True
+assert "離職理由区分に確認が必要" in evaluated["human_review"]["reasons"]
+
+print("REPORT_OUTPUT_CLARITY_MATRIX_OK: 9 core status/state combinations + false-answer edge cases")
