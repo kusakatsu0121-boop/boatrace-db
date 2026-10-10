@@ -36,3 +36,5 @@ jobs:
           sed -n '318,342p' taishoku_app/runtime/workflow_rule_package_v0.1/tally_field_map.v1.json
           echo '=== process missing flow ==='
           sed -n '45,165p' "$P"
+          echo '=== employment reason missing logic ==='
+          grep -n -B18 -A45 -E "overtime_evidence|reason_causation|EI_REASON_NEED_FACTS|EI_REASON_TOKUTEI" "$E" | head -260 || true
