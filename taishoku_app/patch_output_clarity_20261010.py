@@ -160,7 +160,7 @@ def employment_summary(answer: dict, ei: dict) -> str:
     return html_out
 ''')
 
-replace_function(renderer, 'sickness_section', 'review_content', r'''
+replace_function(renderer, 'sickness_section', 'review_content', r"""
 def sickness_section(answer: dict, result: dict) -> str:
     sho = result.get('sickness_allowance', {})
     if not sho.get('active'):
@@ -296,7 +296,7 @@ def sickness_section(answer: dict, result: dict) -> str:
       <details><summary>▶ ほかの給付との調整</summary><div class="detail-body"><p>老齢年金、障害年金、労災給付、出産手当金などを受けている場合は、傷病手当金の金額が調整されることがあります。該当する場合は、退職前または現在の申請先へ、どの給付を受けているか伝えて確認してください。</p></div></details>
     </section>
     '''
-''')
+""")
 
 replace_function(renderer, 'review_content', 'render', r'''
 def _answer_present(answer: dict, key: str) -> bool:
