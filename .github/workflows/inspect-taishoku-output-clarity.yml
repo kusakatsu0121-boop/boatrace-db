@@ -25,5 +25,10 @@ jobs:
           sed -n '1,180p' "$T"
           echo '=== evaluate 1-430 ==='
           sed -n '1,430p' "$E"
-          echo '=== input mapper relevant ==='
-          grep -n -E '傷病|手当|申請|受給|離職|wage|absence|health|status|受付|reference|missing|required' "$P" | head -320 || true
+          echo '=== process submission 35-165 ==='
+          sed -n '35,165p' "$P"
+          echo '=== claim-state terms across runtime ==='
+          grep -RInE '申請中|申請済|受給中|未申請|not_applied|applied|receiving|claim_status|application_status|sickness.*status|benefit.*status' taishoku_app/runtime \
+            --include='*.mjs' --include='*.js' --include='*.py' --include='*.json' | head -500 || true
+          echo '=== adapter/schema candidates ==='
+          find taishoku_app/runtime -maxdepth 3 -type f | grep -E 'adapter|schema|normal|answer|field|tally' | head -160 || true
