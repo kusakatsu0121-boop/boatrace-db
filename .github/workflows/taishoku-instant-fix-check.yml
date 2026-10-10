@@ -17,6 +17,8 @@ jobs:
         run: bash taishoku_app/build.sh
       - name: Validate review-only partial guidance and durable fallback
         run: node taishoku_app/tests/partial_guidance.test.mjs
+      - name: Validate report output clarity matrix
+        run: python3 taishoku_app/tests/report_output_clarity.test.py
       - name: Validate safe failure handling and normal release guards
         shell: bash
         run: |
