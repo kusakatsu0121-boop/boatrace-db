@@ -17,3 +17,5 @@ jobs:
           set -euo pipefail
           E=taishoku_app/runtime/workflow_rule_package_v0.1/evaluate.mjs
           sed -n '245,390p' "$E"
+          echo '=== schema evidence fields ==='
+          grep -n -B4 -A12 -E '"overtime_evidence"|"reason_causation"' taishoku_app/runtime/workflow_rule_package_v0.1/answer.schema.json || true
