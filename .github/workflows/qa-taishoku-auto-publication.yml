@@ -1,0 +1,26 @@
+name: Inspect retirement auto publication
+on:
+  push:
+    branches: [qa/taishoku-auto-publication-20261012]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash taishoku_app/build.sh
+      - name: Show final publication path
+        shell: bash
+        run: |
+          set -euo pipefail
+          F=taishoku_app/runtime/workflow_pipeline_v0.1/instant_finalize.mjs
+          A=taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
+          W=taishoku_app/runtime/workflow_webhook_v0.1/webhook_server.mjs
+          echo '=== instant finalize ==='
+          sed -n '1,190p' "$F"
+          echo '=== report access resolver ==='
+          grep -n -A95 -B15 'resolveReportAccess' "$A"
+          echo '=== status endpoint refs ==='
+          grep -n -A110 -B20 -E "/status/|statusPage|publicReportStatus|review_required|ready_for_manual_delivery|approved_for_manual_delivery" "$W" | head -400
