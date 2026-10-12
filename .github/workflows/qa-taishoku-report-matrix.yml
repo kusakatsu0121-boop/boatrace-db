@@ -1,4 +1,4 @@
-name: Inspect retirement report UX structure
+name: Inspect retirement report template
 on:
   push:
     branches: [qa/taishoku-report-matrix-20261012]
@@ -11,17 +11,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: bash taishoku_app/build.sh
-      - name: Show UX structure
-        shell: bash
-        run: |
-          set -euo pipefail
-          R=taishoku_app/runtime/report_template_v0.1/render_report.py
-          T=taishoku_app/runtime/report_template_v0.1/report_template.html
-          echo '=== roadmap ==='
-          grep -n -A80 '^def roadmap_rows' "$R" | head -100
-          echo '=== task rows ==='
-          grep -n -A110 '^def task_rows' "$R" | head -130
-          echo '=== employment flow ==='
-          grep -n -A150 '^def employment_flow' "$R" | head -180
-          echo '=== template placeholders ==='
-          grep -n -B5 -A12 -E '\{\{roadmap_rows\}\}|\{\{task_rows\}\}|\{\{employment_flow\}\}|退職給付金' "$T"
+      - name: Show template
+        run: sed -n '1,180p' taishoku_app/runtime/report_template_v0.1/report_template.html
