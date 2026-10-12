@@ -1,26 +1,35 @@
-name: Inspect retirement auto publication
+name: Retirement production smoke
 on:
   push:
     branches: [qa/taishoku-auto-publication-20261012]
 permissions:
   contents: read
 jobs:
-  inspect:
+  smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: bash taishoku_app/build.sh
-      - name: Show final publication path
+      - name: Check production backend and public entry
         shell: bash
         run: |
           set -euo pipefail
-          F=taishoku_app/runtime/workflow_pipeline_v0.1/instant_finalize.mjs
-          A=taishoku_app/runtime/workflow_report_access_v0.1/report_access.mjs
-          W=taishoku_app/runtime/workflow_webhook_v0.1/webhook_server.mjs
-          echo '=== instant finalize ==='
-          sed -n '1,190p' "$F"
-          echo '=== report access resolver ==='
-          grep -n -A95 -B15 'resolveReportAccess' "$A"
-          echo '=== status endpoint refs ==='
-          grep -n -A110 -B20 -E "/status/|statusPage|publicReportStatus|review_required|ready_for_manual_delivery|approved_for_manual_delivery" "$W" | head -400
+          BACKEND='https://taishoku-workflow-production-free.onrender.com'
+          ENTRY='https://kusakatsu0121-boop.github.io/boatrace-db/taishoku/'
+          FAKE='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+
+          echo '=== health ==='
+          curl --fail --silent --show-error --retry 3 --retry-delay 3 "$BACKEND/health" | tee /tmp/health.json
+          node -e "const x=require('/tmp/health.json'); if(x.status!=='ok') process.exit(1); if(x.instant_web_report!=='enabled') process.exit(2); if(x.secret_report_access!=='configured') process.exit(3)"
+
+          echo '=== fake status ==='
+          curl --fail --silent --show-error --retry 3 --retry-delay 3 "$BACKEND/status/$FAKE" | tee /tmp/status.json
+          node -e "const x=require('/tmp/status.json'); if(x.status!=='pending') process.exit(4); if(Object.keys(x).some(k=>/report|amount|answer|token/i.test(k))) process.exit(5)"
+
+          echo '=== public entry ==='
+          curl --fail --silent --show-error --retry 3 --retry-delay 3 "$ENTRY" -o /tmp/entry.html
+          grep -q 'tally.so/r/QKyVpY' /tmp/entry.html
+          grep -q 'instant_token' /tmp/entry.html
+          ! grep -Eo '[A-Za-z0-9_-]{43}' /tmp/entry.html | grep -q .
+
+          echo 'PRODUCTION_PUBLIC_SMOKE_OK'
