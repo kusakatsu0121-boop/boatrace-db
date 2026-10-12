@@ -83,6 +83,8 @@ PY
 # HTML-only reports require Python standard library; no PDF dependency.
 python3 "$ROOT/patch_html_only_20261005.py" "$RUNTIME"
 
+python3 "$ROOT/patch_unattended_copy_20261012.py" "$RUNTIME"
+
 # pg is used only when DATABASE_URL is configured. Installing it here keeps
 # the current file-based flow working unchanged when persistence is disabled.
 (

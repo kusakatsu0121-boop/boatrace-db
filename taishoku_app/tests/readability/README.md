@@ -65,3 +65,26 @@ node --test taishoku_app/tests/partial_guidance.test.mjs
 python3 taishoku_app/tests/readability/generate.py taishoku_app/runtime /tmp/html-fixtures
 node taishoku_app/tests/readability/html_only.test.mjs BASELINE_RUNTIME taishoku_app/runtime /tmp/html-fixtures
 ```
+
+## 自動表示に向けた文言修正（2026-10-12）
+
+- 支給条件不明の傷病手当金の日額を非表示。支給通知の自己申告値と計算値を区別し、将来の支給を保証しない説明を金額付近に表示。
+- 失業手当の試算条件・未確定の離職理由を金額付近に表示。求職予定や就労可能時期が不明な場合は見込み額を非表示。
+- 休職中・退職未定では退職日決定を促さない案内へ。退職済みの警告を過去の勤務状況を調べる文へ変更。
+- 傷病手当金の未申請／申請中／受給中／過去受給／不明を分岐。退職前の保険者と現在の保険を区別。
+- 手続きの連番を必須の順番と受け取られない見出しへ変更。任意継続の期限は冒頭でも案内。
+- 不足項目は実際の評価結果にあるものだけを列挙。全項目を毎回再確認させる固定の補足を削除。入力なし・受付番号未設定を非表示。
+- テストで見つかったタイトル欄の表示名未エスケープも修正。
+- 45件のHTML生成チェック（基本7件、状態×申請状況×保険者36件、離職理由と特殊文字各1件）合格。基本7件の評価JSONは時刻以外完全一致。Python -Sで実施。
+- 人の承認を待たず表示する方針に向けた**文章・表示の修正**。承認待ちを撤去する配信処理、本番公開、Tally/NeonのE2Eはこの変更では実施していない。判定・保存・秘密URLの制御は変更なし。
+
+再現：PDF廃止済みの修正前runtimeでgenerate.pyを実行しBASELINEを保存してから、最新build.shでruntimeを作成。
+
+```sh
+python3 taishoku_app/tests/readability/generate.py taishoku_app/runtime /tmp/current
+python3 taishoku_app/tests/readability/unattended_copy_test.py taishoku_app/runtime /tmp/current BASELINE
+```
+
+期限の公式確認（2026-10-12）：
+- 協会けんぽ 任意継続：https://www.kyoukaikenpo.or.jp/benefit/voluntary_continuation/index.html
+- 日本年金機構 国民年金加入：https://www.nenkin.go.jp/service/kokunen/kanyu/20140710-04.html
