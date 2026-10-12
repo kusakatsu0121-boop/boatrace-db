@@ -1,0 +1,19 @@
+name: Inspect report render entry
+on:
+  push:
+    branches: [qa/taishoku-report-matrix-20261012]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash taishoku_app/build.sh
+      - name: Show render entry
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=taishoku_app/runtime/report_template_v0.1/render_report.py
+          grep -n -A140 '^def render' "$R" | head -180
