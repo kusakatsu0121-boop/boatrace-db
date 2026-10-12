@@ -1,19 +1,15 @@
-name: Inspect report render entry
+name: Generate retirement report QA matrix
 on:
   push:
     branches: [qa/taishoku-report-matrix-20261012]
 permissions:
   contents: read
 jobs:
-  inspect:
+  qa:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - run: bash taishoku_app/build.sh
-      - name: Show render entry
-        shell: bash
-        run: |
-          set -euo pipefail
-          R=taishoku_app/runtime/report_template_v0.1/render_report.py
-          grep -n -A140 '^def render' "$R" | head -180
+      - name: Generate 12 representative reports
+        run: python3 taishoku_app/tests/generate_report_qa_matrix.py
