@@ -21,6 +21,8 @@ jobs:
         run: python3 taishoku_app/tests/report_output_clarity.test.py
       - name: Validate report first-view readability
         run: python3 taishoku_app/tests/report_readability.test.py
+      - name: Validate 12 representative report cases
+        run: python3 taishoku_app/tests/report_readability_12cases.test.py
       - name: Validate safe failure handling and normal release guards
         shell: bash
         run: |
