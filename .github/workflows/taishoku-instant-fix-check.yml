@@ -19,6 +19,8 @@ jobs:
         run: node taishoku_app/tests/partial_guidance.test.mjs
       - name: Validate report output clarity matrix
         run: python3 taishoku_app/tests/report_output_clarity.test.py
+      - name: Validate report first-view readability
+        run: python3 taishoku_app/tests/report_readability.test.py
       - name: Validate safe failure handling and normal release guards
         shell: bash
         run: |
