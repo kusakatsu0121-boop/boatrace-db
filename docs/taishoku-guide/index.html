@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta name="description" content="退職前後に、どこへ連絡し、何を持っていき、何と伝えるか。状況を選ぶだけで読める無料の手続きガイドです。">
+  <title>退職前後、今やること｜退職給付をやっつけろ</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+<main>
+  <header>
+    <p class="brand">退職給付をやっつけろ <span>手続き案内版</span></p>
+    <h1>退職前後、<br>今やることを整理しよう。</h1>
+    <p class="lead">連絡する先、持ち物、窓口で伝える言葉まで。<br>分からない項目があっても、そのまま進めます。</p>
+    <p class="privacy">無料・登録不要。選んだ内容は送信・保存しません。</p>
+  </header>
+  <section class="panel" aria-labelledby="questions-title">
+    <h2 id="questions-title">いまの状況を選んでください</h2>
+    <p>会社員の退職前後を中心にした案内です。受給できるかの判定や金額計算は行いません。</p>
+    <div class="fields">
+      <label for="employment">1. 退職の状況
+        <select id="employment"><option value="unknown">まだ分からない・決めていない</option><option value="before">退職する予定（まだ在職中）</option><option value="leave">休職中（退職は決めていない）</option><option value="retired">すでに退職した</option></select>
+      </label>
+      <label for="work">2. いま新しい仕事を始められますか？
+        <select id="work"><option value="unknown">分からない・まだ決めていない</option><option value="ready">働ける状態で、仕事を探す</option><option value="ill">病気やけがで、いまは働けない</option><option value="later">働けるが、しばらく仕事を探さない</option></select>
+      </label>
+      <label for="reason">3. 会社が記載した退職理由について
+        <select id="reason"><option value="unknown">まだ分からない</option><option value="same">実際の理由と合っている</option><option value="dispute">実際の理由と違う・争いがある</option><option value="no_notice">離職票がまだ届いていない</option></select>
+      </label>
+      <label for="sickness">4. 傷病手当金の申請状況（病気やけがで休んだ期間の給付）
+        <select id="sickness"><option value="unknown">分からない・利用を考えていない</option><option value="not_applied">利用を考えているが、まだ申請していない</option><option value="applying">申請して返事を待っている</option><option value="receiving">すでに受け取っている</option></select>
+      </label>
+      <label for="insurance">5. 退職後の健康保険・年金の手続き
+        <select id="insurance"><option value="unknown">これから・分からない</option><option value="done">両方とも必要な手続きは済んでいる</option></select>
+      </label>
+    </div>
+    <button id="show" type="button">今やることを見る <span aria-hidden="true">→</span></button>
+    <p id="load-status" role="status">ボタンの準備中です。長く続く場合はページを再読み込みしてください。</p>
+    <noscript><p>この案内にはJavaScriptが必要です。有効にして再読み込みするか、ページ下の公式窓口をご利用ください。</p></noscript>
+  </section>
+  <section id="results" hidden aria-labelledby="result-title">
+    <p class="eyebrow">ここから進めましょう</p>
+    <h2 id="result-title" tabindex="-1">今やること</h2>
+    <p class="notice">相談の準備に使う案内です。給付の可否・金額・期間は、各窓口が確認して決めます。期限が近い手続きは、ほかの相談の返事を待たずに進めてください。</p>
+    <div id="tasks"></div>
+    <button class="secondary" id="edit" type="button">状況を選び直す</button>
+    <p class="small">必要な部分はスクリーンショットで残せます。ページを閉じると、この案内の選択内容は残りません。</p>
+  </section>
+  <footer>
+    <details><summary>公式の窓口・この案内について</summary>
+      <p>本サイトは行政機関の公式サービスではありません。申請代行や個別の審査は行いません。</p>
+      <ul><li><a href="https://www.mhlw.go.jp/kyujin/hwmap.html" rel="noreferrer">厚生労働省：近くのハローワークを探す</a></li><li><a href="https://www.kyoukaikenpo.or.jp/" rel="noreferrer">協会けんぽ：給付・問い合わせ先</a></li><li><a href="https://www.nenkin.go.jp/service/kokunen/kanyu/20140710-03.html" rel="noreferrer">日本年金機構：退職後の手続き</a></li></ul>
+      <p>選択内容はこの画面内だけで使います。名前・連絡先は収集しません。解析ツール、広告、外部APIは使用していません。ページの配信元はGitHub Pagesです。閲覧時のIPアドレス等は配信元の方針に従って扱われます。</p>
+      <p>公式情報の確認日：2026年10月12日</p>
+    </details>
+  </footer>
+</main>
+</body>
+</html>
