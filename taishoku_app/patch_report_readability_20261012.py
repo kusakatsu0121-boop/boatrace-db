@@ -35,6 +35,16 @@ if old not in text:
     raise SystemExit('difficult employment flow block not found')
 text=text.replace(old,new,1)
 
+# Keep concrete Hello Work wording for people who can work, but behind a closed detail.
+old_normal_flow = """        '<details><summary>？「受給資格決定日」って何？</summary><div class="detail-body">ハローワークに離職票などを提出し、求職申込みをして、失業手当の受給資格を確認してもらった日のことです。</div></details>'
+    )"""
+new_normal_flow = """        '<details><summary>▶ 最初に何と言えばいい？</summary><div class="detail-body"><p>窓口で「退職したので、失業手当の手続きをしたい」と伝えれば大丈夫です。離職票-1・2、マイナンバー確認書類、本人確認書類、本人名義の口座が分かるものなどを持参します。離職理由が実際と違う場合は、その場で「離職理由が実際と違います」と伝えてください。</p></div></details>'
+        '<details><summary>？「受給資格決定日」って何？</summary><div class="detail-body">ハローワークに離職票などを提出し、求職申込みをして、失業手当の受給資格を確認してもらった日のことです。</div></details>'
+    )"""
+if old_normal_flow not in text:
+    raise SystemExit('normal employment flow detail anchor missing')
+text=text.replace(old_normal_flow,new_normal_flow,1)
+
 # Put generic terminology and reemployment information behind context-aware helpers.
 anchor="def employment_reason_note(answer: dict, ei: dict) -> str:\n"
 if anchor not in text:
