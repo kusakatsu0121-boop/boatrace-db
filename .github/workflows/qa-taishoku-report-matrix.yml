@@ -25,6 +25,7 @@ jobs:
             d="$(dirname "$f")"
             "$CHROME" --headless --disable-gpu --no-sandbox --hide-scrollbars \
               --window-size=375,1800 --screenshot="$d/mobile-375.png" "file://$GITHUB_WORKSPACE/$f"
+            base64 -w0 "$d/mobile-375.png" > "$d/mobile-375.png.b64"
           done
       - name: QA assertions
         shell: bash
