@@ -15,6 +15,12 @@ jobs:
       - run: bash taishoku_app/build.sh
       - name: Generate 12 reports
         run: python3 taishoku_app/tests/qa_generate_report_matrix.py
+      - name: Install Japanese font for visual QA
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          fc-cache -f
       - name: Capture 375px mobile top views
         shell: bash
         run: |
