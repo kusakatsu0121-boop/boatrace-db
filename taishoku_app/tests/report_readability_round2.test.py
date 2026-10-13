@@ -74,8 +74,18 @@ assert "退職前後｜あなたが今やること" in health_html
 assert "最初は「まずやること」だけ確認してください" in health_html
 assert "最初は「まずやること」だけ見れば大丈夫です" not in health_html
 
-# Critical warning must keep the action while dropping the long insurer-discovery explanation.
-m=re.search(r'<div class="notice critical">(.*?)</div>',health_html,re.S)
+# Sickness is section 02 after the reordered layout.
+assert '<div class="section-kicker">02</div>\n      <h2>傷病手当金</h2>' in health_html
+
+# If the person already answered that they will not work on the exit date,
+# the retirement-day warning is unnecessary and must stay hidden.
+assert "退職日に出勤する前に確認" not in health_html
+assert "退職日の出勤予定を確認してください" not in health_html
+
+# If exit-day attendance is planned, keep a short critical warning.
+blocked={**health,"employment_status":"exit_date_fixed_employed","exit_date_status":"decided","worked_on_exit_date":"worked_or_planned"}
+blocked_html,_=render(blocked)
+m=re.search(r'<div class="notice critical">(.*?)</div>',blocked_html,re.S)
 assert m
 warning=re.sub(r'<[^>]+>','',m.group(1))
 assert "退職日に出勤する前に確認" in warning
@@ -83,4 +93,11 @@ assert "退職日に出勤すると、退職後の傷病手当金にどう影響
 assert "マイナポータル" not in warning
 assert len(warning) < 150, len(warning)
 
-print("REPORT_READABILITY_ROUND2_OK")
+# If attendance is not answered yet, show only the short confirmation reminder.
+unknown={**health,"employment_status":"exit_date_fixed_employed","exit_date_status":"decided"}
+unknown.pop("worked_on_exit_date",None)
+unknown_html,_=render(unknown)
+assert "退職日の出勤予定を確認してください" in unknown_html
+assert "マイナポータル" not in unknown_html
+
+print("REPORT_READABILITY_ROUND3_OK")
