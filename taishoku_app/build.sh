@@ -68,6 +68,10 @@ python3 "$ROOT/patch_false_missing_answers_20261010.py" "$RUNTIME"
 # Keep the first view short; move secondary explanations behind optional details.
 python3 "$ROOT/patch_report_readability_20261012.py" "$RUNTIME"
 
+# Put relevant benefits in the right reading order, shorten the critical warning,
+# and do not show voluntary-continuation work after insurance procedures are done.
+python3 "$ROOT/patch_report_readability_round2_20261014.py" "$RUNTIME"
+
 # Instant web reports no longer collect a delivery email address. Remove only
 # delivery_email from the core required-field list. Keep the mapping and the
 # format check so historical/email-bearing submissions remain compatible.
