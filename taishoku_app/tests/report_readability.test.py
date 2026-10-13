@@ -29,7 +29,7 @@ assert "▶ 手続き先・期限を詳しく見る" in template
 assert "▶ 健康保険の3つの選択肢を見る" in template
 assert "▶ 国民年金の手続きを見る" in template
 assert "▶ 源泉徴収票・住民税・企業型DCなど" in template
-assert "最初は「まずやること」だけ見れば大丈夫です" in template
+assert "最初は「まずやること」だけ確認してください" in template
 
 def visible_text(html: str) -> str:
     # Closed details expose only the summary in the initial browser view.
