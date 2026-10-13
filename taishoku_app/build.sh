@@ -72,6 +72,10 @@ python3 "$ROOT/patch_report_readability_20261012.py" "$RUNTIME"
 # and do not show voluntary-continuation work after insurance procedures are done.
 python3 "$ROOT/patch_report_readability_round2_20261014.py" "$RUNTIME"
 
+# Use the actual retirement-day attendance answer to show warnings only when needed,
+# and keep benefit section numbering consistent after the reordered layout.
+python3 "$ROOT/patch_report_readability_round3_20261014.py" "$RUNTIME"
+
 # Instant web reports no longer collect a delivery email address. Remove only
 # delivery_email from the core required-field list. Keep the mapping and the
 # format check so historical/email-bearing submissions remain compatible.
