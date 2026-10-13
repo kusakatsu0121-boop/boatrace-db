@@ -1,7 +1,7 @@
 {
   "engine_version": "0.2.0",
   "rule_version": "0.2.0",
-  "evaluated_at": "2026-10-13T15:31:26.455Z",
+  "evaluated_at": "2026-10-13T15:33:23.112Z",
   "sickness_allowance": {
     "active": true,
     "status_code": "SHO_NEED_INCAPACITY_CONFIRMATION",
