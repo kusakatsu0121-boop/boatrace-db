@@ -1,0 +1,21 @@
+name: Inspect retirement attendance values
+on:
+  push:
+    branches: [fix/taishoku-readability-round3-20261014]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash taishoku_app/build.sh
+      - name: Inspect retirement-day attendance schema and use
+        run: |
+          S=taishoku_app/runtime/workflow_rule_package_v0.1/answer.schema.json
+          E=taishoku_app/runtime/workflow_rule_package_v0.1/evaluate.mjs
+          R=taishoku_app/runtime/report_template_v0.1/render_report.py
+          grep -n -B5 -A16 '"retirement_day_attendance"' "$S" || true
+          grep -RIn -E 'retirement_day_attendance|退職日に出勤' taishoku_app/runtime --include='*.mjs' --include='*.py' | head -160
+          grep -n -B3 -A8 'section-kicker">03' "$R" || true
