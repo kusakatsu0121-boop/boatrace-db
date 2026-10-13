@@ -1,0 +1,55 @@
+name: QA current retirement report matrix
+on:
+  push:
+    branches: [qa/taishoku-report-matrix-20261014]
+    paths-ignore:
+      - 'taishoku_app/qa_output/**'
+permissions:
+  contents: write
+jobs:
+  qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash taishoku_app/build.sh
+      - name: Generate 12 current reports
+        run: python3 taishoku_app/tests/qa_generate_latest_matrix.py
+      - name: Install Japanese font
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          fc-cache -f
+      - name: Capture current 375px views
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          for f in taishoku_app/qa_output/report_matrix_latest/*/report.html; do
+            d="$(dirname "$f")"
+            "$CHROME" --headless --disable-gpu --no-sandbox --hide-scrollbars \
+              --window-size=375,1800 --screenshot="$d/mobile-375.png" "file://$GITHUB_WORKSPACE/$f"
+            base64 -w0 "$d/mobile-375.png" > "$d/mobile-375.png.b64"
+          done
+      - name: Assert current first-view cleanup
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=json.loads(Path('taishoku_app/qa_output/report_matrix_latest/summary.json').read_text(encoding='utf-8'))
+          assert len(rows)==12
+          assert all(not x['has_old_detail_heading'] for x in rows)
+          assert all(x['has_collapsed_task_details'] for x in rows)
+          assert all(not x['has_input_none'] for x in rows)
+          assert all(not x['has_unset_reference'] for x in rows)
+          print(rows)
+          PY
+      - name: Commit QA outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add taishoku_app/qa_output/report_matrix_latest
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Add latest retirement report visual QA outputs"
+          git push
