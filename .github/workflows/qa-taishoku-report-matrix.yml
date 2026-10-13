@@ -1,4 +1,4 @@
-name: Inspect retirement report template
+name: QA retirement report matrix
 on:
   push:
     branches: [qa/taishoku-report-matrix-20261012]
@@ -6,10 +6,19 @@ permissions:
   contents: read
 jobs:
   qa:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - run: bash taishoku_app/build.sh
-      - name: Show template
-        run: sed -n '1,180p' taishoku_app/runtime/report_template_v0.1/report_template.html
+      - name: Inspect renderer API
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=taishoku_app/runtime/report_template_v0.1/render_report.py
+          echo '=== RENDER FUNCTIONS ==='
+          grep -n '^def ' "$R"
+          echo '=== RENDER FUNCTION ==='
+          grep -n -A180 '^def render' "$R" || true
+          echo '=== FILE TAIL ==='
+          tail -140 "$R"
