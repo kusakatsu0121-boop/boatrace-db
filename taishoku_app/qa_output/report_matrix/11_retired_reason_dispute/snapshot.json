@@ -1,0 +1,328 @@
+{
+  "engine_version": "0.2.0",
+  "rule_version": "0.2.0",
+  "evaluated_at": "2026-10-13T15:29:38.956Z",
+  "sickness_allowance": {
+    "active": false,
+    "status_code": "SHO_NOT_APPLICABLE",
+    "amount": null,
+    "post_exit": null,
+    "payment_timing": null,
+    "missing_inputs": [],
+    "alerts": []
+  },
+  "employment_insurance": {
+    "active": true,
+    "status_code": "EI_CALCULABLE",
+    "wage_daily_yen": 10000,
+    "benefit_daily_yen": 6307,
+    "reason": {
+      "status_code": "EI_REASON_NOTICE_DISPUTE",
+      "overtime": {
+        "known": true,
+        "met": true,
+        "tests": [
+          {
+            "rule": "three_consecutive_each_over_45",
+            "months": [
+              1,
+              3
+            ]
+          },
+          {
+            "rule": "three_consecutive_each_over_45",
+            "months": [
+              2,
+              4
+            ]
+          },
+          {
+            "rule": "three_consecutive_each_over_45",
+            "months": [
+              3,
+              5
+            ]
+          },
+          {
+            "rule": "three_consecutive_each_over_45",
+            "months": [
+              4,
+              6
+            ]
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              1,
+              2
+            ],
+            "average": 87.5
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              2,
+              3
+            ],
+            "average": 92.5
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              3,
+              4
+            ],
+            "average": 87.5
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              4,
+              5
+            ],
+            "average": 84
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              5,
+              6
+            ],
+            "average": 90
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              1,
+              3
+            ],
+            "average": 90
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              2,
+              4
+            ],
+            "average": 88.3
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              3,
+              5
+            ],
+            "average": 87.7
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              4,
+              6
+            ],
+            "average": 86.7
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              1,
+              4
+            ],
+            "average": 87.5
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              2,
+              5
+            ],
+            "average": 88.3
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              3,
+              6
+            ],
+            "average": 88.8
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              1,
+              5
+            ],
+            "average": 87.6
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              2,
+              6
+            ],
+            "average": 89
+          },
+          {
+            "rule": "two_or_more_consecutive_average_over_80",
+            "months": [
+              1,
+              6
+            ],
+            "average": 88.3
+          }
+        ]
+      }
+    },
+    "scenarios": [
+      {
+        "id": "general",
+        "label": "通常の給付日数で計算した場合",
+        "days": 90,
+        "total_yen": 567630,
+        "confidence": "provisional"
+      },
+      {
+        "id": "special_if_recognized",
+        "label": "長時間労働などが離職理由として認められた場合",
+        "days": 180,
+        "total_yen": 1135260,
+        "confidence": "conditional_reference"
+      }
+    ],
+    "payment_timing": {
+      "basis": "benefit_qualification_decision_date",
+      "scenarios_weeks": {
+        "no_restriction": [
+          4,
+          5
+        ],
+        "one_month_restriction": [
+          7,
+          10
+        ]
+      },
+      "certification_payment_business_days": [
+        4,
+        5
+      ]
+    },
+    "missing_inputs": [],
+    "alerts": [
+      "退職前6か月分の賃金ではなく、通常月の給与額をもとにした概算です。実際の金額とずれることがあります。",
+      "長時間労働を選択しただけで給付日数が増えるわけではありません。直前6か月の時間外労働実績、退職との関係、資料を基にハローワークが離職理由を判断します。"
+    ],
+    "scenario_difference_yen": 567630
+  },
+  "actions": {
+    "first_action": {
+      "task_id": "ACT-EI-03",
+      "action": "離職票-2の離職理由が実際と違う場合は、住居所を管轄するハローワークで「離職理由が実際と違います」と伝える",
+      "timing": "失業手当の手続時",
+      "destination": "住居所を管轄するハローワーク",
+      "reason": "実際の経緯をハローワークの判断に反映してもらうため",
+      "materials": [],
+      "completion": null,
+      "priority": "critical",
+      "status": "not_done",
+      "source_rule_id": "ACT-EI-03",
+      "due_date": null,
+      "rank": 2
+    },
+    "immediate_actions": [
+      {
+        "task_id": "ACT-EI-03",
+        "action": "離職票-2の離職理由が実際と違う場合は、住居所を管轄するハローワークで「離職理由が実際と違います」と伝える",
+        "timing": "失業手当の手続時",
+        "destination": "住居所を管轄するハローワーク",
+        "reason": "実際の経緯をハローワークの判断に反映してもらうため",
+        "materials": [],
+        "completion": null,
+        "priority": "critical",
+        "status": "not_done",
+        "source_rule_id": "ACT-EI-03",
+        "due_date": null,
+        "rank": 2
+      },
+      {
+        "task_id": "ACT-POST-VC",
+        "action": "任意継続を選ぶ場合は申出期限を確認する",
+        "timing": "資格喪失日から20日以内",
+        "destination": "退職前の加入先（協会けんぽ・健康保険組合）",
+        "reason": "任意継続には申出期限があるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "unknown",
+        "source_rule_id": "ACT-POST-01",
+        "due_date": null,
+        "rank": 5
+      },
+      {
+        "task_id": "ACT-EI-01",
+        "action": "ハローワークで求職申込みと失業手当の手続をする",
+        "timing": "離職票などがそろい次第（受給期間は原則、退職日の翌日から1年）",
+        "destination": "住居所を管轄するハローワーク",
+        "reason": "働ける状態で仕事を探す場合に、失業手当の手続を進めるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "unknown",
+        "source_rule_id": "ACT-EI-01",
+        "due_date": null,
+        "rank": 6
+      }
+    ],
+    "timeline": [
+      {
+        "task_id": "ACT-EI-03",
+        "action": "離職票-2の離職理由が実際と違う場合は、住居所を管轄するハローワークで「離職理由が実際と違います」と伝える",
+        "timing": "失業手当の手続時",
+        "destination": "住居所を管轄するハローワーク",
+        "reason": "実際の経緯をハローワークの判断に反映してもらうため",
+        "materials": [],
+        "completion": null,
+        "priority": "critical",
+        "status": "not_done",
+        "source_rule_id": "ACT-EI-03",
+        "due_date": null,
+        "rank": 2
+      },
+      {
+        "task_id": "ACT-POST-VC",
+        "action": "任意継続を選ぶ場合は申出期限を確認する",
+        "timing": "資格喪失日から20日以内",
+        "destination": "退職前の加入先（協会けんぽ・健康保険組合）",
+        "reason": "任意継続には申出期限があるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "unknown",
+        "source_rule_id": "ACT-POST-01",
+        "due_date": null,
+        "rank": 5
+      },
+      {
+        "task_id": "ACT-EI-01",
+        "action": "ハローワークで求職申込みと失業手当の手続をする",
+        "timing": "離職票などがそろい次第（受給期間は原則、退職日の翌日から1年）",
+        "destination": "住居所を管轄するハローワーク",
+        "reason": "働ける状態で仕事を探す場合に、失業手当の手続を進めるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "unknown",
+        "source_rule_id": "ACT-EI-01",
+        "due_date": null,
+        "rank": 6
+      }
+    ],
+    "omitted_task_count": 0
+  },
+  "human_review": {
+    "required": true,
+    "reasons": [
+      "離職理由区分に確認が必要"
+    ]
+  },
+  "global_notice": "給付可否・離職理由の最終判断は、保険者またはハローワークが行います。"
+}

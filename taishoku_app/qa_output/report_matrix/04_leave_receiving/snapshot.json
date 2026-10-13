@@ -1,0 +1,104 @@
+{
+  "engine_version": "0.2.0",
+  "rule_version": "0.2.0",
+  "evaluated_at": "2026-10-13T15:29:37.096Z",
+  "sickness_allowance": {
+    "active": true,
+    "status_code": "SHO_NEED_INCAPACITY_CONFIRMATION",
+    "amount": null,
+    "post_exit": null,
+    "payment_timing": {
+      "basis": "insurer_received_date",
+      "processing_business_days": 10,
+      "note": "協会けんぽに申請書が受け付けられ、不備がない場合の目安です。具体的な支払日は加入先へ確認してください。"
+    },
+    "missing_inputs": [
+      "unable_to_do_usual_work",
+      "known_daily_amount_or_standard_monthly_remuneration"
+    ],
+    "alerts": []
+  },
+  "employment_insurance": {
+    "active": true,
+    "status_code": "EI_NOT_READY_TO_WORK",
+    "wage_daily_yen": 10000,
+    "benefit_daily_yen": 6307,
+    "reason": {
+      "status_code": "EI_REASON_TOKUTEI_RIYU_POSSIBLE",
+      "overtime": null
+    },
+    "scenarios": [
+      {
+        "id": "general",
+        "label": "通常の給付日数で計算した場合",
+        "days": 90,
+        "total_yen": 567630,
+        "confidence": "provisional"
+      }
+    ],
+    "payment_timing": {
+      "status": "not_shown",
+      "note": "今すぐ働けないため、基本手当の初回入金ではなく、受給期間延長と傷病手当金の順番を表示します。"
+    },
+    "missing_inputs": [],
+    "alerts": [
+      "退職前6か月分の賃金ではなく、通常月の給与額をもとにした概算です。実際の金額とずれることがあります。"
+    ]
+  },
+  "actions": {
+    "first_action": {
+      "task_id": "ACT-PRE-DATE",
+      "action": "会社と退職日・最終出勤日・有給の扱いを確認する",
+      "timing": "退職日を決める前",
+      "destination": "会社",
+      "reason": "会社側の扱いを確認してから、退職日や最終出勤日を決めるため",
+      "materials": [],
+      "completion": null,
+      "priority": "high",
+      "status": "now",
+      "source_rule_id": "ACT-PRE-03",
+      "due_date": null,
+      "rank": 4
+    },
+    "immediate_actions": [
+      {
+        "task_id": "ACT-PRE-DATE",
+        "action": "会社と退職日・最終出勤日・有給の扱いを確認する",
+        "timing": "退職日を決める前",
+        "destination": "会社",
+        "reason": "会社側の扱いを確認してから、退職日や最終出勤日を決めるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "now",
+        "source_rule_id": "ACT-PRE-03",
+        "due_date": null,
+        "rank": 4
+      }
+    ],
+    "timeline": [
+      {
+        "task_id": "ACT-PRE-DATE",
+        "action": "会社と退職日・最終出勤日・有給の扱いを確認する",
+        "timing": "退職日を決める前",
+        "destination": "会社",
+        "reason": "会社側の扱いを確認してから、退職日や最終出勤日を決めるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "now",
+        "source_rule_id": "ACT-PRE-03",
+        "due_date": null,
+        "rank": 4
+      }
+    ],
+    "omitted_task_count": 0
+  },
+  "human_review": {
+    "required": true,
+    "reasons": [
+      "離職理由区分に確認が必要"
+    ]
+  },
+  "global_notice": "給付可否・離職理由の最終判断は、保険者またはハローワークが行います。"
+}

@@ -1,0 +1,169 @@
+{
+  "engine_version": "0.2.0",
+  "rule_version": "0.2.0",
+  "evaluated_at": "2026-10-13T15:29:39.222Z",
+  "sickness_allowance": {
+    "active": false,
+    "status_code": "SHO_NOT_APPLICABLE",
+    "amount": null,
+    "post_exit": null,
+    "payment_timing": null,
+    "missing_inputs": [],
+    "alerts": []
+  },
+  "employment_insurance": {
+    "active": true,
+    "status_code": "EI_NEED_WORK_ABILITY_CONFIRMATION",
+    "wage_daily_yen": null,
+    "benefit_daily_yen": null,
+    "reason": {
+      "status_code": "EI_REASON_GENERAL_PROVISIONAL",
+      "overtime": null
+    },
+    "scenarios": [],
+    "payment_timing": {
+      "basis": "benefit_qualification_decision_date",
+      "scenarios_weeks": {
+        "one_month_restriction": [
+          7,
+          10
+        ]
+      },
+      "certification_payment_business_days": [
+        4,
+        5
+      ]
+    },
+    "missing_inputs": [
+      "wage_6m_total_or_regular_month"
+    ],
+    "alerts": []
+  },
+  "actions": {
+    "first_action": {
+      "task_id": "ACT-POST-01",
+      "action": "退職後の健康保険を選んで手続する",
+      "timing": "国保は原則14日以内／任意継続は加入先の期限を確認（協会けんぽは退職日の翌日から20日以内）",
+      "destination": "家族の勤務先の人事／退職前の加入先（協会けんぽ・健康保険組合）／住んでいる市区町村",
+      "reason": "扶養・任意継続・国民健康保険を比べて、自分に合う方法を選ぶため",
+      "materials": [],
+      "completion": null,
+      "priority": "critical",
+      "status": "not_done",
+      "source_rule_id": "ACT-POST-01",
+      "due_date": null,
+      "rank": 5
+    },
+    "immediate_actions": [
+      {
+        "task_id": "ACT-POST-01",
+        "action": "退職後の健康保険を選んで手続する",
+        "timing": "国保は原則14日以内／任意継続は加入先の期限を確認（協会けんぽは退職日の翌日から20日以内）",
+        "destination": "家族の勤務先の人事／退職前の加入先（協会けんぽ・健康保険組合）／住んでいる市区町村",
+        "reason": "扶養・任意継続・国民健康保険を比べて、自分に合う方法を選ぶため",
+        "materials": [],
+        "completion": null,
+        "priority": "critical",
+        "status": "not_done",
+        "source_rule_id": "ACT-POST-01",
+        "due_date": null,
+        "rank": 5
+      },
+      {
+        "task_id": "ACT-POST-02",
+        "action": "国民年金への切替が必要か確認し、必要なら手続する",
+        "timing": "第1号になる場合は退職日の翌日から14日以内",
+        "destination": "住んでいる市区町村の国民年金窓口／年金事務所",
+        "reason": "退職後に必要な年金の手続を確認するため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "not_done",
+        "source_rule_id": "ACT-POST-02",
+        "due_date": null,
+        "rank": 5
+      },
+      {
+        "task_id": "ACT-POST-VC",
+        "action": "任意継続を選ぶ場合は申出期限を確認する",
+        "timing": "資格喪失日から20日以内",
+        "destination": "退職前の加入先（協会けんぽ・健康保険組合）",
+        "reason": "任意継続には申出期限があるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "unknown",
+        "source_rule_id": "ACT-POST-01",
+        "due_date": null,
+        "rank": 5
+      }
+    ],
+    "timeline": [
+      {
+        "task_id": "ACT-POST-01",
+        "action": "退職後の健康保険を選んで手続する",
+        "timing": "国保は原則14日以内／任意継続は加入先の期限を確認（協会けんぽは退職日の翌日から20日以内）",
+        "destination": "家族の勤務先の人事／退職前の加入先（協会けんぽ・健康保険組合）／住んでいる市区町村",
+        "reason": "扶養・任意継続・国民健康保険を比べて、自分に合う方法を選ぶため",
+        "materials": [],
+        "completion": null,
+        "priority": "critical",
+        "status": "not_done",
+        "source_rule_id": "ACT-POST-01",
+        "due_date": null,
+        "rank": 5
+      },
+      {
+        "task_id": "ACT-POST-02",
+        "action": "国民年金への切替が必要か確認し、必要なら手続する",
+        "timing": "第1号になる場合は退職日の翌日から14日以内",
+        "destination": "住んでいる市区町村の国民年金窓口／年金事務所",
+        "reason": "退職後に必要な年金の手続を確認するため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "not_done",
+        "source_rule_id": "ACT-POST-02",
+        "due_date": null,
+        "rank": 5
+      },
+      {
+        "task_id": "ACT-POST-VC",
+        "action": "任意継続を選ぶ場合は申出期限を確認する",
+        "timing": "資格喪失日から20日以内",
+        "destination": "退職前の加入先（協会けんぽ・健康保険組合）",
+        "reason": "任意継続には申出期限があるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "unknown",
+        "source_rule_id": "ACT-POST-01",
+        "due_date": null,
+        "rank": 5
+      },
+      {
+        "task_id": "ACT-DOC-01",
+        "action": "離職票の発行・送付状況を確認する",
+        "timing": "離職票が必要なのに届いていないとき（まず会社へ）",
+        "destination": "まず会社の人事・給与担当／届かない場合は住居所を管轄するハローワーク",
+        "reason": "失業手当の手続を進めるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "unknown",
+        "source_rule_id": "ACT-DOC-01",
+        "due_date": null,
+        "rank": 6
+      }
+    ],
+    "omitted_task_count": 0
+  },
+  "human_review": {
+    "required": true,
+    "reasons": [
+      "次の仕事を始められる状態か不明",
+      "今後仕事を探す予定がまだ決まっていない"
+    ]
+  },
+  "global_notice": "給付可否・離職理由の最終判断は、保険者またはハローワークが行います。"
+}

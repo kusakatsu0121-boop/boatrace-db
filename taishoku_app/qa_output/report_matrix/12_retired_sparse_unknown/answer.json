@@ -1,0 +1,18 @@
+{
+  "display_name": "QAテスト",
+  "as_of_date": "2026-10-12",
+  "age_at_exit": 40,
+  "employment_insurance_duration": "unknown",
+  "wage_regular_month_estimate": null,
+  "job_intent": "undecided",
+  "can_start_new_job": "unknown",
+  "exit_reasons": [
+    "not_organized"
+  ],
+  "separation_notice_status": "unknown",
+  "separation_reason_dispute": "no_difference",
+  "post_exit_health_insurance_done": false,
+  "national_pension_done": false,
+  "cause_work_related": "no",
+  "employment_status": "retired"
+}

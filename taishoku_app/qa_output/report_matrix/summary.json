@@ -1,0 +1,163 @@
+[
+  {
+    "case": "01_retired_normal",
+    "review_required": false,
+    "review_reasons": [],
+    "html_chars": 13390,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": false,
+    "has_pre_exit_insurer_wording": false
+  },
+  {
+    "case": "02_leave_not_applied",
+    "review_required": true,
+    "review_reasons": [
+      "離職理由区分に確認が必要"
+    ],
+    "html_chars": 14332,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": true,
+    "has_pre_exit_insurer_wording": false
+  },
+  {
+    "case": "03_leave_applying",
+    "review_required": true,
+    "review_reasons": [
+      "離職理由区分に確認が必要"
+    ],
+    "html_chars": 14300,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": true,
+    "has_pre_exit_insurer_wording": false
+  },
+  {
+    "case": "04_leave_receiving",
+    "review_required": true,
+    "review_reasons": [
+      "離職理由区分に確認が必要"
+    ],
+    "html_chars": 14273,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": true,
+    "has_pre_exit_insurer_wording": false
+  },
+  {
+    "case": "05_exit_fixed_not_applied",
+    "review_required": true,
+    "review_reasons": [
+      "退職日の勤務で傷病手当金の継続可否が変わる",
+      "離職理由区分に確認が必要"
+    ],
+    "html_chars": 15725,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": true,
+    "has_pre_exit_insurer_wording": true
+  },
+  {
+    "case": "06_exit_fixed_applying",
+    "review_required": true,
+    "review_reasons": [
+      "退職日の勤務で傷病手当金の継続可否が変わる",
+      "離職理由区分に確認が必要"
+    ],
+    "html_chars": 15723,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": true,
+    "has_pre_exit_insurer_wording": true
+  },
+  {
+    "case": "07_exit_fixed_receiving",
+    "review_required": true,
+    "review_reasons": [
+      "退職日の勤務で傷病手当金の継続可否が変わる",
+      "離職理由区分に確認が必要"
+    ],
+    "html_chars": 15682,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": true,
+    "has_pre_exit_insurer_wording": true
+  },
+  {
+    "case": "08_retired_not_applied",
+    "review_required": true,
+    "review_reasons": [
+      "退職日の勤務で傷病手当金の継続可否が変わる",
+      "離職理由区分に確認が必要"
+    ],
+    "html_chars": 15351,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": false,
+    "has_pre_exit_insurer_wording": true
+  },
+  {
+    "case": "09_retired_applying",
+    "review_required": true,
+    "review_reasons": [
+      "退職日の勤務で傷病手当金の継続可否が変わる",
+      "離職理由区分に確認が必要"
+    ],
+    "html_chars": 15319,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": false,
+    "has_pre_exit_insurer_wording": true
+  },
+  {
+    "case": "10_retired_receiving",
+    "review_required": true,
+    "review_reasons": [
+      "退職日の勤務で傷病手当金の継続可否が変わる",
+      "離職理由区分に確認が必要"
+    ],
+    "html_chars": 15318,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": false,
+    "has_pre_exit_insurer_wording": true
+  },
+  {
+    "case": "11_retired_reason_dispute",
+    "review_required": true,
+    "review_reasons": [
+      "離職理由区分に確認が必要"
+    ],
+    "html_chars": 14586,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": false,
+    "has_pre_exit_insurer_wording": false
+  },
+  {
+    "case": "12_retired_sparse_unknown",
+    "review_required": true,
+    "review_reasons": [
+      "次の仕事を始められる状態か不明",
+      "今後仕事を探す予定がまだ決まっていない"
+    ],
+    "html_chars": 14248,
+    "has_input_none": false,
+    "has_unset_reference": false,
+    "has_vague_early": false,
+    "has_current_insurer_wording": false,
+    "has_pre_exit_insurer_wording": false
+  }
+]
