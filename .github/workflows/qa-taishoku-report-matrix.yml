@@ -2,23 +2,53 @@ name: QA retirement report matrix
 on:
   push:
     branches: [qa/taishoku-report-matrix-20261012]
+    paths-ignore:
+      - 'taishoku_app/qa_output/**'
 permissions:
-  contents: read
+  contents: write
 jobs:
   qa:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - run: bash taishoku_app/build.sh
-      - name: Inspect renderer API
+      - name: Generate 12 reports
+        run: python3 taishoku_app/tests/qa_generate_report_matrix.py
+      - name: Capture 375px mobile top views
         shell: bash
         run: |
           set -euo pipefail
-          R=taishoku_app/runtime/report_template_v0.1/render_report.py
-          echo '=== RENDER FUNCTIONS ==='
-          grep -n '^def ' "$R"
-          echo '=== RENDER FUNCTION ==='
-          grep -n -A180 '^def render' "$R" || true
-          echo '=== FILE TAIL ==='
-          tail -140 "$R"
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          for f in taishoku_app/qa_output/report_matrix/*/report.html; do
+            d="$(dirname "$f")"
+            "$CHROME" --headless --disable-gpu --no-sandbox --hide-scrollbars \
+              --window-size=375,1800 --screenshot="$d/mobile-375.png" "file://$GITHUB_WORKSPACE/$f"
+          done
+      - name: QA assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('taishoku_app/qa_output/report_matrix/summary.json')
+          rows=json.loads(p.read_text(encoding='utf-8'))
+          assert len(rows)==12
+          assert all(not r['has_input_none'] for r in rows)
+          assert all(not r['has_unset_reference'] for r in rows)
+          assert all(not r['has_vague_early'] for r in rows)
+          for r in rows:
+              print(r)
+          PY
+      - name: Commit QA outputs to QA branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add taishoku_app/qa_output/report_matrix
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Add 12-case retirement report QA outputs"
+          git push
