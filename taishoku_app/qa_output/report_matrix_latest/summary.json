@@ -1,0 +1,110 @@
+[
+  {
+    "case": "01_retired_normal",
+    "review_required": false,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  },
+  {
+    "case": "02_leave_not_applied",
+    "review_required": true,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  },
+  {
+    "case": "03_leave_applying",
+    "review_required": true,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  },
+  {
+    "case": "04_leave_receiving",
+    "review_required": true,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  },
+  {
+    "case": "05_exit_not_applied",
+    "review_required": true,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  },
+  {
+    "case": "06_exit_applying",
+    "review_required": true,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  },
+  {
+    "case": "07_exit_receiving",
+    "review_required": true,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  },
+  {
+    "case": "08_retired_not_applied",
+    "review_required": true,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  },
+  {
+    "case": "09_retired_applying",
+    "review_required": true,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  },
+  {
+    "case": "10_retired_receiving",
+    "review_required": true,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  },
+  {
+    "case": "11_retired_reason_dispute",
+    "review_required": true,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  },
+  {
+    "case": "12_retired_sparse_unknown",
+    "review_required": true,
+    "visible_dup_heading": 3,
+    "has_old_detail_heading": false,
+    "has_collapsed_task_details": true,
+    "has_input_none": false,
+    "has_unset_reference": false
+  }
+]

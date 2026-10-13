@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QAテスト｜退職前後ワークフロー</title>
+  <style>
+:root {
+  --ink: #1f2933;
+  --muted: #66717f;
+  --line: #dfe6ec;
+  --soft: #f5f8fa;
+  --paper: #ffffff;
+  --navy: #17324d;
+  --teal: #1f7a78;
+  --warn: #8b5a12;
+  --warn-bg: #fff7e8;
+  --critical: #8f2d2d;
+  --critical-bg: #fff0f0;
+  --ok: #2f6f4e;
+  --ok-bg: #edf7f1;
+}
+* { box-sizing: border-box; }
+html { background: #eef2f5; }
+body { margin: 0; color: var(--ink); background: #eef2f5; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; line-height: 1.65; }
+.report { width: min(100%, 820px); margin: 0 auto; }
+.report-page { margin: 14px 0; padding: 34px 34px 42px; background: var(--paper); box-shadow: 0 2px 12px rgba(23,50,77,.06); }
+.hero { padding-top: 46px; }
+.brand { margin: 0 0 48px; color: var(--muted); font-size: 12px; letter-spacing: .08em; }
+.eyebrow, .section-kicker { margin: 0 0 8px; color: var(--teal); font-size: 12px; font-weight: 700; letter-spacing: .12em; }
+h1 { margin: 0; color: var(--navy); font-size: 38px; line-height: 1.25; }
+h2 { margin: 0 0 20px; color: var(--navy); font-size: 28px; line-height: 1.3; }
+h3 { margin: 28px 0 12px; color: var(--navy); font-size: 18px; }
+p { margin: 7px 0; }
+.lead { margin-top: 16px; font-size: 18px; }
+.meta-row { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 32px; color: var(--muted); font-size: 13px; }
+.situation { padding: 16px 18px; border-radius: 12px; background: var(--soft); font-weight: 700; }
+.section-lead { margin: -8px 0 22px; color: var(--muted); }
+.overview-card { margin: 30px 0 26px; padding: 20px; border: 1px solid #d6e5e5; border-radius: 16px; background: #f4faf9; }
+.overview-label { margin: 0 0 8px; color: var(--teal); font-size: 13px; font-weight: 800; letter-spacing: .04em; }
+.overview-summary { margin: 0; color: var(--navy); font-size: 17px; font-weight: 700; line-height: 1.65; }
+.overview-context { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+.roadmap-heading { margin-top: 8px; }
+.roadmap { position: relative; margin: 8px 0 22px; }
+.roadmap-step { position: relative; display: grid; grid-template-columns: 42px 1fr; gap: 12px; align-items: center; min-height: 62px; padding: 10px 0; }
+.roadmap-number, .task-number { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: var(--teal); background: #eaf5f4; font-weight: 800; }
+.roadmap-action { color: var(--ink); font-weight: 700; line-height: 1.5; }
+.roadmap-more { margin: 8px 0 0 54px; color: var(--muted); font-size: 12px; }
+.task-detail-list { display: grid; gap: 14px; }
+.task-detail { display: grid; grid-template-columns: 42px 1fr; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: #fbfcfd; }
+.task-detail h3 { margin: 0 0 6px; font-size: 17px; }
+.task-reason { margin: 0 0 12px; color: #43505d; }
+.task-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.task-meta-grid p { margin: 0; padding: 10px 12px; border-radius: 9px; background: var(--soft); }
+.task-meta-grid span { display: block; color: var(--muted); font-size: 11px; }
+.task-meta-grid strong { display: block; margin-top: 2px; color: var(--navy); font-size: 13px; }
+.notice { margin: 16px 0; padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); }
+.notice.compact p { margin-bottom: 0; }
+.notice.warning { color: #5f3d08; border-color: #efd49c; background: var(--warn-bg); }
+.notice.critical { color: #6d1f1f; border-color: #efb2b2; background: var(--critical-bg); }
+.meta { color: var(--muted); font-size: 12px; }
+.total-card { margin: 16px 0; padding: 22px; border: 1px solid #bdd8d7; border-radius: 14px; background: #f0f9f8; }
+.total-card .label { display: block; color: var(--muted); font-size: 13px; }
+.total-card .amount { display: block; margin-top: 3px; color: var(--navy); font-size: 34px; line-height: 1.25; font-weight: 800; }
+.total-card .note { margin-top: 10px; color: var(--critical); font-weight: 700; }
+.metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
+.metric { padding: 14px; border: 1px solid var(--line); border-radius: 10px; }
+.metric span { display: block; color: var(--muted); font-size: 12px; }
+.metric strong { display: block; margin-top: 3px; color: var(--navy); font-size: 18px; }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0; }
+.flow-step { padding: 9px 12px; border-radius: 9px; background: var(--soft); font-weight: 700; }
+.flow-arrow { color: var(--muted); }
+.scenario-list { display: grid; gap: 10px; }
+.scenario { padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; }
+.scenario strong { color: var(--navy); }
+.compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.compare-grid article { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fbfcfd; }
+.compare-grid h3 { margin-top: 0; }
+details { margin: 14px 0; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfd; }
+summary { padding: 13px 16px; cursor: pointer; color: var(--navy); font-weight: 700; }
+.detail-body { padding: 0 16px 16px; color: #43505d; }
+.compact-list p { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.compact-list p:last-child { border-bottom: 0; }
+.sources { margin: 0; padding-left: 20px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.footer-meta { margin-top: 26px; color: var(--muted); font-size: 11px; }
+
+@media screen and (max-width: 640px) {
+  html, body { background: var(--paper); }
+  .report { width: 100%; }
+  .report-page { margin: 0; padding: 28px 20px 36px; box-shadow: none; border-bottom: 8px solid #eef2f5; }
+  h1 { font-size: 32px; }
+  h2 { font-size: 24px; }
+  .lead { font-size: 16px; }
+  .metric-grid, .compare-grid { grid-template-columns: 1fr; }
+  .task-meta-grid { grid-template-columns: 1fr; }
+  .total-card .amount { font-size: 30px; }
+}
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  html, body { background: #fff; }
+  body { font-size: 10.5pt; }
+  .report { width: auto; max-width: none; }
+  .report-page { margin: 0; padding: 0 0 8mm; box-shadow: none; break-inside: auto; page-break-inside: auto; }
+  .hero { page-break-after: always; }
+  h2, h3, .roadmap-step, .task-detail, .total-card, .metric, .notice, article { break-inside: avoid; page-break-inside: avoid; }
+  details { border: 0; background: transparent; }
+  details > summary { display: none !important; }
+  details > .detail-body { display: block !important; padding: 0; }
+  details:not([open]) > * { display: block !important; }
+  details:not([open]) > summary { display: none !important; }
+}
+
+</style>
+</head>
+<body>
+<main class="report">
+  <section class="report-page hero">
+    <h1>あなた専用｜退職前後ワークフロー</h1>
+    <p class="lead">最初は「まずやること」だけ見れば大丈夫です。詳しい説明は、必要なところだけ開けます。</p>
+    <div class="meta-row"><span>QAテスト</span></div>
+
+    <div class="overview-card">
+      <p class="overview-label">まず確認すること</p>
+      <p class="overview-summary">退職後に必要な手続きを、期限のあるものから順番に進めてください。</p>
+      <p class="overview-context">退職済み ／ 退職・休職を考えた主な理由：仕事内容・キャリア</p>
+    </div>
+
+    <h2 class="roadmap-heading">まずやること</h2>
+    <div class="roadmap"><div class="roadmap-step"><div class="roadmap-number">1</div><div class="roadmap-action">任意継続を選ぶ場合は申出期限を確認する</div></div><div class="roadmap-step"><div class="roadmap-number">2</div><div class="roadmap-action">ハローワークで求職申込みと失業手当の手続をする</div></div></div>
+
+    
+  </section>
+
+  <section class="report-page compact-section">
+    <details class="section-details"><summary>▶ 手続き先・期限を詳しく見る</summary>
+      <div class="detail-body"><div class="task-detail-list"><article class="task-detail"><div class="task-number">1</div><div class="task-detail-body"><h3>任意継続を選ぶ場合は申出期限を確認する</h3><p class="task-reason">任意継続には申出期限があるため</p><div class="task-meta-grid"><p><span>確認・手続先</span><strong>退職前の加入先（協会けんぽ・健康保険組合）</strong></p><p><span>目安</span><strong>資格喪失日から20日以内</strong></p></div></div></article><article class="task-detail"><div class="task-number">2</div><div class="task-detail-body"><h3>ハローワークで求職申込みと失業手当の手続をする</h3><p class="task-reason">働ける状態で仕事を探す場合に、失業手当の手続を進めるため</p><div class="task-meta-grid"><p><span>確認・手続先</span><strong>住居所を管轄するハローワーク</strong></p><p><span>目安</span><strong>離職票などがそろい次第（受給期間は原則、退職日の翌日から1年）</strong></p></div></div></article></div></div>
+    </details>
+  </section>
+
+  <section class="report-page">
+    <div class="section-kicker">02</div>
+    <h2>失業手当（基本手当）</h2>
+    <div class="total-card"><span class="label">失業手当の受給総額（目安）</span><span class="amount">約567,630円</span><p class="note">※実際は認定ごとに支給されます。一度にまとめて受け取る金額ではありません。</p></div><div class="metric-grid"><div class="metric"><span>1日あたりの失業手当（目安）</span><strong>約6,307円</strong></div><div class="metric"><span>受け取れる日数（目安）</span><strong>90日</strong></div><div class="metric"><span>雇用保険に入っていた期間</span><strong>5年以上10年未満</strong></div></div>
+    <details><summary>▶ 「退職給付金」という言い方について</summary><div class="detail-body"><p>広告などで「退職給付金」と呼ばれることがありますが、「退職給付金」という名称の公的制度が別にあるわけではありません。このレポートでは、失業手当・再就職手当・傷病手当金など、実際の制度名で案内します。</p></div></details>
+    <h3>受給までの流れ</h3><div class="flow"><span class="flow-step">ハローワークで失業手当の手続きをする</span><span class="flow-arrow">→</span><span class="flow-step">7日待期</span><span class="flow-arrow">→</span><span class="flow-step">失業認定</span><span class="flow-arrow">→</span><span class="flow-step">振込</span></div><div class="flow"><span class="flow-step">給付制限がある場合</span><span class="flow-arrow">→</span><span class="flow-step">7日待期</span><span class="flow-arrow">→</span><span class="flow-step">原則1か月の給付制限</span><span class="flow-arrow">→</span><span class="flow-step">失業認定</span><span class="flow-arrow">→</span><span class="flow-step">振込</span></div><p class="meta">2025年4月1日以降に自己都合で退職した場合、給付制限は原則1か月です。退職前5年間に、正当な理由のない自己都合退職で受給資格決定を2回以上受けている場合は、3か月になることがあります。一定の教育訓練などを受けると、給付制限が解除される場合があります。</p><details><summary>▶ 最初に何と言えばいい？</summary><div class="detail-body"><p>窓口で「退職したので、失業手当の手続きをしたい」と伝えれば大丈夫です。離職票-1・2、マイナンバー確認書類、本人確認書類、本人名義の口座が分かるものなどを持参します。離職理由が実際と違う場合は、その場で「離職理由が実際と違います」と伝えてください。</p></div></details><details><summary>？「受給資格決定日」って何？</summary><div class="detail-body">ハローワークに離職票などを提出し、求職申込みをして、失業手当の受給資格を確認してもらった日のことです。</div></details>
+    
+    <details><summary>▶ 早く再就職したときの手当</summary><div class="detail-body"><p>早めに再就職した場合は、再就職手当の対象になることがあります。就職が決まったら、失業手当の手続きをしているハローワークへ「再就職手当の対象になるか確認したい」と伝えてください。</p></div></details>
+  </section>
+
+  
+
+  <section class="report-page">
+    <div class="section-kicker">03</div>
+    <h2>退職後の健康保険・年金</h2>
+    <p class="section-lead">期限は上の「まずやること」に出しています。ここでは選択肢だけ確認できます。</p>
+    <details><summary>▶ 健康保険の3つの選択肢を見る</summary><div class="detail-body">
+      <div class="compare-grid">
+        <article><h3>家族の扶養</h3><p>家族の勤務先の人事・総務に「健康保険の扶養に入れる条件を確認したい」と伝えてください。収入見込みや、失業手当・傷病手当金を受ける場合の扱いも確認します。</p></article>
+        <article><h3>任意継続</h3><p>退職前の加入先が協会けんぽなら協会けんぽ、健康保険組合ならその組合へ「任意継続の期限と保険料を確認したい」と伝えてください。</p></article>
+        <article><h3>国民健康保険</h3><p>住んでいる市区町村で手続します。保険料は自治体や前年の所得などで変わります。</p></article>
+      </div>
+    </div></details>
+    <details><summary>▶ 国民年金の手続きを見る</summary><div class="detail-body"><p>退職後すぐに次の会社の厚生年金へ入らない場合は、住んでいる市区町村の国民年金窓口で「会社を退職したので、国民年金への切替が必要か確認したい」と伝えてください。配偶者の扶養に入る場合は、配偶者の勤務先へ「年金の第3号被保険者の手続きも必要ですか」と確認してください。</p>
+      <p>支払いが難しいときは、市区町村の国民年金窓口か年金事務所で「退職して保険料の支払いが難しいので、免除や納付猶予を相談したい」と伝えてください。</p>
+    </div></details>
+  </section>
+
+  <section class="report-page">
+    <div class="section-kicker">04</div>
+    <h2>そのほかの手続き</h2>
+    <details><summary>▶ 源泉徴収票・住民税・企業型DCなど</summary><div class="detail-body compact-list">
+      <p><strong>源泉徴収票</strong><br>会社から受け取ったら保管してください。年末調整や確定申告で必要になることがあります。</p>
+      <p><strong>住民税</strong><br>退職時期や会社の処理によって支払い方法が変わることがあります。会社の案内や届いた納付書を確認してください。</p>
+      <p><strong>企業型DC・iDeCo</strong><br>加入していた場合は、退職後に資産を移す手続きが必要か確認してください。</p>
+    </div></details>
+  </section>
+
+  <section class="report-page">
+    <div class="section-kicker">確認</div>
+    
+    <details><summary>▶ 確認に使った公式情報</summary><div class="detail-body"><ul class="sources"><li>国民生活センター｜失業給付等の申請サポートに関する注意<br>https://www.kokusen.go.jp/news/data/n-20251203_1.html</li><li>ハローワーク那覇｜退職給付金をうたう民間サービスへの注意<br>https://jsite.mhlw.go.jp/okinawa-roudoukyoku/naha_retirement_benefits_202603.html</li><li>厚生労働省｜令和8年8月からの基本手当日額<br>https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000160564_00050.html</li><li>厚生労働省｜マイナ保険証・資格確認書などの資格確認方法<br>https://www.mhlw.go.jp/stf/newpage_50657.html</li><li>協会けんぽ｜傷病手当金<br>https://www.kyoukaikenpo.or.jp/benefit/injury_and_sickness_allowance/</li><li>協会けんぽ｜傷病手当金FAQ（退職後の継続給付）<br>https://www.kyoukaikenpo.or.jp/g6/cat620/r307</li><li>協会けんぽ｜傷病手当金支給申請書<br>https://www.kyoukaikenpo.or.jp/g2/cat230/r124/</li><li>日本年金機構｜会社を退職したときの国民年金の手続き<br>https://www.nenkin.go.jp/service/kokunen/kanyu/20140710-03.html</li><li>厚生労働省｜令和7年4月の雇用保険制度変更<br>https://www.mhlw.go.jp/stf/newpage_51380.html</li><li>厚生労働省｜基本手当・再就職手当Q&amp;A<br>https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000139508.html</li><li>厚生労働省｜基本手当Q&amp;A（手続場所・必要書類・離職理由）<br>https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000139508.html</li><li>ハローワークインターネットサービス｜雇用保険Q&amp;A<br>https://www.hellowork.mhlw.go.jp/help/question05.html</li></ul></div></details>
+    <details><summary>▶ このレポートについて</summary><div class="detail-body"><p>このレポートは、退職前後に必要な確認や手続を整理するためのものです。給付を受けられるか、離職理由がどう扱われるかなどの最終判断は、協会けんぽ・健康保険組合・ハローワークなどの窓口が行います。申請代行や、会社・行政機関との交渉は行いません。</p></div></details>
+    <p class="footer-meta">作成日 2026年10月14日</p>
+  </section>
+</main>
+</body>
+</html>

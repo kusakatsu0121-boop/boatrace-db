@@ -1,0 +1,163 @@
+{
+  "engine_version": "0.2.0",
+  "rule_version": "0.2.0",
+  "evaluated_at": "2026-10-13T15:39:05.273Z",
+  "sickness_allowance": {
+    "active": true,
+    "status_code": "SHO_NEED_INCAPACITY_CONFIRMATION",
+    "amount": null,
+    "post_exit": {
+      "status_code": "SHO_POST_EXIT_NEED_CONFIRMATION"
+    },
+    "payment_timing": {
+      "basis": "insurer_received_date",
+      "processing_business_days": 10,
+      "note": "協会けんぽに申請書が受け付けられ、不備がない場合の目安です。具体的な支払日は加入先へ確認してください。"
+    },
+    "missing_inputs": [
+      "unable_to_do_usual_work",
+      "known_daily_amount_or_standard_monthly_remuneration"
+    ],
+    "alerts": []
+  },
+  "employment_insurance": {
+    "active": true,
+    "status_code": "EI_NOT_READY_TO_WORK",
+    "wage_daily_yen": 10000,
+    "benefit_daily_yen": 6307,
+    "reason": {
+      "status_code": "EI_REASON_TOKUTEI_RIYU_POSSIBLE",
+      "overtime": null
+    },
+    "scenarios": [
+      {
+        "id": "general",
+        "label": "通常の給付日数で計算した場合",
+        "days": 90,
+        "total_yen": 567630,
+        "confidence": "provisional"
+      }
+    ],
+    "payment_timing": {
+      "status": "not_shown",
+      "note": "今すぐ働けないため、基本手当の初回入金ではなく、受給期間延長と傷病手当金の順番を表示します。"
+    },
+    "missing_inputs": [],
+    "alerts": [
+      "退職前6か月分の賃金ではなく、通常月の給与額をもとにした概算です。実際の金額とずれることがあります。"
+    ]
+  },
+  "actions": {
+    "first_action": {
+      "task_id": "ACT-SHO-02",
+      "action": "退職後も傷病手当金を続けて受けられる条件を確認する",
+      "timing": "退職日や最終出勤日を決める前",
+      "destination": "傷病手当金の申請先（協会けんぽ・健康保険組合など）／会社の人事",
+      "reason": "退職日の勤務状況によって、退職後の受給可否が変わるため",
+      "materials": [],
+      "completion": null,
+      "priority": "critical",
+      "status": "now",
+      "source_rule_id": "ACT-SHO-02",
+      "due_date": null,
+      "rank": 2
+    },
+    "immediate_actions": [
+      {
+        "task_id": "ACT-SHO-02",
+        "action": "退職後も傷病手当金を続けて受けられる条件を確認する",
+        "timing": "退職日や最終出勤日を決める前",
+        "destination": "傷病手当金の申請先（協会けんぽ・健康保険組合など）／会社の人事",
+        "reason": "退職日の勤務状況によって、退職後の受給可否が変わるため",
+        "materials": [],
+        "completion": null,
+        "priority": "critical",
+        "status": "now",
+        "source_rule_id": "ACT-SHO-02",
+        "due_date": null,
+        "rank": 2
+      },
+      {
+        "task_id": "ACT-PRE-DATE",
+        "action": "会社と退職日・最終出勤日・有給の扱いを確認する",
+        "timing": "退職日を決める前",
+        "destination": "会社",
+        "reason": "会社側の扱いを確認してから、退職日や最終出勤日を決めるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "now",
+        "source_rule_id": "ACT-PRE-03",
+        "due_date": null,
+        "rank": 4
+      },
+      {
+        "task_id": "ACT-PRE-04",
+        "action": "退職後に受け取る書類の送付先と担当を確認する",
+        "timing": "退職前",
+        "destination": "会社",
+        "reason": "離職票などの未着を防ぐため",
+        "materials": [],
+        "completion": null,
+        "priority": "normal",
+        "status": "upcoming",
+        "source_rule_id": "ACT-PRE-04",
+        "due_date": null,
+        "rank": 7
+      }
+    ],
+    "timeline": [
+      {
+        "task_id": "ACT-SHO-02",
+        "action": "退職後も傷病手当金を続けて受けられる条件を確認する",
+        "timing": "退職日や最終出勤日を決める前",
+        "destination": "傷病手当金の申請先（協会けんぽ・健康保険組合など）／会社の人事",
+        "reason": "退職日の勤務状況によって、退職後の受給可否が変わるため",
+        "materials": [],
+        "completion": null,
+        "priority": "critical",
+        "status": "now",
+        "source_rule_id": "ACT-SHO-02",
+        "due_date": null,
+        "rank": 2
+      },
+      {
+        "task_id": "ACT-PRE-DATE",
+        "action": "会社と退職日・最終出勤日・有給の扱いを確認する",
+        "timing": "退職日を決める前",
+        "destination": "会社",
+        "reason": "会社側の扱いを確認してから、退職日や最終出勤日を決めるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "now",
+        "source_rule_id": "ACT-PRE-03",
+        "due_date": null,
+        "rank": 4
+      },
+      {
+        "task_id": "ACT-PRE-04",
+        "action": "退職後に受け取る書類の送付先と担当を確認する",
+        "timing": "退職前",
+        "destination": "会社",
+        "reason": "離職票などの未着を防ぐため",
+        "materials": [],
+        "completion": null,
+        "priority": "normal",
+        "status": "upcoming",
+        "source_rule_id": "ACT-PRE-04",
+        "due_date": null,
+        "rank": 7
+      }
+    ],
+    "omitted_task_count": 0
+  },
+  "human_review": {
+    "required": true,
+    "reasons": [
+      "退職日の勤務で傷病手当金の継続可否が変わる",
+      "離職理由区分に確認が必要"
+    ]
+  },
+  "global_notice": "給付可否・離職理由の最終判断は、保険者またはハローワークが行います。"
+}

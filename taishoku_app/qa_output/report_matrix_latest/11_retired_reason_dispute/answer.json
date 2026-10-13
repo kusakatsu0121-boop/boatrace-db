@@ -1,0 +1,28 @@
+{
+  "display_name": "QAテスト",
+  "as_of_date": "2026-10-14",
+  "age_at_exit": 40,
+  "employment_insurance_duration": "5_to_10y",
+  "wage_regular_month_estimate": 300000,
+  "job_intent": "seeking_now",
+  "can_start_new_job": "now",
+  "exit_reasons": [
+    "long_hours"
+  ],
+  "separation_notice_status": "received",
+  "separation_reason_dispute": "difference",
+  "post_exit_health_insurance_done": true,
+  "national_pension_done": true,
+  "cause_work_related": "no",
+  "employment_status": "retired",
+  "overtime_hours_last_6m": [
+    85,
+    90,
+    95,
+    80,
+    88,
+    92
+  ],
+  "overtime_evidence": true,
+  "reason_causation": true
+}
