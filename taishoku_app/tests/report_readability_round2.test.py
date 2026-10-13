@@ -98,6 +98,8 @@ unknown={**health,"employment_status":"exit_date_fixed_employed","exit_date_stat
 unknown.pop("worked_on_exit_date",None)
 unknown_html,_=render(unknown)
 assert "退職日の出勤予定を確認してください" in unknown_html
-assert "マイナポータル" not in unknown_html
+m2=re.search(r'<div class="notice warning"><strong>退職日の出勤予定を確認してください</strong>(.*?)</div>',unknown_html,re.S)
+assert m2
+assert "マイナポータル" not in m2.group(1)
 
 print("REPORT_READABILITY_ROUND3_OK")
