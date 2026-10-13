@@ -1,0 +1,104 @@
+{
+  "engine_version": "0.2.0",
+  "rule_version": "0.2.0",
+  "evaluated_at": "2026-10-13T15:50:12.417Z",
+  "sickness_allowance": {
+    "active": false,
+    "status_code": "SHO_NOT_APPLICABLE",
+    "amount": null,
+    "post_exit": null,
+    "payment_timing": null,
+    "missing_inputs": [],
+    "alerts": []
+  },
+  "employment_insurance": {
+    "active": true,
+    "status_code": "EI_CALCULABLE",
+    "wage_daily_yen": 10000,
+    "benefit_daily_yen": 6307,
+    "reason": {
+      "status_code": "EI_REASON_GENERAL_PROVISIONAL",
+      "overtime": null
+    },
+    "scenarios": [
+      {
+        "id": "general",
+        "label": "通常の給付日数で計算した場合",
+        "days": 90,
+        "total_yen": 567630,
+        "confidence": "provisional"
+      }
+    ],
+    "payment_timing": {
+      "basis": "benefit_qualification_decision_date",
+      "scenarios_weeks": {
+        "one_month_restriction": [
+          7,
+          10
+        ]
+      },
+      "certification_payment_business_days": [
+        4,
+        5
+      ]
+    },
+    "missing_inputs": [],
+    "alerts": [
+      "退職前6か月分の賃金ではなく、通常月の給与額をもとにした概算です。実際の金額とずれることがあります。"
+    ]
+  },
+  "actions": {
+    "first_action": {
+      "task_id": "ACT-EI-01",
+      "action": "ハローワークで求職申込みと失業手当の手続をする",
+      "timing": "離職票などがそろい次第（受給期間は原則、退職日の翌日から1年）",
+      "destination": "住居所を管轄するハローワーク",
+      "reason": "働ける状態で仕事を探す場合に、失業手当の手続を進めるため",
+      "materials": [],
+      "completion": null,
+      "priority": "high",
+      "status": "unknown",
+      "source_rule_id": "ACT-EI-01",
+      "due_date": null,
+      "rank": 6
+    },
+    "immediate_actions": [
+      {
+        "task_id": "ACT-EI-01",
+        "action": "ハローワークで求職申込みと失業手当の手続をする",
+        "timing": "離職票などがそろい次第（受給期間は原則、退職日の翌日から1年）",
+        "destination": "住居所を管轄するハローワーク",
+        "reason": "働ける状態で仕事を探す場合に、失業手当の手続を進めるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "unknown",
+        "source_rule_id": "ACT-EI-01",
+        "due_date": null,
+        "rank": 6
+      }
+    ],
+    "timeline": [
+      {
+        "task_id": "ACT-EI-01",
+        "action": "ハローワークで求職申込みと失業手当の手続をする",
+        "timing": "離職票などがそろい次第（受給期間は原則、退職日の翌日から1年）",
+        "destination": "住居所を管轄するハローワーク",
+        "reason": "働ける状態で仕事を探す場合に、失業手当の手続を進めるため",
+        "materials": [],
+        "completion": null,
+        "priority": "high",
+        "status": "unknown",
+        "source_rule_id": "ACT-EI-01",
+        "due_date": null,
+        "rank": 6
+      }
+    ],
+    "omitted_task_count": 0
+  },
+  "human_review": {
+    "required": false,
+    "reasons": []
+  },
+  "global_notice": "給付可否・離職理由の最終判断は、保険者またはハローワークが行います。"
+}

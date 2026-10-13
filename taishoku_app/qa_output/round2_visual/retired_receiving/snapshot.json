@@ -1,0 +1,108 @@
+{
+  "engine_version": "0.2.0",
+  "rule_version": "0.2.0",
+  "evaluated_at": "2026-10-13T15:50:13.282Z",
+  "sickness_allowance": {
+    "active": true,
+    "status_code": "SHO_NEED_INCAPACITY_CONFIRMATION",
+    "amount": null,
+    "post_exit": {
+      "status_code": "SHO_POST_EXIT_NEED_CONFIRMATION"
+    },
+    "payment_timing": {
+      "basis": "insurer_received_date",
+      "processing_business_days": 10,
+      "note": "協会けんぽに申請書が受け付けられ、不備がない場合の目安です。具体的な支払日は加入先へ確認してください。"
+    },
+    "missing_inputs": [
+      "unable_to_do_usual_work",
+      "known_daily_amount_or_standard_monthly_remuneration"
+    ],
+    "alerts": []
+  },
+  "employment_insurance": {
+    "active": true,
+    "status_code": "EI_NOT_READY_TO_WORK",
+    "wage_daily_yen": 10000,
+    "benefit_daily_yen": 6307,
+    "reason": {
+      "status_code": "EI_REASON_TOKUTEI_RIYU_POSSIBLE",
+      "overtime": null
+    },
+    "scenarios": [
+      {
+        "id": "general",
+        "label": "通常の給付日数で計算した場合",
+        "days": 90,
+        "total_yen": 567630,
+        "confidence": "provisional"
+      }
+    ],
+    "payment_timing": {
+      "status": "not_shown",
+      "note": "今すぐ働けないため、基本手当の初回入金ではなく、受給期間延長と傷病手当金の順番を表示します。"
+    },
+    "missing_inputs": [],
+    "alerts": [
+      "退職前6か月分の賃金ではなく、通常月の給与額をもとにした概算です。実際の金額とずれることがあります。"
+    ]
+  },
+  "actions": {
+    "first_action": {
+      "task_id": "ACT-EI-02",
+      "action": "傷病手当金と、必要なら雇用保険の受給期間延長を確認する",
+      "timing": "働けない状態が30日以上続いたら、受給期間延長を確認",
+      "destination": "傷病手当金の申請先（協会けんぽ・健康保険組合など）／ハローワーク",
+      "reason": "今すぐ働けず、その状態が30日以上続く場合は、失業手当より先に確認する手続があるため",
+      "materials": [],
+      "completion": null,
+      "priority": "critical",
+      "status": "unknown",
+      "source_rule_id": "ACT-EI-02",
+      "due_date": null,
+      "rank": 2
+    },
+    "immediate_actions": [
+      {
+        "task_id": "ACT-EI-02",
+        "action": "傷病手当金と、必要なら雇用保険の受給期間延長を確認する",
+        "timing": "働けない状態が30日以上続いたら、受給期間延長を確認",
+        "destination": "傷病手当金の申請先（協会けんぽ・健康保険組合など）／ハローワーク",
+        "reason": "今すぐ働けず、その状態が30日以上続く場合は、失業手当より先に確認する手続があるため",
+        "materials": [],
+        "completion": null,
+        "priority": "critical",
+        "status": "unknown",
+        "source_rule_id": "ACT-EI-02",
+        "due_date": null,
+        "rank": 2
+      }
+    ],
+    "timeline": [
+      {
+        "task_id": "ACT-EI-02",
+        "action": "傷病手当金と、必要なら雇用保険の受給期間延長を確認する",
+        "timing": "働けない状態が30日以上続いたら、受給期間延長を確認",
+        "destination": "傷病手当金の申請先（協会けんぽ・健康保険組合など）／ハローワーク",
+        "reason": "今すぐ働けず、その状態が30日以上続く場合は、失業手当より先に確認する手続があるため",
+        "materials": [],
+        "completion": null,
+        "priority": "critical",
+        "status": "unknown",
+        "source_rule_id": "ACT-EI-02",
+        "due_date": null,
+        "rank": 2
+      }
+    ],
+    "omitted_task_count": 0
+  },
+  "human_review": {
+    "required": true,
+    "reasons": [
+      "退職日の勤務で傷病手当金の継続可否が変わる",
+      "離職理由区分に確認が必要",
+      "今後仕事を探す予定がまだ決まっていない"
+    ]
+  },
+  "global_notice": "給付可否・離職理由の最終判断は、保険者またはハローワークが行います。"
+}

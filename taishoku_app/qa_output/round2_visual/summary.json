@@ -1,0 +1,31 @@
+[
+  {
+    "case": "clean_done",
+    "task_ids": [
+      "ACT-EI-01"
+    ],
+    "sickness_before_unemployment": true,
+    "warning_has_mynaportal": false,
+    "has_old_h1": false
+  },
+  {
+    "case": "exit_not_applied",
+    "task_ids": [
+      "ACT-SHO-02",
+      "ACT-PRE-DATE",
+      "ACT-PRE-04"
+    ],
+    "sickness_before_unemployment": true,
+    "warning_has_mynaportal": false,
+    "has_old_h1": false
+  },
+  {
+    "case": "retired_receiving",
+    "task_ids": [
+      "ACT-EI-02"
+    ],
+    "sickness_before_unemployment": true,
+    "warning_has_mynaportal": false,
+    "has_old_h1": false
+  }
+]

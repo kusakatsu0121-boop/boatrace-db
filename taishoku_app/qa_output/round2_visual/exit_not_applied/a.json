@@ -1,0 +1,27 @@
+{
+  "display_name": "QAテスト",
+  "as_of_date": "2026-10-14",
+  "age_at_exit": 40,
+  "employment_insurance_duration": "5_to_10y",
+  "wage_regular_month_estimate": 300000,
+  "separation_notice_status": "received",
+  "separation_reason_dispute": "no_difference",
+  "cause_work_related": "no",
+  "national_pension_done": true,
+  "exit_reasons": [
+    "health"
+  ],
+  "can_start_new_job": "difficult",
+  "job_intent": "undecided",
+  "health_insurance_type": "kyokai_kenpo",
+  "medical_consultation": "consulted",
+  "waiting_combined_four_days": true,
+  "payable_absence_after_waiting": "yes",
+  "absence_pay_status": "none",
+  "insured_period_before_exit": "one_year_or_more",
+  "retirement_day_attendance": "no",
+  "employment_status": "exit_date_fixed_employed",
+  "exit_date_status": "decided",
+  "sickness_benefit_status": "not_applied",
+  "post_exit_health_insurance_done": false
+}
