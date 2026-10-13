@@ -64,7 +64,7 @@ health={
     "payable_absence_after_waiting":"yes",
     "absence_pay_status":"none",
     "insured_period_before_exit":"one_year_or_more",
-    "retirement_day_attendance":"no",
+    "worked_on_exit_date":"not_worked_or_not_planned",
 }
 health_html,_=render(health)
 assert health_html.index("<h2>傷病手当金</h2>") < health_html.index("<h2>失業手当（基本手当）</h2>")
