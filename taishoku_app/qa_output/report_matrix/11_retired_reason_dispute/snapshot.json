@@ -1,7 +1,7 @@
 {
   "engine_version": "0.2.0",
   "rule_version": "0.2.0",
-  "evaluated_at": "2026-10-13T15:29:38.956Z",
+  "evaluated_at": "2026-10-13T15:31:28.603Z",
   "sickness_allowance": {
     "active": false,
     "status_code": "SHO_NOT_APPLICABLE",
