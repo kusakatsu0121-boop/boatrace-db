@@ -1,0 +1,2 @@
+race_code,captured_at_jst,deadline_jst,minutes_before_deadline,source_acquired_at,source_commit,frozen_model_commit,snapshot_sha256
+202610141301,2026-10-14T10:38:05.600805+09:00,2026-10-14T10:45:00+09:00,6.907,2026-10-14T10:35:24.315912+09:00,4c8ce9b58de97ad0da8dde363b1c45369de3a92c,92b4694f05ba3a99f3b77ec5492a136f6ae962f5,be3ce837757f80e3abacdfc725cb375ec16566bd18959f1b3d78d303725da744
